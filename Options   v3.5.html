@@ -947,6 +947,23 @@
      around it. */
   .total-stepper-wrap { position: relative; width: 100%; }
   .total-stepper-wrap input { padding-right: 46px; }
+  /* Explicit follow-up: "move the values within these fields to center
+     of the field box... always centered and not cut in low res
+     phones." Stock Price modal's Entry/Closed Price. Found a DEEPER,
+     pre-existing bug while wiring this up: `.total-stepper-wrap input`
+     (line above, 1 class + 1 element) and `.form-row input` (further
+     down this stylesheet, ALSO 1 class + 1 element -- see its own
+     comment) TIE on specificity, so the LATER one in source order
+     (`.form-row input { padding: 0 12px; }`) was silently winning for
+     padding-right, meaning these 2 fields effectively had only 12px of
+     reserved space, not the intended 46px -- #closeDealModal's own
+     price fields never had this problem since its ID-scoped padding-
+     right rule already outranks `.form-row input` regardless of order.
+     Sets `padding` (both sides, not just padding-left) via the SAME 2-
+     ID selector (#entryPriceModal + the field's own ID) so it wins
+     outright and both properties are correct, not just mirrored off an
+     already-wrong number. */
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; text-align: center; }
   /* Close Deal's Profit Taker %/$ fields use the plain `.form-row input`
      styling (padding: 0 12px, defined further down this stylesheet) --
      same specificity as the rule above (1 class + 1 element each) and
@@ -959,6 +976,26 @@
      bumped from 34px to clear the much bigger stepper. */
   #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
   #closeDealModal .total-stepper-sm { width: 65px; }
+  /* Explicit follow-up: "move the values within these fields to center
+     of the field box... different sizes for fields, and different
+     sizes for steppers [at Desktop/Phone/low-res Phone]... always
+     centered and not cut in low res phones." Scoped to JUST Entry/
+     Closed Price (not PT%/$, which weren't part of this ask) -- text-
+     align:center alone isn't enough here because the stepper (position:
+     absolute, reserved via padding-right above) makes the box
+     ASYMMETRIC: 12px padding-left (base .form-row input) vs 71px
+     padding-right, so "centered" text would actually center within
+     that lopsided gap, landing visibly left of the box's true visual
+     center. Mirroring padding-right's own value as padding-left here
+     (and at each of ITS breakpoints below -- see the matching
+     padding-right rules at 700px/345px) keeps the gap symmetric no
+     matter which breakpoint's stepper width is currently in play, so
+     centering stays correct everywhere instead of just working by
+     coincidence at one specific size. #closeDealModal ID selector
+     (2 IDs) beats the shared `.total-stepper-wrap input` rule's own
+     specificity regardless of source order, same reasoning as the
+     comment above this block for padding-right. */
+  #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 71px; text-align: center; }
   /* Explicit follow-up, "Global" (both Desktop and Phone -- unscoped by
      any media query, same as everything else on this line): "Increase
      the vertical size of Close Deal 'Profit Taker %' & 'Profit Taker $'
@@ -3485,6 +3522,10 @@
        time, matching every other field in this round. */
     #closeDealModal .total-stepper-sm { width: 52px; }
     #closeDealModal .total-stepper-wrap input { padding-right: 62px; }
+    /* Mirrors padding-right at THIS tier -- see the base-tier comment
+       (search "always centered and not cut in low res phones") for the
+       full reasoning. */
+    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 62px; }
     /* Bumped again (18px -> 28px) now that the field itself grew another
        80% taller (see the global height rule near the top of this
        stylesheet) -- button half-height here is now ~38.5px, same as
@@ -3536,6 +3577,11 @@
        (35 stepper + 3px dead-zone + 2px gutter) needed the number font
        trimmed once more, 20px -> 18px. */
     .total-stepper-wrap input { padding-right: 40px; font-size: 18px; }
+    /* Mirrors padding-right at THIS tier for the Stock Price modal's
+       Entry/Closed Price fields -- see the base-tier comment (search
+       "always centered and not cut in low res phones") for the full
+       reasoning. */
+    #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 40px; }
     .total-stepper-wrap .total-stepper:not(.total-stepper-sm) { width: 35px; }
     .total-stepper-wrap .total-stepper:not(.total-stepper-sm) .total-stepper-btn { font-size: 23px; }
     /* Same invisible missclick-guard padding-left as the 700px tier,
@@ -3593,6 +3639,10 @@
        this exact breakpoint. */
     #closeDealModal .total-stepper-sm { width: 40px; }
     #closeDealModal .total-stepper-wrap input { padding-right: 46px; }
+    /* Mirrors padding-right at THIS tier -- see the base-tier comment
+       (search "always centered and not cut in low res phones") for the
+       full reasoning. */
+    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 46px; }
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 20px; }
     #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { font-size: 12px; }
   }

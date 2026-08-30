@@ -7928,3 +7928,64 @@ Date Closed row -- identical result. All 4 price inputs'
 `.placeholder` property confirmed empty string (`""`) after the fix,
 both modals. Screenshot cross-check of Close Deal modal matches.
 No console errors.
+
+## Entry/Closed Price value centering, robust across all 3 breakpoints
+
+Explicit follow-up: "move the values within these fields to center of
+the field box. remember desktop, phone, and low res phones, have
+different sizes for fields, and different sizes for steppers. create
+this rule so they are always centered and not cut in low res phones!"
+
+**Why `text-align: center` alone wasn't enough**: the stepper
+(`position: absolute`, reserved via `padding-right` on the input) makes
+the field's typeable content box ASYMMETRIC -- `12px` padding-left
+(base `.form-row input`) vs a much bigger padding-right (`46-71px`
+depending on modal/breakpoint, reserved for the stepper). Centering
+text within an asymmetric box lands it visibly left of the box's true
+visual center, worse the wider the stepper's reserved space is. Fixed
+by making padding-left MIRROR padding-right's own value, at each of the
+3 breakpoints this file already has (base/Desktop, `700px`, `345px`),
+for `#cdEntryPrice`/`#cdClosedPrice`/`#epEntryPrice`/`#epClosedPrice`
+specifically -- not the shared `.total-stepper-wrap input` base rule,
+so Profit Taker %/$ and every other stepper field elsewhere in the file
+are untouched (not part of this ask).
+
+**A deeper, pre-existing bug found while wiring this up**: the Stock
+Price modal's own `epEntryPrice`/`epClosedPrice` were NEVER correctly
+reserving space for their stepper in the first place. `.total-stepper-
+wrap input { padding-right: 46px; }` and `.form-row input { padding: 0
+12px; }` (defined later in the stylesheet) are tied on specificity (1
+class + 1 element each) -- the LATER one always wins a tie, so `.form-
+row input`'s `12px` was silently overriding the intended `46px`
+reservation. `#closeDealModal`'s own price fields never had this
+problem since its rule is ID-scoped (`#closeDealModal .total-stepper-
+wrap input`), which already outranks `.form-row input` regardless of
+source order. Fixed alongside the centering work by using `padding: 0
+Npx` (both sides, not just `padding-left`) on a 2-ID selector
+(`#entryPriceModal #epEntryPrice`) that reliably wins outright --
+this actually fixes 2 things at once: the values are centered NOW, and
+the stepper was very likely overlapping/obscuring long values (e.g.
+"583.99") before this round at every breakpoint, not just low-res ones
+-- probably the literal "not cut in low res phones" symptom the user
+was seeing, just not limited to low-res the way the wording suggested.
+
+Values at each tier: Close Deal `71px` (Desktop) / `62px` (`700px`) /
+`46px` (`345px`); Stock Price `46px` (Desktop + `700px`, unchanged
+between those two) / `40px` (`345px`) -- all mirrored exactly as
+padding-left, right next to each corresponding existing padding-right
+rule in the source so a future stepper-width change is easy to spot
+needs the same update in both places.
+
+### Verified
+
+Checked `getComputedStyle().paddingLeft` vs `.paddingRight` for all 4
+fields at 3 real viewport widths -- `1280px` (Desktop): Close Deal
+`71px`/`71px` both fields (match), Stock Price `46px`/`46px` both
+fields (match, previously would have been `46px`/`12px`, confirmed
+mismatched before this fix via an earlier probe). `500px` (`700px`
+tier): Close Deal `62px`/`62px`, Stock Price `46px`/`46px`. `320px`
+(`345px` tier, genuine low-res): Close Deal `46px`/`46px`, Stock Price
+`40px`/`40px`. All 6 combinations matched exactly. Screenshot at 320px
+with "583.99"/"497.64" filled in confirms both values visually centered
+between the field's left edge and the stepper, not cut off or skewed.
+No console errors.
