@@ -396,7 +396,7 @@
   .total-stepper-wrap { position: relative; width: 100%; }
   .total-stepper-wrap input { padding-right: 46px; }
 
-  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; text-align: center; }
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
 
   #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
   #closeDealModal .total-stepper-sm { width: 65px; }
@@ -1328,6 +1328,11 @@
   .cd-price-row #cdEntryPrice, .cd-price-row #cdClosedPrice { height: 79px; }
   .ep-price-row.single { grid-template-columns: 1fr; }
 
+  #closeDealModal .cd-price-row .total-stepper-wrap { width: 100%; margin: 0; }
+  #closeDealModal .cd-price-row .total-stepper-sm { width: 48px; }
+  #closeDealModal .cd-price-row .total-stepper-sm .total-stepper-btn { font-size: 22px; }
+  #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
+
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
 
@@ -1563,6 +1568,10 @@
     #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 62px; }
 
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
+
+    #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; }
+    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 46px; }
+    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 46px; }
   }
 
   @media (max-width: 345px) {
@@ -1600,6 +1609,9 @@
     #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 46px; }
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 20px; }
     #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { font-size: 12px; }
+
+    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 40px; }
+    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 40px; }
   }
 
   @media (max-width: 500px) {

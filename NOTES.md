@@ -7989,3 +7989,69 @@ tier): Close Deal `62px`/`62px`, Stock Price `46px`/`46px`. `320px`
 with "583.99"/"497.64" filled in confirms both values visually centered
 between the field's left edge and the stepper, not cut off or skewed.
 No console errors.
+
+## Entry/Closed Price: 25px right shift + Close Deal copies Stock Price's dimensions
+
+Explicit follow-up, across 2 messages:
+
+> "'Stock Price' edit window, move the values within these fields to a
+> bit to the right side of the field box, by 25px. 🏷️ Entry Price /
+> 💰 Closed Price. apply the fix into 'Close Deal' window aswell...
+> 'Close Deal' fields are really small, and utilizing space horribly...
+> copy 🏷️ Entry Price / 💰 Closed Price fields dimensions from 'Stock
+> Price' edit window."
+
+**Root cause of "really small... horribly"**: Close Deal's Entry/Closed
+Price fields (added 3 rounds ago) live inside `#closeDealModal`, and
+EVERY sizing rule in that modal is scoped by modal ID only -- meaning
+they silently inherited every enlargement/narrowing meant for Profit
+Taker %/$ specifically: the 70%-width centered stepper-wrap ("make
+those fields a little bit less wider," an old PT%/$-only ask), the x2.5
+stepper (65px vs Stock Price's plain 48px), the bigger button glyph
+(34px vs 22px), and 71px of padding sized for that bigger stepper. None
+of this was ever asked for Entry/Closed Price -- it just came along for
+the ride by sharing a modal.
+
+**Fix**: `.cd-price-row`-scoped rules (the field's own ID + this class,
+2 classes + 1 ID) outrank the plain `#closeDealModal .total-stepper-sm`
+etc. (1 class + 1 ID) regardless of source order, so one set of rules
+resets Entry/Closed Price back to Stock Price's own plain values at
+every tier without needing `!important` or fighting specificity ties:
+`.total-stepper-wrap` width 70%->100% (no more `margin:0 auto` centering
+a narrower box, uses the full column), stepper 65px->48px, button glyph
+34px->22px. Confirmed via live measurement both fields now render at
+the identical `343px` width and `48px` stepper size in both modals.
+
+**25px shift, both modals' Entry/Closed Price fields**: `text-align:
+center` centers within the CONTENT box (element width minus both
+paddings) -- shifting that midpoint right by X while padding-right
+stays fixed (it's sized to just clear the stepper; shrinking it would
+put the value back under the stepper) needs padding-left to grow by
+DOUBLE X, since the content box's own center point only moves half as
+far as the padding change. `46px -> 96px` on padding-left (padding-
+right held at `46px`) computes out to exactly `+25px`, algebraically
+confirmed via `paddingLeft + (width-paddingLeft-paddingRight)/2` before
+touching anything live. Desktop-tier only -- explicitly reset back to
+plain symmetric padding (`46/46` at <=700px, `40/40` at <=345px,
+Stock Price's own pre-existing values at those tiers) so the shift
+can't eat into either modal's already-tight low-res-phone width
+budget. Close Deal's version folds this into the SAME `.cd-price-row`
+override that already copies Stock Price's other dimensions, one
+consistent set of rules rather than 2 separate passes.
+
+### Verified
+
+Desktop (1280px): computed `paddingLeft + (clientWidth-paddingLeft-
+paddingRight)/2 - clientWidth/2` (the box's content-center offset from
+its own true horizontal middle) measures exactly `25` for all 4 fields
+(`#epEntryPrice`, `#epClosedPrice`, `#cdEntryPrice`, `#cdClosedPrice`).
+Both modals' price fields measure identical `343px` width and `48px`
+stepper width via `getBoundingClientRect()`. Screenshots of both modals
+side-by-side show the values ("583.99"/"497.64") visibly shifted right
+of center, and Close Deal's fields now fill their full column width
+(no more empty margin either side) matching Stock Price's look. 600px
+(700px tier) and a genuine 320px mobile-UA viewport (345px tier): both
+reset back to symmetric `0px 46px` and `0px 40px` respectively in BOTH
+modals, `scrollWidth === clientWidth` (`clipped: false`) confirmed with
+"583.99"/"497.64" actually filled in -- the shift doesn't reach these
+narrower tiers, no clipping introduced. No console errors.
