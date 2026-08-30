@@ -2,23 +2,16 @@
 """
 HTML Comment Stripper (auto-run edition)
 -----------------------------------------
-GUI mode is disabled (commented out below, kept for future use).
 On execution, this script now runs directly against the fixed path
-in TARGET_FILE above and writes "<name>_stripped.html" next to it,
-with all documentation/explanation comments removed (HTML comments,
-plus CSS/JS comments inside <style>/<script> blocks). Actual code,
-markup, strings, regex literals and template literals are left
-untouched so functionality is not affected.
+in TARGET_FILE above and writes the result straight to "index.html"
+in the same folder, with all documentation/explanation comments
+removed (HTML comments, plus CSS/JS comments inside <style>/<script>
+blocks). Actual code, markup, strings, regex literals and template
+literals are left untouched so functionality is not affected.
 """
 
 import os
 import re
-import shutil
-
-# --- GUI imports (disabled - kept for future use) --------------------------
-# import tkinter as tk
-# from tkinter import filedialog, messagebox, scrolledtext
-
 
 # ---------------------------------------------------------------------------
 # CSS comment stripping
@@ -346,91 +339,6 @@ def collapse_blank_lines(text: str) -> str:
     return ''.join(out)
 
 
-
-#
-# class StripperApp:
-#     def __init__(self, root):
-#         self.root = root
-#         root.title("HTML Comment Stripper")
-#         root.resizable(True, False)
-#
-#         pad = {'padx': 10, 'pady': 6}
-#
-#         frame = tk.Frame(root)
-#         frame.pack(fill='x', **pad)
-#
-#         tk.Label(frame, text="HTML file:").grid(row=0, column=0, sticky='w')
-#
-#         self.path_var = tk.StringVar()
-#         self.path_entry = tk.Entry(frame, textvariable=self.path_var, width=60)
-#         self.path_entry.grid(row=1, column=0, sticky='we', padx=(0, 6))
-#         frame.columnconfigure(0, weight=1)
-#
-#         browse_btn = tk.Button(frame, text="Browse...", command=self.browse)
-#         browse_btn.grid(row=1, column=1)
-#
-#         strip_btn = tk.Button(
-#             root, text="Strip HTML", command=self.strip_file,
-#             height=2, bg="#2d6cdf", fg="white", font=('Segoe UI', 10, 'bold')
-#         )
-#         strip_btn.pack(fill='x', padx=10, pady=(4, 8))
-#
-#         self.log = scrolledtext.ScrolledText(root, height=8, width=70, state='disabled')
-#         self.log.pack(fill='both', expand=True, padx=10, pady=(0, 10))
-#
-#     def log_msg(self, msg: str):
-#         self.log.configure(state='normal')
-#         self.log.insert('end', msg + '\n')
-#         self.log.see('end')
-#         self.log.configure(state='disabled')
-#
-#     def browse(self):
-#         path = filedialog.askopenfilename(
-#             title="Select HTML file",
-#             filetypes=[("HTML files", "*.html *.htm"), ("All files", "*.*")]
-#         )
-#         if path:
-#             self.path_var.set(path)
-#
-#     def strip_file(self):
-#         path = self.path_var.get().strip()
-#         if not path:
-#             messagebox.showwarning("No file", "Please choose an HTML file first.")
-#             return
-#         if not os.path.isfile(path):
-#             messagebox.showerror("Not found", f"File not found:\n{path}")
-#             return
-#
-#         try:
-#             with open(path, 'r', encoding='utf-8', errors='surrogateescape') as f:
-#                 original = f.read()
-#         except OSError as e:
-#             messagebox.showerror("Read error", str(e))
-#             return
-#
-#         try:
-#             stripped = strip_document(original)
-#         except Exception as e:
-#             messagebox.showerror("Processing error", str(e))
-#             return
-#
-#         folder, filename = os.path.split(path)
-#         name, ext = os.path.splitext(filename)
-#         out_path = os.path.join(folder, f"{name}_stripped{ext or '.html'}")
-#
-#         try:
-#             with open(out_path, 'w', encoding='utf-8', errors='surrogateescape') as f:
-#                 f.write(stripped)
-#         except OSError as e:
-#             messagebox.showerror("Write error", str(e))
-#             return
-#
-#         removed = len(original) - len(stripped)
-#         self.log_msg(f"Done: {out_path}")
-#         self.log_msg(f"Removed {removed:,} characters of comments.")
-#         messagebox.showinfo("Done", f"Stripped file saved to:\n{out_path}")
-
-
 # ---------------------------------------------------------------------------
 # Auto-run: strips the fixed TARGET_FILE with no GUI / no prompts
 # ---------------------------------------------------------------------------
@@ -439,9 +347,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TARGET_FILE = os.path.join(SCRIPT_DIR, "Options   v3.5.html")
 
-# Second location that always receives an exact copy of the freshly
-# stripped output (overwritten every run).
-SECOND_COPY_TARGET = os.path.join(SCRIPT_DIR, "index.html")
+# Stripped output is written directly to this fixed filename, in the
+# same folder as TARGET_FILE (overwritten every run).
+OUTPUT_FILE = os.path.join(SCRIPT_DIR, "index.html")
 
 
 def run_auto(path: str = TARGET_FILE) -> None:
@@ -455,26 +363,15 @@ def run_auto(path: str = TARGET_FILE) -> None:
     stripped = strip_document(original)
     stripped = collapse_blank_lines(stripped)
 
-    folder, filename = os.path.split(path)
-    name, ext = os.path.splitext(filename)
-    out_path = os.path.join(folder, f"{name}_stripped{ext or '.html'}")
+    out_dir = os.path.dirname(OUTPUT_FILE)
+    os.makedirs(out_dir, exist_ok=True)
 
-    with open(out_path, 'w', encoding='utf-8', errors='surrogateescape') as f:
+    with open(OUTPUT_FILE, 'w', encoding='utf-8', errors='surrogateescape') as f:
         f.write(stripped)
 
     removed = len(original) - len(stripped)
-    print(f"Done: {out_path}")
+    print(f"Done: {OUTPUT_FILE}")
     print(f"Removed {removed:,} characters of comments.")
-
-    # Also place an exact copy of the stripped file at the fixed second
-    # location (folder is created if it doesn't exist yet).
-    try:
-        second_dir = os.path.dirname(SECOND_COPY_TARGET)
-        os.makedirs(second_dir, exist_ok=True)
-        shutil.copyfile(out_path, SECOND_COPY_TARGET)
-        print(f"Copied to: {SECOND_COPY_TARGET}")
-    except OSError as e:
-        print(f"Warning: could not copy to {SECOND_COPY_TARGET}: {e}")
 
 
 def main():

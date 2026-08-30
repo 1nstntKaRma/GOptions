@@ -7359,3 +7359,198 @@ Price confirmed absent from `.deal-actions-cell` on both rows. Full
 functional re-check both modes: Entry Price modal opens with the right
 fields shown/hidden, Reopen still flips `closed`, Edit still opens the
 Save/Edit modal. No console errors.
+
+## Portfolio: DTE cell becomes the Entry/Closed price display when closed
+
+Explicit follow-up, several bullets in one round:
+
+> "Portfolio Phone mode - 'CLOSED/OPEN' isnt positioned correctly on the
+> frame border, add a line in the code that allows me manually editing
+> each of them at its horizontal position... 'Closed Date' near 'OPEN'
+> label isnt displaying properly since its transperent, add a black
+> background to it, no frame... (Entry $) isnt displaying properly since
+> its transperent, add a black background to it and a frame just like
+> 'OPEN' label... reposition it centered within the border, above the
+> 'DTE value' instead of above the 3 buttons... when deal is closed, DTE
+> cell (grey border) will now be used to display 'Entry/Closed prices':
+> 🧾 unless both values exist, if they do show '$458.32 / - / $497.64'
+> stacked... Desktop & phone mode - instead of showing the text 'Entry $'
+> when value is empty, show 🧾 instead, add a whitish border just for
+> this button when value is empty."
+
+Followed mid-turn by the same DTE-cell-becomes-price-display ask
+explicitly extended to **Desktop** too (was originally read as Phone-
+only from the first message).
+
+**Badge horizontal position knobs (Phone)**: `.deal-card-border-badge`'s
+hardcoded `left:24px` split into `--phone-badge-open-x` /
+`--phone-badge-closed-x` (new Legend-block `:root` vars, both default
+24px so nothing moves until edited), with `.open`/`.closed` modifier
+classes on the badge picking the right one.
+
+**Close-date background restored**: `.deal-card-close-date` gets
+`background: var(--bg)` (black) back -- this is a direct reversal of an
+earlier round's explicit "WITHOUT A BACKGROUND BEHIND THE VALUE" removal
+seen live and reconsidered ("isnt displaying properly since its
+transperent"). "No frame" honored literally -- no `border` added, only
+`background` + a small `border-radius` for a soft chip look.
+
+**Entry price display re-homed again (Phone)**: was anchored above the
+3-icon action row (`.deal-card-actions-stack`, previous round's fix for
+a flexbox width-inflation bug); now anchored above the DTE badge
+instead, via a new `.deal-card-dte-stack` wrapper (`position:relative`)
+containing the DTE badge, with `.deal-card-dte-stack .deal-price-display`
+`position:absolute; bottom:100%` off it -- same out-of-flow technique as
+before (the price text is often wider than what it sits above, so it
+must stay independent of that width or it re-triggers the same
+stretching bug), just a different anchor. Only rendered for OPEN deals
+now (see next point), so `.deal-card-actions-stack` and its CSS are
+gone -- `.deal-card-actions` is a plain sibling flex row again.
+
+Given a black background + frame ("just like 'OPEN' label"), split into
+2 non-overlapping rules by exact-match vs `.missing` (rather than one
+rule + an override) so neither depends on stylesheet source order:
+`:not(.missing)` gets a blue border, `.missing` gets a whitish
+(`var(--text)`) border -- both keep the same black background.
+
+**CLOSED deals: Entry/Closed price display moved out of the status
+column entirely, into the DTE cell** -- both modes. The DTE cell
+(`.deal-dte-cell` Desktop / `.deal-card-dte-badge` Phone) no longer
+shows the 🔒 glyph once closed; a new shared helper,
+`dealDtePriceCellHtml(deal)` (next to `dealPriceDisplayHtml`, same
+shared-by-both-layouts treatment), renders either a single 🧾 button (if
+either stock price is still unset) or a 3-line stack -- Entry value,
+a dimmer centered dash, Closed value (`.deal-dte-price-btn`,
+`.deal-dte-price-val` x2, `.deal-dte-price-dash`) -- inside the SAME
+already-bordered/colored `.closed` box, so no new frame was added, just
+new content. Both cells' `.closed` padding trimmed slightly (`4px 8px`
+-> `4px 6px`) to fit the stack without growing the box more than
+necessary. `dealPriceDisplayHtml()` itself is simplified back down to
+ONLY the open-deal Entry-price case (its old closed-deal branch is
+unreachable now that both call sites skip it via `isClosed ? '' : ...`)
+-- the old "Closed $" placeholder text/grey-color-class code is gone,
+not dead-code-guarded.
+
+**Missing-value emoji + whitish border (both modes)**: `dealPriceDisplayHtml`
+now renders 🧾 instead of the literal "Entry $" placeholder text when
+`entryStockPrice` is unset, with a new `.deal-price-display.missing`
+rule (`border: 1px solid var(--text)`) as the global fallback frame --
+Desktop gets exactly this (was borderless by design, "matches the
+reference image"); Phone's own dte-stack rules (above) additionally give
+it a black background always, with `.missing` there swapping only the
+border color.
+
+**Card-to-card spacing (Phone, mid-turn add-on)**: "each deal border...
+is now touching its adjacent deals, after the addition of 'CLOSED/OPEN'
+bubble." The badge straddles `-10px` above its own card's top edge --
+the previous `9px` `margin-bottom` wasn't enough clearance, so it
+visually overlapped the PREVIOUS card's bottom border. Bumped to `20px`.
+This is margin-BOTTOM (space added after each card) -- the user's own
+phrasing ("only add spacer below first deal, since the first deal isn't
+interfering with anything above it") is really just describing how
+margin-bottom already behaves: card 1 needs nothing above itself since
+nothing precedes it, so the first visible effect of the fix is the gap
+appearing below card 1, before card 2.
+
+### Verified
+
+Phone (375px), 4 injected test deals (open+empty price, open+set price,
+closed+both prices empty, closed+both prices set): NVDA (open, no
+entry price) renders 🧾 with `border: 0.8px solid rgb(156,156,156)`
+(= `--text`) and black background, positioned directly above its DTE
+badge. TSLA (open, entry set) renders `$378.15` with a blue border,
+same position. AAPL (closed, no prices) renders 🧾 alone inside the DTE
+cell's grey-bordered box. MSFT (closed, both prices set) renders a
+2-value stack (`.deal-dte-price-val` count `2`, texts `$458.32` /
+`$497.64`) with the dash between, `flex-direction: column`, inside the
+same box. Badge horizontal knob confirmed live-tunable: setting
+`--phone-badge-open-x` to `60px` moved the badge's rendered `left` from
+`27px` to `63px`. Card-to-card gap re-measured after the spacing fix:
+`11px` clear between card 1's bottom edge and card 2's badge top (was
+overlapping before). Desktop (1280px), same 4 deals: identical 🧾/
+`$378.15`-with-border/🧾/stacked-price behavior confirmed in the
+corresponding cells (status column for open-deal price, DTE column for
+closed-deal price). No console errors in either mode.
+
+## Portfolio follow-up: 🧾 sizing, Desktop badge centering, dark grey border
+
+Explicit follow-up, 5 bullets:
+
+> "Phone Portfolio mode - when a deal is CLOSED, but not all stock entry
+> closed prices exist, show 🧾 as a button universalized by its size
+> dimension according to the 3 buttons on the right side (currently
+> border is too small and not correct)... Desktop Portfolio mode -
+> OPEN/CLOSED label must stay centered vertically and never get pushed
+> downwards/upwards by anything!... 🧾 will go below OPEN label, after a
+> value has been added, the value itself will be positioned below open
+> label. OPEN must stay centered vertically... 🧾 change border color
+> into DARK grey... Entry/Closed price when two values exist, remove the
+> special background, remove border."
+
+**New shared helper, `dealDtePriceStacked(deal)`**: just `!!entry &&
+!!closed`, factored out of `dealDtePriceCellHtml`'s own check so both
+`dealRowHtml`/`dealCardHtml` can pick the right modifier class on the
+OUTER cell without re-deriving the same 2 booleans inline. Both
+functions now compute a class string once (`' closed icon-only'` /
+`' closed stacked'` on Phone, `' closed'` / `' closed stacked'` on
+Desktop -- see below for why Desktop doesn't need its own `icon-only`)
+and apply it to `.deal-card-dte-badge` / `.deal-dte-cell`.
+
+**Phone 🧾 sizing**: `.deal-card-dte-badge.closed.icon-only` gets a fixed
+`width:34px; height:34px; padding:0` -- exactly matching `.deal-card-
+actions .deal-icon-btn`'s own 34x34 box, only while still missing a
+price. `.stacked` (both set) keeps the roomier default padding, needs
+the extra height for its 3 lines. No Desktop equivalent added -- this
+specific ask was Phone-only, Desktop's DTE cell wasn't reported broken.
+
+**Desktop OPEN/CLOSED badge, permanently centered**: root cause of the
+"pushed" complaint -- `.deal-status-cell`'s price display was a normal
+flex-column child, so its presence/absence directly changed the cell's
+total height, and `.portfolio-row`'s `align-items:center` centers each
+CELL as a block, meaning the badge's own on-screen position shifted
+depending on whether a price line existed above it. Fixed by taking the
+price fully out of flow (`position:absolute`, same technique used for
+Phone's price displays in earlier rounds) -- `.deal-status-cell` is now
+`position:relative` wrapping just the badge (open: badge alone; closed:
+badge+date, unchanged from before, only ever had those two), with
+`.deal-status-cell .deal-price-display` `position:absolute; top:100%`
+UNDER it (was normal-flow, `margin-bottom` ABOVE it) -- "🧾 will go below
+'OPEN' label" satisfied by construction, and the badge can no longer be
+pushed by anything since the price no longer occupies flow space at
+all. Verified live: badge vertical center offset from its row's own
+center is exactly `0` for both a deal with a price set and one without
+(previously would have differed).
+
+**Dark grey border**: `.deal-status-cell .deal-price-display.missing`
+overrides the shared `.deal-price-display.missing` rule's whitish
+(`var(--text)`) border with `var(--border)` (`#2c2c2c`, already the
+file's standard dark-grey border token, reused rather than inventing a
+new hex) -- 3 class-components beats the shared rule's 2, wins
+regardless of source order. Phone's own missing-state border (black bg
++ its own rule, see previous round) is untouched -- this ask was
+Desktop-only.
+
+**Stacked price: frame removed (Desktop only)**: `.deal-dte-cell.closed
+.stacked { border: none; background: none; }` -- strips the `.closed`
+frame back off, but ONLY once both prices are set. The single 🧾 (still
+missing one) keeps the grey border/background from the base `.closed`
+rule, unaffected -- this ask was specifically about the 2-value stacked
+state, not the icon state.
+
+### Verified
+
+Desktop (1280px), 5 injected test deals (open+missing, open+set, closed+
+both-missing, closed+both-set, closed+one-missing): badge vertical
+center offset from row center is `0` for both open deals regardless of
+price presence (`getBoundingClientRect()` on badge vs row, before/after
+comparison). Missing-price border color `rgb(44,44,44)` (`--border`,
+confirmed dark grey, not the shared whitish `--text`). Closed+both-
+missing and closed+one-missing DTE cells both keep `border`+`background`
+(`rgb(107,107,107)` / `rgb(8,8,8)`) -- correctly NOT `.stacked` (one-
+missing case confirms the check is `entry AND closed`, not just
+"closed"). Closed+both-set DTE cell (`.stacked`) has `border: 0px none`
+and transparent background -- frame fully removed. Phone (375px): 🧾-
+only DTE badges measure exactly `34x34`, matching the 3 action icons'
+own `34x34` (`getBoundingClientRect()` on both, direct comparison) --
+the 2-value stacked badge is untouched at its natural `50x45`. No
+console errors in either mode.
