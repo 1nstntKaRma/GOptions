@@ -842,7 +842,7 @@
   .deal-card-border-badge.closed { left: var(--phone-badge-closed-x); }
   .deal-card .badge { background: var(--bg); }
 
-  .deal-card-close-date { font-size: 11px; color: var(--muted); padding: 1px 4px; background: var(--bg); border-radius: 4px; }
+  .deal-card-close-date { font-size: 11px; color: var(--muted); margin-left: 8px; }
 
   .deal-card .deal-ticker { font-size: 26px; }
   .deal-card .deal-sub { font-size: 13px; }
@@ -1318,6 +1318,9 @@
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
+  .ep-price-row .form-row { padding: 6px 0; }
+  .ep-price-row.single { grid-template-columns: 1fr; }
+
   .form-row-compact { margin-bottom: 0; }
   .form-row-compact label { font-size: 11px; }
   .form-row-compact input {
@@ -1597,8 +1600,7 @@
 
     <div id="calculatorView">
 
-      <img class="calc-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Calculator.png"
-           onerror="this.onerror=null; this.src='ICO/Calculator.png';" alt="Calculator" />
+      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" />
 
       <div id="calcEditingBanner" class="calc-editing-banner"></div>
 
@@ -1769,8 +1771,7 @@
 
     <div id="portfolioView">
 
-      <img class="portfolio-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Portfolio.png"
-           onerror="this.onerror=null; this.src='ICO/Portfolio.png';" alt="Portfolio" />
+      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" />
       <div class="portfolio-header">
         <div class="top-row-left">
           <div class="portfolio-title-block">
@@ -2031,23 +2032,37 @@
   <form class="modal-panel" onsubmit="submitEntryPrice(event)">
     <h2>Stock Price</h2>
     <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
-    <div class="form-row">
-      <label for="epEntryPrice">Entry Stock Price</label>
-      <div class="total-stepper-wrap">
-        <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
-        <div class="total-stepper total-stepper-sm">
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
-        </div>
+
+    <div class="form-row" id="epDateRow">
+      <label for="epDateDay">Closed Date</label>
+      <div class="date-pair">
+        <select id="epDateDay"></select>
+        <span>.</span>
+        <select id="epDateMonth"></select>
+        <span>.</span>
+        <select id="epDateYear"></select>
       </div>
     </div>
-    <div class="form-row" id="epClosedRow">
-      <label for="epClosedPrice">Closed Stock Price</label>
-      <div class="total-stepper-wrap">
-        <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
-        <div class="total-stepper total-stepper-sm">
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
+
+    <div class="form-grid-2 ep-price-row" id="epPriceRow">
+      <div class="form-row">
+        <label for="epEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row" id="epClosedRow">
+        <label for="epClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2203,10 +2218,11 @@
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function stepDecimalField(inputId, direction, increment, decimals) {
+  function stepDecimalField(inputId, direction, increment, decimals, min) {
     const el = document.getElementById(inputId);
     const current = parseFloat(el.value) || 0;
-    const next = direction === 'up' ? current + increment : current - increment;
+    let next = direction === 'up' ? current + increment : current - increment;
+    if (min !== undefined && next < min) next = min;
     const factor = Math.pow(10, decimals);
     const rounded = Math.round(next * factor) / factor;
     el.value = decimals > 0 ? rounded.toFixed(decimals) : String(rounded);
@@ -2861,7 +2877,8 @@
   [
     ['sdStartMonth', 'sdStartDay', 'sdStartYear'],
     ['sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear'],
-    ['cdDateMonth', 'cdDateDay', 'cdDateYear']
+    ['cdDateMonth', 'cdDateDay', 'cdDateYear'],
+    ['epDateMonth', 'epDateDay', 'epDateYear']
   ].forEach(([mId, dId, yId]) => {
     const mSel = document.getElementById(mId);
     const dSel = document.getElementById(dId);
@@ -2935,7 +2952,7 @@
   function dealPriceDisplayHtml(deal) {
     const hasEntry = !!deal.entryStockPrice;
     const cls = hasEntry ? 'deal-price-display blue' : 'deal-price-display blue missing';
-    const txt = hasEntry ? `$${formatStockPrice(deal.entryStockPrice)}` : '\u{1F9FE}';
+    const txt = hasEntry ? `\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}` : '\u{1F3F7}\u{FE0F}';
     return `<button type="button" class="${cls}" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry Stock Price">${txt}</button>`;
   }
 
@@ -3043,7 +3060,7 @@
     const isClosed = !!deal.closed;
 
     const borderBadge = isClosed
-      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED</span><span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></div>`
+      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></span></div>`
       : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
@@ -3485,6 +3502,12 @@
 
   let entryPriceDealId = null;
 
+  ['epEntryPrice', 'epClosedPrice'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      if (this.value.includes('-')) this.value = this.value.replace(/-/g, '');
+    });
+  });
+
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -3492,7 +3515,10 @@
     document.getElementById('epDealName').textContent = dealDisplayName(deal);
     document.getElementById('epEntryPrice').value = deal.entryStockPrice || '';
     document.getElementById('epClosedPrice').value = deal.closedStockPrice || '';
+    document.getElementById('epDateRow').hidden = !deal.closed;
     document.getElementById('epClosedRow').hidden = !deal.closed;
+    document.getElementById('epPriceRow').classList.toggle('single', !deal.closed);
+    if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
 
@@ -3505,8 +3531,12 @@
     e.preventDefault();
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
-    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
-    if (deal.closed) deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
+
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim().replace(/-/g, '');
+    if (deal.closed) {
+      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim().replace(/-/g, '');
+      deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
+    }
     deal.updatedTs = Date.now();
     closeEntryPriceModal();
     renderPortfolio();

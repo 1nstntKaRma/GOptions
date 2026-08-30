@@ -7554,3 +7554,168 @@ only DTE badges measure exactly `34x34`, matching the 3 action icons'
 own `34x34` (`getBoundingClientRect()` on both, direct comparison) --
 the 2-value stacked badge is untouched at its natural `50x45`. No
 console errors in either mode.
+
+## Portfolio follow-up: CLOSED centering, price emoji rebrand, Stock Price modal redesign, Phone badge merge
+
+Explicit follow-up, several bullets:
+
+> "'OPEN/CLOSED' label... 'CLOSED' still not centered, apply the same
+> fix so 'date closed' gets pushed downwards instead... Desktop entry/
+> closed price font is a lil too small, make it bigger... Desktop &
+> phone 'entry/closed price' summary when both values exist looks bad,
+> show instead: '🏷️ $583.99 / 💰 $583.94'... all 'entry/closed prices'
+> can't be a minus value, only positive... 'Edit Entry Stock Price'
+> button should be 🏷️ instead of 🧾... when showing Entry Stock Price,
+> display '🏷️ $378.15'... add 'Closed Date'/'🏷️ Entry Stock Price'/
+> '💰 Closed Stock Price' title and field... 'edit entry/close Stock
+> Price window' will have the top field added as 'Closed Date'... in 1
+> row, below this row... a bit bulkier in height, 1 half for 'Entry
+> Price', other half 'Closed Price'... Phone Mode: 'Date Closed' should
+> be joined inside 'CLOSED' label bubble and frame instead of having its
+> own position and bubble, example 'CLOSED  30.8'."
+
+The 2 rounds of Close-Deal-window-vs-Stock-Price-window wording were
+read as the same request stated twice (rough draft, then the precise
+row-1/row-2 spec) -- only `#entryPriceModal` ("Stock Price") was
+touched; `#closeDealModal` ("Close Deal") already had its own Close
+Date field from before and wasn't changed.
+
+**Desktop CLOSED badge, same out-of-flow fix as OPEN**: `.deal-status-
+close-date` was still a normal flex-column child below `.badge-closed`
+-- its own height still shifted where `.portfolio-row`'s `align-items:
+center` placed the badge, the exact bug the OPEN-state price fix solved
+last round but hadn't been applied here yet. Now `position:absolute;
+top:100%` off `.deal-status-cell` (already `position:relative` from
+last round), so CLOSED's badge is the ONLY flow child too, matching
+OPEN exactly.
+
+**Entry/Closed price font, bumped**: shared `.deal-dte-price-btn.stacked`
+rule (Desktop `.deal-dte-cell` + Phone `.deal-card-dte-badge`, not
+layout-scoped) `10px` -> `12px`, `gap` `1px` -> `2px` to match.
+
+**New stacked format**: `dealDtePriceCellHtml()` drops the old `$X -
+$Y` dash-separated pair for `🏷️ $X.XX` / `💰 $Y.YY`, 2 lines, no dash --
+`.deal-dte-price-dash` (now unreferenced) removed from CSS entirely
+rather than left dead.
+
+**Always positive**: new shared helper `formatStockPrice(val)` --
+`Math.abs(parseFloat(val)).toFixed(2)`, empty string if not a number.
+A stock price is never negative by definition, but the field is free
+text (steppers only ever ±0.01, a manual "-5" is still typeable) -- this
+strips the sign at DISPLAY time only, doesn't touch what's actually
+stored or the input fields themselves. Used everywhere a stock price
+renders: `dealPriceDisplayHtml`, `dealDtePriceCellHtml`.
+
+**🏷️ replaces 🧾 (Entry price button only)**: `dealPriceDisplayHtml`'s
+missing-value placeholder AND its real-value display both now show the
+tag emoji -- `🏷️` alone when empty, `🏷️ $X.XX` once set (previously
+plain "$X.XX", no emoji, when set). Scoped to the OPEN-deal Entry-price
+button specifically (`title="Edit Entry Stock Price"`) -- the DTE
+cell's own missing-value icon (`title="Edit Entry/Closed Stock Price"`,
+a different action covering both fields at once) still shows 🧾,
+untouched.
+
+**Stock Price modal (`#entryPriceModal`) redesigned**: was 2 stacked
+rows (Entry Stock Price, Closed Stock Price). Now 2 rows total --
+row 1, new, `#epDateRow`: "Closed Date" (day/month/year selects, same
+`applyDateToPair`/`composeDateMD` helpers Close Deal's own Close Date
+already uses, so editing it here writes straight to the same
+`deal.closeDate`); row 2, `#epPriceRow`, a `.form-grid-2` 2-column grid
+(same pattern as Close Deal's PT%/PT$ row) instead of 2 stacked rows --
+left "🏷️ Entry Price", right "💰 Closed Price". `.ep-price-row .form-row`
+gets extra vertical padding only (no `min-height`) for the "bulkier"
+ask while staying compact on short/low-res phones, per "Window should
+remain compact." Both `#epDateRow` and the Closed-Price half stay
+hidden while the deal is open (`openEntryPriceModal` toggles `hidden`
+same as before, now on the date row too) -- `#epPriceRow` gets a
+`.single` class in that state, collapsing the grid back to 1 column so
+Entry Price isn't left stranded at half width. `submitEntryPrice` now
+also writes `deal.closeDate` from the date selects, but only when the
+deal is closed (mirrors the existing Closed Price guard).
+`epDateMonth/epDateDay/epDateYear` added to the shared date-select init
+list (alongside Save Deal's Start/Expiry and Close Deal's own Close
+Date) so they get populated/wired up the same way on page load.
+
+**Phone: CLOSED badge + date merged into one bubble**: `.deal-card-
+close-date` used to be a separate flex sibling with its OWN background/
+padding/border-radius (a whole second pill) next to `.badge-closed` --
+now nested INSIDE the same `<span class="badge badge-closed">`, so it's
+one frame, one background. Its own background/padding/border-radius
+are gone; only `margin-left: 8px` remains, doing the "keep it spaced a
+bit" spacing between "CLOSED" and the date text.
+
+**Unrelated fix flagged mid-round**: the Calculator/Portfolio corner
+logos (`<img class="calc-logo-corner">` / `.portfolio-logo-corner`) had
+a hardcoded absolute Windows path (`file:///C:/GolaN/.../nanaurbznes/
+t/t/ICO/...`) left over from when this file lived in a different folder
+during an earlier session, with an `onerror` fallback to a plain
+relative `ICO/....png`. That absolute path breaks the instant the
+project moves folders again (doesn't move with it) -- simplified to
+JUST the relative path, `src="ICO/Calculator.png"` / `"ICO/Portfolio.png"`,
+no `onerror` needed. A relative path always resolves against THIS
+file's own folder, which is exactly where `ICO/` lives now (confirmed:
+`C:\GolaN\- Windows + Office\GOptions\ICO\Calculator.png` and
+`Portfolio.png` both exist) -- true whether run locally or hosted, per
+the ask ("this way it will always be true").
+
+### Verified
+
+Desktop (1280px): badge vertical center offset from row center is `0`
+for ALL 4 test deals now (2 open, 2 closed) -- previously closed rows
+were consistently `-10`, confirming the fix. Missing entry price shows
+`🏷️` alone; set entry price shows `🏷️ $378.15`. A deal saved with
+`entryStockPrice: '-583.99'` displays as `🏷️ $583.99` in the DTE stack
+(both `.deal-dte-price-val` texts checked directly, no `-` present).
+Stock Price modal opened for a closed deal with both prices set: date
+selects populate `10`/`06`/`2026` from `closeDate: '2026-06-10'`,
+"🏷️ Entry Price"/"💰 Closed Price" render side-by-side. Phone (375px):
+"CLOSED  10.7" screenshot-confirmed as one merged pill, no visible seam
+between the label and date. No console errors in either mode. Logo
+path fix: grepped the whole file for the old absolute path/folder name
+afterward, zero matches remain; `ls` confirms `ICO/Calculator.png` and
+`ICO/Portfolio.png` exist alongside this HTML file at its current
+location. Actual image LOAD not directly re-verifiable in this
+session's browser tool -- it renders this file as a static snapshot
+since it lives outside the tool's own project folder, and confirmed via
+`read_network_requests` that it isn't issuing real file:// fetches for
+page resources at all (zero requests recorded for `ICO`) -- not
+evidence of a bug, just this preview environment's own limitation.
+Worth a real-browser open to fully confirm the logos render.
+
+## Entry/Closed Stock Price: negative values blocked at edit time, not just display
+
+Explicit follow-up: "Entry Stock Price & Closed Stock Price can be
+thrown to minus values during edit, but wont display the negative
+value. add a stronger fix that wont allow negative values even when
+editing." Last round's `formatStockPrice()` (`Math.abs` at DISPLAY time)
+was correct but left the actual STORED/EDITED value free to go negative
+-- this closes that gap at the source, 3 layers deep:
+
+1. **Stepper floor**: `stepDecimalField(inputId, direction, increment,
+   decimals, min)` gains an optional 5th param, backward-compatible --
+   every EXISTING caller across the file (Total/Limit/PT$/Contracts/
+   Strike/Range, none of which have this fix requested) omits it, so
+   `min === undefined` and clamping is skipped, unchanged behavior.
+   Only `epEntryPrice`/`epClosedPrice`'s own stepper buttons now pass
+   `0` as `min` -- stepping down from `0.00` (or below) just stays at
+   `0.00` instead of going negative.
+2. **Live typing strip**: a new `input` listener on both fields strips
+   any `-` character on every keystroke (also fires on paste, which
+   dispatches its own `input` event) -- a negative value literally
+   cannot exist in either field while the modal is open, not just
+   "corrected once you leave the field."
+3. **Submit-time strip**: `submitEntryPrice()` also `.replace(/-/g, '')`s
+   both values before writing them to the deal, belt-and-suspenders in
+   case a minus sign reaches storage some other way (e.g. restored from
+   an older export/save predating this fix).
+
+### Verified
+
+Stepping `epEntryPrice` down 5x from `0.03` by `0.01` (would reach
+`-0.02` unclamped) lands at `0.00` and stays there. Programmatically
+setting the field to `-12.50` and dispatching `input` immediately
+strips it to `12.50` (live, before any blur/submit). Calling
+`submitEntryPrice()` directly with both fields set to `-99.99`/`-1.23`
+(bypassing the live listener entirely, simulating some other path
+writing to the field) still stores `99.99`/`1.23` on the deal -- no `-`
+survives regardless of entry path. No console errors.

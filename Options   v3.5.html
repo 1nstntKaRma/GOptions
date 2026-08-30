@@ -1836,10 +1836,15 @@
   .deal-card-border-badge.open { left: var(--phone-badge-open-x); }
   .deal-card-border-badge.closed { left: var(--phone-badge-closed-x); }
   .deal-card .badge { background: var(--bg); }
-  /* Explicit follow-up (reversed again after seeing it live): "Closed
-     Date near 'OPEN' label isnt displaying properly since its
-     transperent. add a black background to it. no frame." */
-  .deal-card-close-date { font-size: 11px; color: var(--muted); padding: 1px 4px; background: var(--bg); border-radius: 4px; }
+  /* Explicit follow-up: "'Date Closed' should be joined inside 'CLOSED'
+     label bubble and frame instead of having its own position and
+     bubble... keep it spaced a bit between those two values." Nested
+     inside .badge-closed now (see dealCardHtml()) -- its own background/
+     padding/border-radius from the previous "separate pill" round are
+     gone, it just inherits .badge-closed's single frame; margin-left is
+     the ONLY thing left doing visual work, the spacing between "CLOSED"
+     and the date. */
+  .deal-card-close-date { font-size: 11px; color: var(--muted); margin-left: 8px; }
 
   /* Ticker ~2x the base .deal-name size (was inheriting a plain 14px) --
      scoped to .deal-card so the wide grid's own .deal-ticker (shared
@@ -2674,6 +2679,17 @@
   }
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  /* Explicit follow-up: "make it a bit bulkier in height" -- Entry/
+     Closed Price row in the Stock Price modal, a touch taller than the
+     plain .form-grid-2 rows elsewhere (Close Deal's PT%/PT$) so the 2
+     side-by-side steppers read as a deliberately bigger pair of fields,
+     not just a cramped variant of the same row style. "Window should
+     remain compact... low res phones" -- kept to padding only (no
+     min-height), stays compact if content is compact. .single (deal
+     still open, Closed Price hidden) collapses back to 1 column so
+     Entry Price isn't left stranded in a half-width box. */
+  .ep-price-row .form-row { padding: 6px 0; }
+  .ep-price-row.single { grid-template-columns: 1fr; }
 
   /* Ticker/Title are optional identifiers, not primary trade parameters --
      smaller and pushed to the bottom of the form so Total/Limit/PT% (which
@@ -3559,21 +3575,16 @@
            it automatically hides whenever Portfolio mode is showing instead
            -- Portfolio keeps its own "Portfolio" text title for now, only
            the Calculator side has a logo to swap in so far. -->
-      <!-- Two paths for the same file, so this still works both testing
-           locally AND once actually deployed: `src` is tried first (the
-           local absolute path, needed while testing THIS file from
-           wherever it currently lives -- a plain relative path would
-           resolve against ITS folder, not the images' real one, since
-           they're not stored alongside it). `onerror` fires if that
-           fails to load (e.g. once deployed to a real server, where a
-           Windows drive path obviously doesn't exist) and falls back to
-           the relative "ICO/Calculator.png" -- correct once the whole
-           app, including that ICO folder, actually ships from a root
-           folder somewhere. `this.onerror=null` first so a SECOND
-           failure (both paths wrong) doesn't loop forever re-trying the
-           same fallback src against itself. -->
-      <img class="calc-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Calculator.png"
-           onerror="this.onerror=null; this.src='ICO/Calculator.png';" alt="Calculator" />
+      <!-- Explicit follow-up: the old hardcoded absolute Windows path
+           here pointed at wherever the ICO folder happened to live
+           during an earlier session -- broke the moment the whole
+           project (this file + ICO/) moved to a new folder, since that
+           absolute path doesn't move with it. A plain relative path
+           always resolves against THIS file's own folder, which is
+           exactly where ICO/ actually lives (see `ls`) -- true whether
+           running locally (file://) or hosted on a real server, no
+           onerror fallback needed. -->
+      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" />
       <!-- Explicit follow-up: pressing a deal's OPEN badge (see
            openDealInCalculator() in the script) loads that deal into
            Calculator mode -- this shows which one, in CAPS, "below the
@@ -3804,11 +3815,9 @@
            block near the top of this file to move/resize it. Lives
            inside #portfolioView so it auto-hides whenever Calculator
            mode is showing instead. -->
-      <!-- Same local-path-first, relative-path-fallback trick as the
-           Calculator logo -- see its own comment above for the full
-           reasoning. -->
-      <img class="portfolio-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Portfolio.png"
-           onerror="this.onerror=null; this.src='ICO/Portfolio.png';" alt="Portfolio" />
+      <!-- Same plain-relative-path fix as the Calculator logo above --
+           see its own comment for the full reasoning. -->
+      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" />
       <div class="portfolio-header">
         <div class="top-row-left">
           <div class="portfolio-title-block">
@@ -4118,23 +4127,47 @@
   <form class="modal-panel" onsubmit="submitEntryPrice(event)">
     <h2>Stock Price</h2>
     <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
-    <div class="form-row">
-      <label for="epEntryPrice">Entry Stock Price</label>
-      <div class="total-stepper-wrap">
-        <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
-        <div class="total-stepper total-stepper-sm">
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
-        </div>
+    <!-- Explicit follow-up: "top field added as 'Closed Date' title and
+         field... in 1 row." Same date-pair pattern/helpers as Close
+         Deal's own Close Date (applyDateToPair/composeDateMD) -- only
+         shown for a deal that's actually closed (see openEntryPriceModal),
+         same as the Closed Price field below always has been. -->
+    <div class="form-row" id="epDateRow">
+      <label for="epDateDay">Closed Date</label>
+      <div class="date-pair">
+        <select id="epDateDay"></select>
+        <span>.</span>
+        <select id="epDateMonth"></select>
+        <span>.</span>
+        <select id="epDateYear"></select>
       </div>
     </div>
-    <div class="form-row" id="epClosedRow">
-      <label for="epClosedPrice">Closed Stock Price</label>
-      <div class="total-stepper-wrap">
-        <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
-        <div class="total-stepper total-stepper-sm">
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
-          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
+    <!-- Explicit follow-up: "below this row... make it a bit bulkier in
+         height, and have 1 half of it for 'Entry Price' and the other
+         half on the right side 'Closed Price'." Was 2 stacked form-rows
+         -- now one .form-grid-2 row (same 2-column pattern Close Deal's
+         PT%/PT$ row already uses), #epPriceRow's own CSS adds the extra
+         height. .single (see openEntryPriceModal) collapses it back to
+         1 column, Entry only, while the deal's still open. -->
+    <div class="form-grid-2 ep-price-row" id="epPriceRow">
+      <div class="form-row">
+        <label for="epEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row" id="epClosedRow">
+        <label for="epClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4413,10 +4446,16 @@
    * #sdStrikeBuy/-Sell, #sdShort/#sdLong) just get harmless no-op
    * dispatches, same as #sdTotal already does today.
    * =================================================================== */
-  function stepDecimalField(inputId, direction, increment, decimals) {
+  // `min` is optional and backward-compatible -- every EXISTING caller
+  // omits it (Total/Limit/PT$ etc. can legitimately go negative), so
+  // clamping only kicks in for callers that explicitly opt in (Entry/
+  // Closed Stock Price pass 0, see below -- "wont allow negative values
+  // even when editing").
+  function stepDecimalField(inputId, direction, increment, decimals, min) {
     const el = document.getElementById(inputId);
     const current = parseFloat(el.value) || 0;
-    const next = direction === 'up' ? current + increment : current - increment;
+    let next = direction === 'up' ? current + increment : current - increment;
+    if (min !== undefined && next < min) next = min;
     const factor = Math.pow(10, decimals);
     const rounded = Math.round(next * factor) / factor;
     el.value = decimals > 0 ? rounded.toFixed(decimals) : String(rounded);
@@ -5348,7 +5387,8 @@
   [
     ['sdStartMonth', 'sdStartDay', 'sdStartYear'],
     ['sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear'],
-    ['cdDateMonth', 'cdDateDay', 'cdDateYear']
+    ['cdDateMonth', 'cdDateDay', 'cdDateYear'],
+    ['epDateMonth', 'epDateDay', 'epDateYear']
   ].forEach(([mId, dId, yId]) => {
     const mSel = document.getElementById(mId);
     const dSel = document.getElementById(dId);
@@ -5467,15 +5507,17 @@
   // placeholders ("Entry $"/"Closed $") double as the button's own
   // label until a real value exists, per the reference image/example --
   // once set, the placeholder is replaced by the actual "$X.XX".
-  // Explicit follow-up: "instead of showing the text 'Entry $' when value
-  // is empty, show this emoji instead: 🧾... add a whitish border just
-  // for this button when value is empty." Only ever called for OPEN
-  // deals now -- CLOSED deals' Entry/Closed price display moved into the
-  // DTE cell itself, see dealDtePriceCellHtml() below.
+  // Explicit follow-up: "'Edit Entry Stock Price' button should be 🏷️
+  // instead of 🧾... when showing 'Entry Stock Price' it should be
+  // displayed like this: 🏷️ $378.15." Same 🏷️ glyph either way now --
+  // missing-value placeholder AND the real value both get it, just with
+  // or without a "$X.XX" after it. Only ever called for OPEN deals now
+  // -- CLOSED deals' Entry/Closed price display moved into the DTE cell
+  // itself, see dealDtePriceCellHtml() below.
   function dealPriceDisplayHtml(deal) {
     const hasEntry = !!deal.entryStockPrice;
     const cls = hasEntry ? 'deal-price-display blue' : 'deal-price-display blue missing';
-    const txt = hasEntry ? `$${formatStockPrice(deal.entryStockPrice)}` : '\u{1F9FE}';
+    const txt = hasEntry ? `\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}` : '\u{1F3F7}\u{FE0F}';
     return `<button type="button" class="${cls}" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry Stock Price">${txt}</button>`;
   }
 
@@ -5663,8 +5705,14 @@
     // frame border... allow me manually editing each of them at its
     // horizontal position" -- .open/.closed modifier picks its own
     // --phone-badge-*-x knob (see CSS/root).
+    // Explicit follow-up: "'Date Closed' should be joined inside
+    // 'CLOSED' label bubble and frame instead of having its own position
+    // and bubble" -- was 2 separate flex siblings (own pill each); now
+    // the date is nested INSIDE the same .badge-closed span, one frame,
+    // "CLOSED  30.8" ("keep it spaced a bit" -- see .deal-card-close-date
+    // margin-left in CSS).
     const borderBadge = isClosed
-      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED</span><span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></div>`
+      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></span></div>`
       : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
@@ -6335,6 +6383,19 @@
    * (see the modal's own HTML comment for why it's hidden, not absent). */
   let entryPriceDealId = null;
 
+  // Explicit follow-up: "Entry/Closed Stock Price can be thrown to minus
+  // values during edit, but wont display the negative value. add a
+  // stronger fix that wont allow negative values even when editing."
+  // The stepper's own `min:0` (see its onclick calls in the HTML) stops
+  // the +/- buttons, but not someone typing "-5" directly -- this strips
+  // any minus sign LIVE, on every keystroke/paste, so a negative value
+  // can never exist in either field at all, not just at submit time.
+  ['epEntryPrice', 'epClosedPrice'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      if (this.value.includes('-')) this.value = this.value.replace(/-/g, '');
+    });
+  });
+
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -6342,7 +6403,10 @@
     document.getElementById('epDealName').textContent = dealDisplayName(deal);
     document.getElementById('epEntryPrice').value = deal.entryStockPrice || '';
     document.getElementById('epClosedPrice').value = deal.closedStockPrice || '';
+    document.getElementById('epDateRow').hidden = !deal.closed;
     document.getElementById('epClosedRow').hidden = !deal.closed;
+    document.getElementById('epPriceRow').classList.toggle('single', !deal.closed);
+    if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
 
@@ -6355,8 +6419,15 @@
     e.preventDefault();
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
-    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
-    if (deal.closed) deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
+    // .replace(/-/g, '') here too, belt-and-suspenders with the live
+    // input-stripping above -- guarantees a negative sign can never
+    // reach storage even if it somehow got into the field some other
+    // way (e.g. a value restored from an older save/import).
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim().replace(/-/g, '');
+    if (deal.closed) {
+      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim().replace(/-/g, '');
+      deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
+    }
     deal.updatedTs = Date.now();
     closeEntryPriceModal();
     renderPortfolio();
