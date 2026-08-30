@@ -1,0 +1,3879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<meta name="color-scheme" content="dark" />
+<title>Options v3.5 - Golan</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+
+    color-scheme: dark;
+    --bg: #000;
+    --panel: #080808;
+    --border: #2c2c2c;
+    --text: #9c9c9c;
+    --muted: #646464;
+    --blue: #047ebb;
+    --btn-blue: #007cba;
+    --green: #038800;
+    --red: #ac0202;
+    --row: #16191b;
+    --zoom-scale: 1;
+    --hover-accent: #4c097f;
+    --purple-dark: #45007a;
+
+    --portfolio-pl-desktop-x: 0px;
+    --portfolio-pl-desktop-y: -20px;
+    --portfolio-count-desktop-x: 0px;
+    --portfolio-count-desktop-y: -20px;
+    --portfolio-winloss-desktop-x: 1px;
+    --portfolio-winloss-desktop-y: -20px;
+    --portfolio-winratio-desktop-x: 3px;
+    --portfolio-winratio-desktop-y: -20px;
+
+    --portfolio-pl-phone-x: -4px;
+    --portfolio-pl-phone-y: -25px;
+    --portfolio-count-phone-x: -3px;
+    --portfolio-count-phone-y: -40px;
+    --portfolio-winloss-phone-x: -3px;
+    --portfolio-winloss-phone-y: -40px;
+    --portfolio-winratio-phone-x: 0px;
+    --portfolio-winratio-phone-y: -40px;
+
+    --portfolio-pl-desktop-fs: 20px;
+    --portfolio-count-desktop-fs: 20px;
+    --portfolio-winloss-desktop-fs: 16px;
+    --portfolio-winratio-desktop-fs: 16px;
+    --portfolio-deals-desktop-y: 45px;
+    --portfolio-dealsClosed-desktop-y: -20px;
+    --portfolio-pl-phone-fs: 20px;
+    --portfolio-count-phone-fs: 15px;
+    --portfolio-winloss-phone-fs: 14px;
+    --portfolio-winratio-phone-fs: 14px;
+    --portfolio-deals-phone-y: 20px;
+    --portfolio-dealsClosed-phone-y: -50px;
+
+    --desktop-topright-nudge-x: 0px;
+
+    --calc-vspacing-top-row-gap-min: 22px;   
+    --calc-vspacing-metrics-gap-min: 16px;   
+    --calc-vspacing-metric-tile-height-min: 110px; 
+    --calc-vspacing-footer-gap-min: 20px;    
+
+    --legend-mode-color: var(--blue);
+    --legend-mode-bg: var(--panel);
+    --legend-hamburger-color: var(--border);
+    --legend-hamburger-bg: var(--panel);
+    --legend-sync-color: #e3b341;   
+    --legend-sync-bg: var(--panel); 
+
+    --legend-sync-busy-color: #027900;
+    --legend-sync-busy-bg: #000000;
+
+    --legend-sync-ok-color: #027900;   
+    --legend-sync-ok-bg: #000000;
+
+    --legend-sync-error-color: #2b1010;
+    --legend-sync-error-bg: #2b1010;
+    --legend-topbar-size: 22px;
+
+    --legend-ratio-color: var(--blue);
+    --legend-ratio-bg: transparent;
+    --legend-maxLoss-color: var(--red);
+    --legend-maxLoss-bg: transparent;
+    --legend-maxProfit-color: var(--green);
+    --legend-maxProfit-bg: transparent;
+    --legend-profitTaker-color: var(--blue);
+    --legend-profitTaker-bg: transparent;
+    --legend-metric-icon-size: 22px;
+
+    --legend-dealClose-color: #b46c00;
+    --legend-dealClose-bg: var(--panel);
+    --legend-dealEdit-color: var(--text);   
+    --legend-dealEdit-bg: var(--panel);
+    --legend-dealDelete-color: var(--red);
+    --legend-dealDelete-bg: var(--panel);
+    --legend-deal-icon-size-table: 15px;  
+    --legend-deal-icon-size-card: 16px;   
+
+    --legend-dte-color: #c85701;  
+
+    --legend-graph-loss-bg: #6e0000;
+    --legend-graph-profit-bg: #067200;
+    --legend-graph-bar-text: #000;
+    --legend-graph-dot-loss: var(--red);    
+    --legend-graph-dot-profit: var(--green); 
+    --legend-graph-label-size: 17px;
+    --legend-graph-bar-size: 21px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    background: var(--bg);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    #googleSyncBtn:hover { border-color: var(--hover-accent); }
+    .mode-toggle-btn:hover { border-color: var(--hover-accent); }
+    .hamburger-btn:hover { border-color: var(--hover-accent); }
+    .btn-secondary:hover { border-color: var(--hover-accent); }
+    .conflict-choice-btn:hover { border-color: var(--hover-accent); }
+
+    button.badge-open:hover { color: var(--hover-accent); }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 24px 20px 18px;
+  }
+
+  .page-frame {
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .app {
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .calc-top-row-desktop, .portfolio-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .top-row-left { display: flex; align-items: flex-start; gap: 40px; }
+  .top-row-right { display: flex; align-items: flex-start; gap: 39px; position: relative; left: var(--desktop-topright-nudge-x); }
+  .calc-top-row, .calc-top-row-mobile, .calc-deal-btn-row-mobile, .portfolio-header { margin: 0 0 22px; }
+  .calc-top-row.calc-top-row-desktop { margin-bottom: clamp(var(--calc-vspacing-top-row-gap-min), 2vh, 22px); }
+  .calc-logo-corner { top: 15px; left: -90px; width: 40px; height: 58px; scale: 150%; }
+  body.portfolio-layout-mobile .calc-logo-corner { top: -4px; left: 35px; width: 40px; height: 58px; scale: 100%; }
+
+  .calc-editing-banner {
+    display: none;
+    position: absolute;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+
+    color: var(--purple-dark);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .portfolio-logo-corner { top: 5px; left: -97px; width: 52px; height: 54px; scale: 150%; }
+  @media (max-width: 700px) {
+    .portfolio-logo-corner { top: -5px; left: 10px; width: 52px; height: 54px; scale: 100%; } 
+  }
+
+  .calc-top-row-desktop .top-row-left { margin-left: 0; }
+  .portfolio-header .top-row-left { margin-left: 64px; }
+
+  .calc-logo-corner, .portfolio-logo-corner {
+    position: absolute;
+    border-radius: 12px;
+    object-fit: contain;
+    transform-origin: top left;
+  }
+  .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .calc-icons-slot, .portfolio-icons-slot { justify-content: flex-end; }
+
+  body.portfolio-layout-mobile .shared-top-icons { gap: 10px; }
+
+  .contracts-mobile-slot { justify-self: center; }
+
+  .contracts-mobile-slot #contracts { width: 120px; height: 75px; font-size: 20px; }
+
+  .calc-top-row-mobile {
+    display: none;
+
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: flex-start;
+    gap: 20px;
+  }
+  body.portfolio-layout-mobile .calc-top-row-desktop { display: none; }
+  body.portfolio-layout-mobile .calc-top-row-mobile { display: grid; }
+
+  .calc-deal-btn-row-mobile { display: none; justify-content: flex-end; }
+  body.portfolio-layout-mobile .calc-deal-btn-row-mobile { display: flex; }
+
+  body.portfolio-layout-mobile #topSaveBtnMobile { width: 134px; }
+  body.portfolio-layout-mobile .calc-deal-btn-row-mobile { margin-top: -60px; }
+
+  .calc-inputs-mobile-slot { display: none; margin-bottom: 22px; }
+  body.portfolio-layout-mobile .calc-inputs-mobile-slot { display: block; }
+
+  body.portfolio-layout-mobile #calcInputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto;
+    gap: 10px;
+    margin: 0;
+    align-items: start;
+  }
+  body.portfolio-layout-mobile #calcInputs .input-group {
+    justify-self: stretch;
+  }
+  body.portfolio-layout-mobile #calcInputs #total,
+  body.portfolio-layout-mobile #calcInputs #limit,
+  body.portfolio-layout-mobile #calcInputs #ptPct {
+    width: 100%;
+    height: 106px;
+    font-size: 23px;
+  }
+
+  #googleSyncBtn {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 14px;
+    border: 1px solid var(--legend-sync-color);
+    background: var(--legend-sync-bg);
+    color: var(--text);
+    font-size: var(--legend-topbar-size);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+
+  #googleSyncBtn.sync-busy { background: var(--legend-sync-busy-bg); border-color: var(--legend-sync-busy-color); }
+  #googleSyncBtn.sync-ok { background: var(--legend-sync-ok-bg); border-color: var(--legend-sync-ok-color); }
+  #googleSyncBtn.sync-error { background: var(--legend-sync-error-bg); border-color: var(--legend-sync-error-color); }
+
+  .mode-toggle-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+
+    border: 1px solid var(--legend-mode-color);
+    background: var(--legend-mode-bg);
+    color: var(--text);
+    font-size: var(--legend-topbar-size);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+
+  .sync-row { position: relative; display: flex; align-items: center; }
+
+  .hamburger-wrap { position: relative; }
+
+  .hamburger-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.72);
+    z-index: 69;
+  }
+  .hamburger-menu-backdrop[hidden] { display: none; }
+  .hamburger-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    border: 1px solid var(--legend-hamburger-color);
+    background: var(--legend-hamburger-bg);
+    color: var(--text);
+    font-size: var(--legend-topbar-size);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+
+  .hamburger-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6);
+    min-width: 230px;
+    padding: 6px;
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    isolation: isolate;
+  }
+  .hamburger-menu::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--panel);
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .hamburger-menu[hidden] {
+    display: flex;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .hamburger-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+  }
+  .hamburger-item:hover { background: var(--row); }
+
+  .hamburger-item input[type="file"] { display: none; }
+
+  .inputs {
+    display: grid;
+    grid-template-columns: 130px repeat(3, minmax(0, 220px));
+    justify-content: start;
+    gap: 36px;
+    margin: 0;
+  }
+
+  #calcInputsDesktopSlot { margin-top: -4px; }
+  .inputs input { height: 74px; font-size: 34px; }
+
+  .input-group { text-align: center; }
+
+  label {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  input, select {
+    width: 100%;
+    height: 58px;
+    border: 1px solid #4b4e52;
+    border-radius: 13px;
+    background: #010101;
+
+    color: var(--text);
+    text-align: center;
+    font-size: 32px;
+    outline: none;
+    padding: 0 10px;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus { border-color: #8b8f93; }
+
+  .total-stepper-wrap { position: relative; width: 100%; }
+  .total-stepper-wrap input { padding-right: 46px; }
+
+  #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
+  #closeDealModal .total-stepper-sm { width: 65px; }
+
+  #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { height: 79px; text-align: center; }
+
+  #closeDealModal .total-stepper-wrap { width: 70%; margin: 0 auto; }
+
+  #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 34px; }
+
+  .limit-sign-prefix {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 24px;
+    pointer-events: none;
+  }
+  #limit:focus ~ .limit-sign-prefix,
+  #limit:placeholder-shown ~ .limit-sign-prefix { opacity: 0; }
+
+  #saveDealModal .limit-sign-prefix { font-size: 15px; left: 8px; }
+  #sdLimit:focus ~ .limit-sign-prefix { opacity: 0; }
+  .total-stepper {
+    position: absolute;
+    top: 1px; right: 1px; bottom: 1px;
+    width: 38px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #4b4e52;
+    border-radius: 0 12px 12px 0;
+    overflow: hidden;
+  }
+  .total-stepper-btn {
+    flex: 1 1 50%;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    padding: 0;
+  }
+  .total-stepper-btn + .total-stepper-btn { border-top: 1px solid #4b4e52; }
+  .total-stepper-btn:hover, .total-stepper-btn:active { color: var(--text); background: rgba(196,195,195,.08); }
+
+  input::placeholder {
+    color: var(--muted);
+    opacity: 1;
+    font-size: 18px;
+    letter-spacing: .8px;
+  }
+
+  .metric-value.missing {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: .8px;
+  }
+
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: clamp(var(--calc-vspacing-metrics-gap-min), 1.4vh, 16px);
+  }
+
+  .metric {
+    min-height: clamp(var(--calc-vspacing-metric-tile-height-min), 10.5vh, 120px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    gap: 4px;
+  }
+
+  .metric + .metric { border-left: 1px solid #45494d; }
+
+  .metric-title {
+    font-size: 18px;
+    color: #7e7e7e;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .metric-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .metric-value {
+    font-size: 38px;
+    line-height: 1;
+    font-weight: 500;
+  }
+
+  .metric-value.red { color: var(--red); }
+  .metric-value.green { color: var(--green); }
+
+  .icon {
+    font-size: var(--legend-metric-icon-size);
+    line-height: 1;
+    margin-top: 0;
+    width: 33px;
+    height: 33px;
+    border: 2px solid currentColor;
+    border-radius: 30%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    padding: 0;
+  }
+
+  .blue { color: var(--blue); }
+  .red { color: var(--red); }
+  .green { color: var(--green); }
+
+  #metricIconRatio { color: var(--legend-ratio-color); background: var(--legend-ratio-bg); }
+  #metricIconMaxLoss { color: var(--legend-maxLoss-color); background: var(--legend-maxLoss-bg); }
+  #metricIconMaxProfit { color: var(--legend-maxProfit-color); background: var(--legend-maxProfit-bg); }
+  #metricIconProfitTaker { color: var(--legend-profitTaker-color); background: var(--legend-profitTaker-bg); }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(460px, .92fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .chart-panel {
+    padding: 22px 22px 17px;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .chart {
+    display: grid;
+    grid-template-columns: 105px minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    min-height: 330px;
+    position: relative;
+  }
+
+  .chart-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 17px;
+    font-size: var(--legend-graph-label-size);
+    gap: 10px;
+    white-space: nowrap;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .dot.red { background: var(--legend-graph-dot-loss); }
+  .dot.green { background: var(--legend-graph-dot-profit); }
+
+  .plot {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    position: relative;
+    border-left: 2px solid #eee;
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(25% - 1px),
+      #3b3e42 calc(25% - 1px),
+      #3b3e42 25%
+    );
+  }
+
+  .bar {
+    position: absolute;
+    left: 0;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--legend-graph-bar-text);
+    font-size: var(--legend-graph-bar-size);
+    font-weight: 500;
+    min-width: 70px;
+    transition: width .15s ease;
+  }
+
+  .bar.loss { top: 60px; background: var(--legend-graph-loss-bg); }
+  .bar.profit { top: 223px; background: var(--legend-graph-profit-bg); }
+
+  .scale {
+    position: absolute;
+    left: -2px;
+    right: 0;
+    bottom: -25px;
+    height: 24px;
+    display: flex;
+    justify-content: space-between;
+    color: #aaa;
+    font-size: 13px;
+  }
+
+  .table-column {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    min-width: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 0;
+  }
+
+  th, td {
+    border-right: 1px solid #515151;
+    border-bottom: 1px solid #515151;
+    text-align: center;
+    height: 45px;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  th:last-child, td:last-child { border-right: 0; }
+  tr:last-child td { border-bottom: 0; }
+
+  th {
+    height: 52px;
+    font-weight: 400;
+    color: var(--blue);
+  }
+
+  th:nth-child(4), td:nth-child(4) { color: var(--green); }
+  th:nth-child(5), td:nth-child(5) { color: var(--red); }
+
+  td { color: var(--text); }
+  tbody tr:nth-child(even) { background: var(--row); }
+
+  .btn {
+
+    height: 51px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 9px;
+    padding: 0 20px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    letter-spacing: .2px;
+  }
+
+  .btn-primary { background: var(--panel); border: 2px solid var(--btn-blue); color: var(--btn-blue); }
+  .btn-primary:hover { filter: brightness(1.2); }
+
+  .btn-primary.top-deal-btn-editing,
+  .btn-primary.top-deal-btn-editing:hover {
+    background: var(--panel);
+    border: 2px solid var(--purple-dark);
+    color: var(--purple-dark);
+  }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(201,4,10,.1); }
+
+  .btn-cancel { background: var(--panel); border: 1.5px solid var(--legend-dealDelete-color); color: var(--legend-dealDelete-color); }
+  .btn-cancel:hover { filter: brightness(1.2); }
+
+  .top-deal-btn-stack { display: grid; justify-items: stretch; gap: 6px; }
+
+  .deal-cancel-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    border: 2px solid var(--legend-dealDelete-color);
+    background: var(--legend-dealDelete-bg);
+    color: var(--legend-dealDelete-color);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .deal-cancel-btn:hover { filter: brightness(1.2); }
+  .deal-cancel-btn[hidden] { display: none; }
+
+  .deal-cancel-btn-desktop {
+    width: 100%;
+    height: 51px;
+    padding: 0 20px;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    letter-spacing: .2px;
+    box-sizing: border-box;
+  }
+
+  body.portfolio-layout-mobile #topSaveBtnMobile.top-deal-btn-editing {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+  .calc-deal-btn-row-mobile { gap: 8px; }
+
+  body.portfolio-layout-mobile .calc-deal-btn-row-mobile.calc-deal-btn-row-mobile-editing {
+    position: relative;
+    left: -20px;
+  }
+  .btn-mini { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+  .btn-file {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-file input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    height: 100%;
+    width: 100%;
+  }
+
+  #portfolioView { display: none; }
+
+  .portfolio-title-block { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 20px; position: relative; left: -23px; }
+
+  .portfolio-pl-summary { font-size: var(--portfolio-pl-desktop-fs); font-weight: 700; line-height: 1; position: relative; top: var(--portfolio-pl-desktop-y); left: var(--portfolio-pl-desktop-x); }
+  .portfolio-pl-summary.green { color: var(--green); }
+  .portfolio-pl-summary.red { color: var(--red); }
+  .portfolio-pl-summary:empty { display: none; }
+
+  .portfolio-winloss { font-size: var(--portfolio-winloss-desktop-fs); color: var(--text); font-weight: 600; position: relative; top: var(--portfolio-winloss-desktop-y); left: var(--portfolio-winloss-desktop-x); }
+  .portfolio-winloss:empty { display: none; }
+  .portfolio-winratio { font-size: var(--portfolio-winratio-desktop-fs); font-weight: 600; position: relative; top: var(--portfolio-winratio-desktop-y); left: var(--portfolio-winratio-desktop-x); }
+  .portfolio-winratio.green { color: var(--green); }
+  .portfolio-winratio.red { color: var(--red); }
+  .portfolio-winratio:empty { display: none; }
+
+  .portfolio-count { color: var(--muted); font-size: var(--portfolio-count-desktop-fs); letter-spacing: 0; position: relative; top: var(--portfolio-count-desktop-y); left: var(--portfolio-count-desktop-x); }
+
+  .portfolio-count:empty { display: none; }
+
+  .portfolio-empty {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--muted);
+    font-size: 16px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    margin-top: 42px;
+  }
+
+  .deal-grid { margin-bottom: 40px; overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; top: var(--portfolio-deals-desktop-y); }
+
+  .deal-grid.has-closed-deals { top: var(--portfolio-dealsClosed-desktop-y); }
+
+  .portfolio-row {
+    display: grid;
+
+    grid-template-columns: 120px 74px 82px 56px 60px 64px 66px 50px 62px 96px 68px 116px;
+    align-items: center;
+    column-gap: 8px;
+
+    justify-content: space-between;
+    min-width: max-content;
+  }
+
+  .portfolio-row.portfolio-table-header {
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0 14px 10px;
+
+    border: 1px solid transparent;
+    line-height: 1.3;
+  }
+
+  .portfolio-row.portfolio-table-header > div { text-align: center; }
+
+  .portfolio-row.deal-row {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px;
+    margin-bottom: 14px;
+  }
+  .portfolio-row.deal-row.open { border-color: var(--blue); }
+
+  .deal-cards-mobile { margin-bottom: 40px; position: relative; top: var(--portfolio-deals-phone-y); }
+
+  .deal-cards-mobile.has-closed-deals { top: var(--portfolio-dealsClosed-phone-y); }
+
+  .deal-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: var(--panel);
+  }
+  .deal-card.open { border-color: var(--blue); }
+
+  .deal-card .deal-ticker { font-size: 26px; }
+  .deal-card .deal-sub { font-size: 13px; }
+  .deal-card .badge { font-size: 12px; padding: 3px 9px; }
+
+  .deal-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .deal-card-title-block { min-width: 0; flex: 1 1 auto; }
+  .deal-card-strikes { font-weight: 600; color: var(--text); font-size: 16px; }
+  .deal-card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .deal-card-dte-badge {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: var(--text);
+    text-align: center;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-width: 34px;
+  }
+
+.deal-card-dte-badge .dte-num { font-size: 16px; font-weight: 700; line-height: 1; }
+.deal-card-dte-badge .dte-label { font-size: 11px; line-height: 1; color: var(--muted); }
+
+  .deal-card-status-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+  .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; }
+
+  .deal-card-actions .deal-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--legend-dealEdit-bg);
+    font-size: var(--legend-deal-icon-size-card);
+    padding: 0;
+    line-height: 1;
+  }
+  .deal-card-actions .deal-icon-btn.close { border-color: var(--legend-dealClose-color); background: var(--legend-dealClose-bg); }
+  .deal-card-actions .deal-icon-btn.delete { border-color: var(--legend-dealDelete-color); background: var(--legend-dealDelete-bg); }
+
+  .deal-card-status-block .deal-icon-btn {
+    background: none;
+    border: none;
+    font-size: 17px;
+    padding: 0;
+  }
+
+  .deal-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .deal-card-metric {
+    background: var(--bg);
+    padding: 10px 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+  }
+  .deal-card-metric-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+  }
+  .deal-card-metric-value { font-size: 17px; font-weight: 700; color: var(--text); }
+  .deal-card-metric-value.blue { color: var(--blue); }
+  .deal-card-metric-value.red { color: var(--red); }
+  .deal-card-metric-value.green { color: var(--green); }
+  .deal-card-metric-value.missing { color: var(--muted); }
+
+  .deal-card-metric-stacked {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 6px;
+    row-gap: 2px;
+    font-size: 13px;
+    justify-content: center;
+  }
+  .deal-card-metric-stacked .deal-card-metric-label {
+    text-align: right;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .deal-card-metric-stacked-value { text-align: left; color: var(--text); align-self: center; }
+
+  .deal-ticker-cell { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
+  .deal-name { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .deal-ticker { font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--text); }
+  .deal-title-text { font-weight: 500; color: var(--text); font-size: 13px; }
+  .deal-sub { font-size: 10.5px; color: var(--muted); letter-spacing: .2px; }
+
+  .portfolio-row.deal-row .deal-ticker { font-size: 19px; }
+  .portfolio-row.deal-row .deal-sub { font-size: 12.5px; }
+
+  .deal-ticker-dates { font-size: 12px; color: var(--text); opacity: 1; letter-spacing: 0.5px; }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+
+    background: none;
+    font-family: inherit;
+    cursor: default;
+  }
+  .badge-open { color: var(--blue); }
+
+  button.badge-open { cursor: pointer; }
+  .badge-closed { color: var(--muted); }
+
+  .deal-status-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .deal-status-cell .deal-icon-btn { padding: 0; font-size: 15px; }
+
+  .deal-status-cell .badge-open {
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-width: 1.5px;
+  }
+
+  .deal-dte-cell { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+  .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
+  .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
+
+  .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; }
+  .deal-metric-cell.missing { color: var(--muted); font-weight: 500; }
+
+  .deal-strikes-cell { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
+  .deal-strikes-cell b { color: var(--text); font-weight: 700; }
+
+  .deal-actions-cell { display: flex; gap: 6px; justify-content: center; }
+  .deal-icon-btn {
+    background: none; border: none; cursor: pointer; font-size: var(--legend-deal-icon-size-table);
+    padding: 3px 5px; line-height: 1; color: var(--legend-dealEdit-color); border-radius: 6px;
+  }
+  .deal-icon-btn:hover { background: var(--panel); }
+  .deal-icon-btn.close { color: var(--legend-dealClose-color); }
+  .deal-icon-btn.delete { color: var(--legend-dealDelete-color); }
+
+  .deal-actions-cell .deal-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--legend-dealEdit-bg);
+    font-size: 15px;
+    padding: 0;
+    line-height: 1;
+  }
+  .deal-actions-cell .deal-icon-btn:hover { background: var(--legend-dealEdit-bg); filter: brightness(1.2); }
+
+  .deal-actions-cell .deal-icon-btn.close {
+    border-color: var(--legend-dealClose-color);
+    background: var(--legend-dealEdit-bg);
+  }
+  .deal-actions-cell .deal-icon-btn.delete {
+    border-color: var(--legend-dealDelete-color);
+    background: var(--legend-dealDelete-bg);
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-backdrop.hidden { display: none; }
+
+  .modal-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 30px 22px;
+    width: min(760px, 96vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .update-deal-confirm-panel { width: min(340px, 92vw); text-align: center; }
+  .update-deal-confirm-text { margin: 4px 0 20px; font-size: 15px; color: var(--text); }
+
+  .modal-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .modal-panel h2 { margin: 0; font-size: 21px; letter-spacing: .3px; color: var(--text); }
+  .modal-panel .modal-sub { font-size: 13px; color: var(--muted); margin: 6px 0 14px; }
+  .cd-strikes-info { font-size: 13px; color: var(--muted); margin: -8px 0 14px; }
+  .cd-strikes-info b { color: var(--text); }
+
+  .modal-scroll { overflow-y: auto; flex: 1 1 auto; padding-right: 4px; margin-right: -4px; }
+  .conflict-bulk-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .conflict-bulk-row .btn { flex: 1 1 auto; padding: 7px 10px; font-size: 12.5px; }
+  .conflict-row {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .conflict-row-title { font-weight: 600; color: var(--text); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .conflict-row-choice { display: flex; gap: 6px; flex: 0 0 auto; }
+  .conflict-choice-btn {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .conflict-choice-btn.active[data-choice="keep"] { background: #1f6f4a; border-color: #1f6f4a; color: var(--text); }
+  .conflict-choice-btn.active[data-choice="delete"] { background: #7a2b2b; border-color: #7a2b2b; color: var(--text); }
+
+  #syncConflictBadge {
+
+    position: absolute;
+    right: -4px;
+    top: -2px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #b8892f;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sd-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .sd-header-left { display: flex; align-items: center; gap: 12px; }
+  .sd-header-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(4,126,187,.16); border: 1px solid rgba(4,126,187,.4);
+    display: flex; align-items: center; justify-content: center; font-size: 19px; flex: 0 0 auto;
+  }
+  .sd-spread-type { min-width: 220px; }
+  .sd-spread-type label { display: block; font-size: 11px; color: var(--muted); letter-spacing: .3px; margin-bottom: 6px; text-align: center; }
+  .sd-spread-type select {
+    width: 100%; height: 46px; border-radius: 12px; padding: 0 16px; font-size: 16px; font-weight: 600;
+    background: #050708; color: var(--text); border: 1px solid rgba(4,126,187,.5); text-align: center;
+  }
+
+  .sd-hero-row { display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr 1fr; gap: 10px; margin: 20px 0 18px; }
+  .sd-hero-row .form-row { margin-bottom: 0; }
+  .sd-hero-box {
+    width: 100%; height: 44px; border-radius: 12px; border: 1px solid rgba(4,126,187,.35);
+    background: #050708; color: var(--text); padding: 0 10px; font-size: 15px; font-weight: 700;
+  }
+
+  .sd-field-ticker .sd-hero-box,
+  .sd-field-contracts .sd-hero-box,
+  .sd-field-total .sd-hero-box,
+  .sd-field-limit .sd-hero-box,
+  .sd-field-pt .sd-hero-box { height: 64px; font-size: 20px; }
+
+  #saveDealModal #sdTotal { padding-right: 52px; }
+
+  #saveDealModal #sdContracts { padding-right: 52px; }
+
+  #saveDealModal #sdLimit, #saveDealModal #sdPt { padding-right: 52px; }
+  .total-stepper-sm { width: 48px; border-radius: 0 12px 12px 0; }
+  .total-stepper-sm .total-stepper-btn { font-size: 22px; }
+
+  #saveDealModal .sd-hero-box { text-align: center; }
+  .sd-ticker-box { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; }
+
+  .sd-ticker-icon { font-size: 17px; flex: 0 0 auto; }
+
+  #saveDealModal .sd-ticker-box input {
+    border: none; background: none; padding: 0; height: auto; font-size: 17px; font-weight: 800;
+    letter-spacing: .6px; text-transform: uppercase; text-align: center; color: var(--text); flex: 0 1 auto;
+  }
+
+  .sd-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sd-card {
+    border: 1px solid rgba(4,126,187,.3); border-radius: 14px; padding: 16px 18px;
+    background: rgba(4,126,187,.04);
+  }
+
+  .sd-card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 14px; }
+  .sd-card-title .sd-card-icon { font-size: 15px; color: var(--muted); }
+
+  .sd-date-block + .sd-date-block { margin-top: 14px; }
+  .sd-date-line { display: flex; align-items: flex-end; gap: 10px; }
+  .sd-date-line .date-pair { flex: 1 1 auto; }
+  .sd-date-line label { display: flex; align-items: center; gap: 5px; }
+
+  .sd-range-field { width: 110px; flex: 0 0 auto; }
+  .sd-range-field input {
+    width: 100%; height: 44px; border-radius: 9px; border: 1px solid rgba(4,126,187,.4);
+    background: #050708; color: var(--text); text-align: center; font-size: 15px; font-weight: 700;
+  }
+  .sd-range-field input[readonly] { color: var(--muted); background: #030405; }
+
+  .sd-range-field .total-stepper-wrap input { padding-right: 26px; }
+
+  .sd-strike-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .sd-strike-grid .form-row { margin-bottom: 0; }
+  .sd-strike-grid input {
+    border-radius: 9px; border: 1px solid rgba(4,126,187,.35);
+    background: #050708; color: var(--text); font-size: 16px;
+  }
+
+  #saveDealModal .sd-strike-grid input { height: 57px; }
+
+  #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm { width: 48px; }
+  #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm .total-stepper-btn { font-size: 22px; }
+  #saveDealModal .sd-price-wrap .total-stepper-sm { width: 48px; }
+  #saveDealModal .sd-price-wrap .total-stepper-sm .total-stepper-btn { font-size: 20px; }
+
+  #saveDealModal .sd-strike-grid input { text-align: center; }
+
+  .sd-strike-grid .form-row .total-stepper-wrap { width: 90%; }
+
+  .sd-strike-grid .sd-price-wrap .total-stepper-wrap { width: 94%; }
+
+  .sd-strike-grid .total-stepper-wrap input { width: 100%; padding-right: 53px; }
+  .sd-hidden-label { visibility: hidden; }
+
+  .sd-price-wrap { display: flex; align-items: center; }
+
+  .sd-dollar-prefix {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  #saveDealModal .sd-strike-grid .sd-price-input { text-align: left; padding-left: 20px; }
+
+  #saveDealModal .sd-strike-grid .sd-price-input { font-size: 12px; }
+  .sd-price-input:focus ~ .sd-dollar-prefix { opacity: 0; }
+
+  #saveDealModal .form-row label { text-align: center; text-transform: none; }
+  #saveDealModal .sd-date-line label { justify-content: center; }
+  #saveDealModal .sd-range-field label { display: block; text-align: center; }
+
+  #saveDealModal .date-pair span { display: none; }
+  #saveDealModal .date-pair { gap: 8px; }
+
+  .form-row { margin-bottom: 14px; text-align: left; }
+  .form-row label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; letter-spacing: .3px; text-transform: uppercase; }
+  .form-row input, .form-row select {
+    width: 100%;
+    height: 44px;
+    border: 1px solid #4b4e52;
+    border-radius: 9px;
+    background: #010101;
+    color: var(--text);
+    padding: 0 12px;
+    font-size: 15px;
+    text-align: left;
+  }
+  .ticker-input {
+    font-weight: 800 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase;
+  }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .form-row-compact { margin-bottom: 0; }
+  .form-row-compact label { font-size: 11px; }
+  .form-row-compact input {
+    height: 34px;
+    font-size: 13px;
+    padding: 0 10px;
+  }
+  .form-row-compact .ticker-input { font-size: 13px; letter-spacing: .6px; }
+
+  .icon-edit-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 0 0 4px;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  .icon-edit-btn:hover { color: var(--blue); }
+
+  .date-pair { display: flex; align-items: center; gap: 6px; }
+  .date-pair select {
+    width: 68px;
+    flex: 0 0 auto;
+    height: 44px;
+    padding: 0 6px;
+    text-align: center;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    flex: 0 0 auto;
+  }
+
+  .footer {
+    text-align: center;
+    color: #666;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-top: clamp(var(--calc-vspacing-footer-gap-min), 1.8vh, 20px);
+  }
+
+  @media (max-width: 980px) {
+
+    body { padding: 18px 2px; }
+
+    .inputs {
+      padding-right: 0;
+      grid-template-columns: 100px repeat(3, minmax(0, 180px));
+      gap: 18px;
+    }
+
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .inputs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .inputs { grid-template-rows: auto auto; row-gap: 10px; }
+    .inputs .input-group-contracts { grid-column: 2; grid-row: 1; }
+    .inputs .input-group-contracts ~ .input-group { grid-row: 2; }
+
+    .inputs input { height: 88px; font-size: 30px; }
+
+    .calc-top-row, .calc-top-row-mobile, .portfolio-header { gap: 10px; }
+    .portfolio-header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: flex-start;
+    }
+    .portfolio-header > .top-row-left,
+    .portfolio-header > .top-row-right { display: contents; }
+
+    .portfolio-header .portfolio-title-block { margin-left: 80px; justify-self: stretch; width: calc(100% - 80px); left: 0; }
+
+    .portfolio-header .portfolio-count { text-align: center; font-size: var(--portfolio-count-phone-fs); margin-top: 11px; position: relative; top: var(--portfolio-count-phone-y); left: var(--portfolio-count-phone-x); white-space: nowrap; }
+    .portfolio-header .portfolio-pl-summary { font-size: var(--portfolio-pl-phone-fs); position: relative; top: var(--portfolio-pl-phone-y); left: var(--portfolio-pl-phone-x); white-space: nowrap; }
+    .portfolio-header .portfolio-winloss { text-align: center; font-size: var(--portfolio-winloss-phone-fs); position: relative; top: var(--portfolio-winloss-phone-y); left: var(--portfolio-winloss-phone-x); white-space: nowrap; }
+    .portfolio-header .portfolio-winratio { text-align: center; font-size: var(--portfolio-winratio-phone-fs); position: relative; top: var(--portfolio-winratio-phone-y); left: var(--portfolio-winratio-phone-x); white-space: nowrap; }
+    label { font-size: 13px; }
+    input, select { height: 52px; font-size: 27px; }
+
+    .inputs input { font-size: 23px; height: 106px; }
+    .total-stepper-wrap input { padding-right: 46px; }
+    .total-stepper-wrap .total-stepper:not(.total-stepper-sm) { width: 41px; }
+    .total-stepper-wrap .total-stepper:not(.total-stepper-sm) .total-stepper-btn { font-size: 29px; }
+
+    .total-stepper { padding-left: 3px; }
+
+    .summary { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+    .metric {
+      min-height: 115px;
+    }
+
+    .metric:nth-child(1) { grid-column: 1 / 3; }
+    .metric:nth-child(2) { grid-column: 3 / 5; }
+    .metric:nth-child(3) { grid-column: 5 / 7; }
+
+    .metric:nth-child(4) {
+      grid-column: 1 / 4;
+      border-left: 0;
+      border-top: 1px solid #45494d;
+    }
+
+    .metric:nth-child(5) {
+      grid-column: 4 / 7;
+      border-top: 1px solid #45494d;
+    }
+
+    .metric-value { font-size: 32px; }
+    .chart { grid-template-columns: 85px minmax(0, 1fr); }
+    .chart-label { font-size: 13px; padding-right: 10px; }
+    th, td { font-size: 14px; }
+    .mode-toggle-btn, #googleSyncBtn, .hamburger-btn { width: 38px; height: 38px; font-size: 16px; }
+    .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons { gap: 6px; }
+
+    .top-deal-btn { height: 40px; padding: 0 12px; font-size: 13px; }
+
+    .form-grid-3 { grid-template-columns: 1fr; }
+
+    .modal-panel { overflow-y: auto; }
+
+    .modal-backdrop { align-items: flex-start; }
+    .modal-panel { max-height: calc(100vh - 40px); }
+
+    .modal-backdrop { padding: 20px 0; }
+    .modal-panel { width: 100vw; padding: 14px 12px 10px; }
+
+    #saveDealModal .modal-panel {
+      display: grid;
+
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    #saveDealModal .sd-card { padding: 12px 14px; }
+    #saveDealModal .sd-card-title { margin-bottom: 10px; }
+    #saveDealModal .sd-date-block + .sd-date-block { margin-top: 10px; }
+
+    #saveDealModal .modal-actions,
+    #closeDealModal .modal-actions { margin-top: 0; padding-top: 0; border-top: none; }
+    #saveDealModal .sd-header-row,
+    #saveDealModal .sd-hero-row,
+    #saveDealModal .sd-cards { display: contents; }
+
+    #saveDealModal .modal-sub { display: none; }
+    #saveDealModal .sd-header-left { grid-column: 1 / 4; grid-row: 1; }
+    #saveDealModal .sd-spread-type { grid-column: 4 / 7; grid-row: 1; min-width: 0; }
+    #saveDealModal .sd-field-ticker { grid-column: 1 / 4; grid-row: 2; }
+
+    #saveDealModal .sd-field-contracts { grid-column: 4 / 7; grid-row: 2; }
+    #saveDealModal .sd-field-total { grid-column: 1 / 3; grid-row: 3; }
+    #saveDealModal .sd-field-limit { grid-column: 3 / 5; grid-row: 3; }
+    #saveDealModal .sd-field-pt { grid-column: 5 / 7; grid-row: 3; }
+    #saveDealModal #sdDatesCard { grid-column: 1 / 7; grid-row: 4; }
+    #saveDealModal #sdStrikesCard { grid-column: 1 / 7; grid-row: 5; }
+    #saveDealModal .modal-actions { grid-column: 1 / 7; grid-row: 6; }
+
+    #saveDealModal .sd-field-ticker .sd-hero-box,
+    #saveDealModal .sd-field-contracts .sd-hero-box,
+    #saveDealModal .sd-field-total .sd-hero-box,
+    #saveDealModal .sd-field-limit .sd-hero-box,
+    #saveDealModal .sd-field-pt .sd-hero-box { height: 77px; }
+
+    #saveDealModal .date-pair select { width: 60px; padding: 0 2px; font-size: 14px; }
+    #saveDealModal .date-pair { gap: 6px; }
+    #saveDealModal .sd-date-line { gap: 8px; }
+
+    #saveDealModal .date-pair select,
+    #saveDealModal .sd-range-field input { height: 60px; }
+    #saveDealModal .sd-range-field { width: 92px; }
+    #saveDealModal .sd-range-field .total-stepper-wrap input { padding-right: 46px; }
+    #saveDealModal .sd-range-field .total-stepper-sm { width: 40px; }
+    #saveDealModal .sd-range-field .total-stepper-sm .total-stepper-btn { font-size: 20px; }
+
+    #saveDealModal .sd-strike-grid { grid-template-columns: 58px 1fr 1.15fr; gap: 6px 6px; }
+    #saveDealModal .sd-strike-grid .form-row { display: contents; }
+    #saveDealModal .sd-strike-grid .form-row > label {
+      margin-bottom: 0; text-align: left; font-size: 12px; align-self: center;
+    }
+    #saveDealModal .sd-strike-grid .form-row > label.sd-hidden-label { display: none; }
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap,
+    #saveDealModal .sd-strike-grid .form-row > .sd-price-wrap { width: auto; align-self: center; }
+    #saveDealModal .sd-strike-grid .form-row .total-stepper-wrap { width: 100%; }
+
+    #saveDealModal .sd-strike-grid input { height: 60px; font-size: 16px; }
+
+    #saveDealModal .total-stepper-sm .total-stepper-btn { font-size: 24px; }
+
+    .total-stepper-sm { width: 48px; }
+
+    #saveDealModal #sdTotal { padding-right: 56px; font-size: 16px; }
+
+    #saveDealModal #sdContracts { padding-right: 54px; }
+
+    #saveDealModal #sdLimit, #saveDealModal #sdPt { padding-right: 54px; font-size: 14px; }
+
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm { width: 58px; }
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm .total-stepper-btn { font-size: 26px; }
+    #saveDealModal .sd-strike-grid .total-stepper-wrap input { padding-right: 64px; }
+
+    #saveDealModal .sd-price-wrap .total-stepper-wrap input { padding-right: 66px; }
+    #saveDealModal .sd-price-wrap .sd-price-input { font-size: 11px; }
+    #saveDealModal .sd-price-wrap .total-stepper-sm { width: 60px; }
+    #saveDealModal .sd-price-wrap .total-stepper-sm .total-stepper-btn { font-size: 26px; }
+
+    #closeDealModal .total-stepper-sm { width: 52px; }
+    #closeDealModal .total-stepper-wrap input { padding-right: 62px; }
+
+    #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
+  }
+
+  @media (max-width: 345px) {
+
+    .mode-toggle-btn, #googleSyncBtn, .hamburger-btn { width: 32px; height: 32px; font-size: 14px; }
+    .calc-top-row, .portfolio-header { gap: 6px; }
+    .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons { gap: 4px; }
+    .top-deal-btn { padding: 0 8px; font-size: 12px; }
+
+    .total-stepper-wrap input { padding-right: 40px; font-size: 18px; }
+    .total-stepper-wrap .total-stepper:not(.total-stepper-sm) { width: 35px; }
+    .total-stepper-wrap .total-stepper:not(.total-stepper-sm) .total-stepper-btn { font-size: 23px; }
+
+    .total-stepper { padding-left: 3px; }
+
+    #saveDealModal #sdTotal { font-size: 14px; padding-right: 38px; }
+    #saveDealModal #sdLimit, #saveDealModal #sdPt { font-size: 14px; padding-right: 38px; }
+    #saveDealModal .total-stepper-sm { width: 34px; }
+    #saveDealModal .total-stepper-sm .total-stepper-btn { font-size: 18px; }
+
+    #saveDealModal .sd-price-wrap .sd-price-input { font-size: 10px; }
+    #saveDealModal .sd-price-wrap .total-stepper-wrap input { padding-right: 26px; }
+    #saveDealModal .sd-price-wrap .total-stepper-sm { width: 21px; }
+    #saveDealModal .sd-price-wrap .total-stepper-sm .total-stepper-btn { font-size: 12px; }
+
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap input { font-size: 12px; padding-right: 47px; }
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm { width: 41px; }
+    #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm .total-stepper-btn { font-size: 20px; }
+
+    #closeDealModal .total-stepper-sm { width: 40px; }
+    #closeDealModal .total-stepper-wrap input { padding-right: 46px; }
+    #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 20px; }
+    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { font-size: 12px; }
+  }
+
+  @media (max-width: 500px) {
+
+    .chart {
+      grid-template-columns: 72px minmax(0, 1fr);
+      min-height: 160px;
+    }
+
+    .chart-label { font-size: 11px; }
+    .bar { font-size: 17px; height: 46px; }
+    .bar.loss { top: 17px; }
+    .bar.profit { top: 97px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-frame">
+
+  <div class="zoom-stage">
+    <main class="app">
+
+    <div id="calculatorView">
+
+      <img class="calc-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Calculator.png"
+           onerror="this.onerror=null; this.src='ICO/Calculator.png';" alt="Calculator" />
+
+      <div id="calcEditingBanner" class="calc-editing-banner"></div>
+
+      <div class="calc-top-row calc-top-row-desktop">
+        <div class="top-row-left">
+          <div id="calcInputsDesktopSlot" class="calc-inputs-slot">
+            <section class="inputs" id="calcInputs">
+              <div class="input-group input-group-contracts">
+                <label for="contracts">Contracts</label>
+                <div class="total-stepper-wrap">
+                  <input id="contracts" inputmode="numeric" value="1" placeholder="1" />
+                  <div class="total-stepper">
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Contracts" onclick="stepContractsField('contracts','up')">+</button>
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Contracts" onclick="stepContractsField('contracts','down')">&#8722;</button>
+                  </div>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="total">Total $</label>
+                <div class="total-stepper-wrap">
+                  <input id="total" inputmode="decimal" value="1000" placeholder="Missing Value" />
+                  <div class="total-stepper">
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Total $" onclick="stepTotalField('total','up')">+</button>
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Total $" onclick="stepTotalField('total','down')">&#8722;</button>
+                  </div>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="limit">Limit $</label>
+                <div class="total-stepper-wrap">
+                  <input id="limit" inputmode="decimal" value="3.33" aria-label="Limit dollar value" placeholder="Missing Value" />
+                  <span class="limit-sign-prefix" aria-hidden="true">&#8722;</span>
+                  <div class="total-stepper">
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Limit $" onclick="stepLimitField('limit','up')">+</button>
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Limit $" onclick="stepLimitField('limit','down')">&#8722;</button>
+                  </div>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="ptPct">Profit Taker %</label>
+                <div class="total-stepper-wrap">
+                  <input id="ptPct" inputmode="decimal" value="80" placeholder="Missing Value" />
+                  <div class="total-stepper">
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker %" onclick="stepPtPctField('ptPct','limit','up')">+</button>
+                    <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker %" onclick="stepPtPctField('ptPct','limit','down')">&#8722;</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="top-row-right">
+
+          <div class="top-deal-btn-stack">
+            <button id="topSaveBtn" class="btn btn-primary top-deal-btn" onclick="handleDealButtonClick()" title="Save">&#x1F4BE; Deal</button>
+            <button id="topCancelBtn" class="deal-cancel-btn deal-cancel-btn-desktop" onclick="cancelDealEditing()" title="Cancel Editing" hidden>Cancel &#x2715;</button>
+          </div>
+          <div id="calcIconsSlot" class="calc-icons-slot">
+
+            <div id="sharedTopIcons" class="shared-top-icons">
+              <div class="sync-row">
+                <button id="googleSyncBtn" onclick="onSyncBtnClick()"
+                        title="Sign in with Google to sync your portfolio via Drive">&#x1F511;</button>
+                <button id="syncConflictBadge" onclick="showConflictDialog(true)" title="Sync conflicts waiting for your decision"></button>
+              </div>
+              <button id="modeToggleBtn" class="mode-toggle-btn" title="Switch to Portfolio Mode" onclick="setMode('portfolio')">&#x1F4BC;</button>
+              <div class="hamburger-wrap">
+
+                <div id="hamburgerMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closeHamburgerMenu()"></div>
+                <button id="hamburgerBtn" class="hamburger-btn" title="Menu" onclick="toggleHamburgerMenu(event)">&#x2630;</button>
+                <div id="hamburgerMenu" class="hamburger-menu" hidden>
+                  <button type="button" class="hamburger-item" id="layoutToggleItem" onclick="togglePortfolioLayoutManual()"></button>
+                  <button type="button" class="hamburger-item" id="layoutLockItem" onclick="toggleLayoutLock()"></button>
+                  <button type="button" class="hamburger-item" id="hamburgerExportItem" onclick="exportDeals(); closeHamburgerMenu();"></button>
+                  <label class="hamburger-item">
+                    <span id="hamburgerImportLabel"></span>
+                    <input type="file" accept="application/json" onchange="importDealsFile(event); closeHamburgerMenu();" />
+                  </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="calc-top-row calc-top-row-mobile">
+
+        <div class="calc-top-row-mobile-spacer"></div>
+        <div id="contractsMobileSlot" class="contracts-mobile-slot"></div>
+        <div id="calcIconsSlotMobile" class="calc-icons-slot"></div>
+      </div>
+
+      <div class="calc-deal-btn-row-mobile">
+        <button id="topSaveBtnMobile" class="btn btn-primary top-deal-btn" onclick="handleDealButtonClick()" title="Save">&#x1F4BE; Deal</button>
+        <button id="topCancelBtnMobile" class="deal-cancel-btn" onclick="cancelDealEditing()" title="Cancel Editing" hidden>&#x2715;</button>
+      </div>
+      <div id="calcInputsMobileSlot" class="calc-inputs-slot calc-inputs-mobile-slot"></div>
+
+      <section class="panel summary">
+        <div class="metric">
+          <div class="metric-title">RATIO</div>
+          <div class="metric-content">
+            <div id="ratio" class="metric-value">51.7</div>
+            <div id="metricIconRatio" class="icon blue">%</div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">MAX LOSS</div>
+          <div class="metric-content">
+            <div id="maxLoss" class="metric-value red">$989</div>
+            <div id="metricIconMaxLoss" class="icon red">↓</div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">MAX PROFIT</div>
+          <div class="metric-content">
+            <div id="maxProfit" class="metric-value green">$511</div>
+            <div id="metricIconMaxProfit" class="icon green">↑</div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">PROFIT TAKER</div>
+          <div class="metric-content">
+            <div id="profitTaker" class="metric-value">-1.02</div>
+            <div id="metricIconProfitTaker" class="icon blue">💰</div>
+          </div>
+        </div>
+        <div class="metric">
+          <div id="dynamicStopTitle" class="metric-title">LOSS</div>
+          <div class="metric-content">
+            <div id="dynamicStopValue" class="metric-value red">$73</div>
+            <div id="dynamicStopIcon" class="icon red">↓</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="mainLayout" class="main-layout">
+        <section class="panel chart-panel">
+          <div class="chart">
+            <div class="chart-label"><span>Max Loss</span><span class="dot red"></span></div>
+            <div class="chart-label"><span>Max Profit</span><span class="dot green"></span></div>
+            <div class="plot">
+              <div id="lossBar" class="bar loss">$989</div>
+              <div id="profitBar" class="bar profit">$511</div>
+              <div id="scale" class="scale"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="table-column">
+          <section class="panel table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th><span> Ratio</th>
+                  <th></span> Limit</th>
+                  <th></span> <span id="ptHeader">PT</span></th>
+                  <th></span> Profit</th>
+                  <th></span> Loss</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </section>
+        </section>
+      </section>
+    </div>
+
+    <div id="portfolioView">
+
+      <img class="portfolio-logo-corner" src="file:///C:/GolaN/- Windows + Office/nanaurbznes/t/t/ICO/Portfolio.png"
+           onerror="this.onerror=null; this.src='ICO/Portfolio.png';" alt="Portfolio" />
+      <div class="portfolio-header">
+        <div class="top-row-left">
+          <div class="portfolio-title-block">
+
+            <div class="portfolio-pl-summary" id="dealPLSummary"></div>
+            <div class="portfolio-count" id="dealCount"></div>
+
+            <div class="portfolio-winloss" id="dealWinLoss"></div>
+            <div class="portfolio-winratio" id="dealWinRatio"></div>
+          </div>
+        </div>
+        <div class="top-row-right">
+          <button type="button" id="topNewDealBtn" class="btn btn-primary top-deal-btn" onclick="openSaveModal()">&#x1F4BE; Deal</button>
+          <div id="portfolioIconsSlot" class="portfolio-icons-slot"></div>
+        </div>
+      </div>
+
+      <div id="portfolioEmpty" class="portfolio-empty">
+        No deals saved yet. Use <b>Save</b> from the top bar, or <b>New Deal</b> here, to add your first spread.
+      </div>
+
+      <div id="dealGrid" class="deal-grid"></div>
+      <div id="dealCardsMobile" class="deal-cards-mobile"></div>
+    </div>
+
+    <div class="footer">Options v3.5 By Golan</div>
+    </main>
+  </div>
+</div>
+
+<div id="saveDealModal" class="modal-backdrop hidden">
+  <form class="modal-panel" onsubmit="submitSaveDeal(event)">
+    <div class="sd-header-row">
+      <div class="sd-header-left">
+        <div class="sd-header-icon" id="sdHeaderIcon">&#128190;</div>
+        <div>
+          <h2 id="modalTitle">Save Deal</h2>
+          <p class="modal-sub" style="margin:2px 0 0;">Record this spread's trade parameters into your portfolio.</p>
+        </div>
+      </div>
+      <div class="sd-spread-type">
+        <label for="sdSpreadType">Spread Type</label>
+        <select id="sdSpreadType">
+          <option value="Bull Put Spread">Bull Put Spread</option>
+          <option value="Bear Call Spread">Bear Call Spread</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sd-hero-row">
+      <div class="form-row sd-field-ticker">
+        <label for="sdTicker">Ticker</label>
+        <div class="sd-hero-box sd-ticker-box">
+          <span class="sd-ticker-icon" id="sdTickerIcon">&#127991;&#65039;</span>
+          <input id="sdTicker" type="text" class="ticker-input" maxlength="10"
+                 oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '').toUpperCase()" />
+        </div>
+      </div>
+      <div class="form-row sd-field-contracts">
+        <label for="sdContracts">Contracts</label>
+        <div class="total-stepper-wrap">
+          <input id="sdContracts" type="text" inputmode="numeric" class="sd-hero-box" value="1" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Contracts" onclick="stepContractsField('sdContracts','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Contracts" onclick="stepContractsField('sdContracts','down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row sd-field-total">
+        <label for="sdTotal">Total $</label>
+        <div class="total-stepper-wrap">
+          <input id="sdTotal" type="text" inputmode="decimal" class="sd-hero-box" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Total $" onclick="stepTotalField('sdTotal','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Total $" onclick="stepTotalField('sdTotal','down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row sd-field-limit">
+        <label for="sdLimit">Limit $</label>
+        <div class="total-stepper-wrap">
+          <input id="sdLimit" type="text" inputmode="decimal" class="sd-hero-box" />
+          <span class="limit-sign-prefix" aria-hidden="true">&#8722;</span>
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Limit $" onclick="stepLimitField('sdLimit','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Limit $" onclick="stepLimitField('sdLimit','down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row sd-field-pt">
+        <label for="sdPt">Profit Taker %</label>
+        <div class="total-stepper-wrap">
+          <input id="sdPt" type="text" inputmode="decimal" class="sd-hero-box" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker %" onclick="stepPtPctField('sdPt','sdLimit','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker %" onclick="stepPtPctField('sdPt','sdLimit','down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sd-cards">
+
+      <div class="sd-card" id="sdDatesCard">
+        <div class="sd-card-title"><span class="sd-card-icon" id="sdDatesCardIcon">&#128198;</span> Dates <span id="sdDatesClockIcon">&#9201;</span></div>
+        <div class="sd-date-block">
+          <div class="sd-date-line">
+            <div class="form-row" style="margin-bottom:0;">
+              <label for="sdStartDay">Start Date</label>
+              <div class="date-pair">
+                <select id="sdStartDay"></select>
+                <span>.</span>
+                <select id="sdStartMonth"></select>
+                <span>.</span>
+                <select id="sdStartYear"></select>
+              </div>
+            </div>
+            <div class="sd-range-field">
+              <label for="sdRangeDays">Range <span id="sdRangeArrowIcon">&#8645;</span></label>
+              <div class="total-stepper-wrap">
+                <input id="sdRangeDays" type="text" inputmode="numeric" />
+                <div class="total-stepper total-stepper-sm">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Range" onclick="stepDecimalField('sdRangeDays','up',1,0)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Range" onclick="stepDecimalField('sdRangeDays','down',1,0)">&#8722;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sd-date-block">
+          <div class="sd-date-line">
+            <div class="form-row" style="margin-bottom:0;">
+              <label for="sdExpiryDay">Expiry Date</label>
+              <div class="date-pair">
+                <select id="sdExpiryDay"></select>
+                <span>.</span>
+                <select id="sdExpiryMonth"></select>
+                <span>.</span>
+                <select id="sdExpiryYear"></select>
+              </div>
+            </div>
+            <div class="sd-range-field">
+              <label for="sdDte">DTE <span id="sdDteClockIcon">&#9201;</span></label>
+              <input id="sdDte" type="text" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sd-card" id="sdStrikesCard">
+        <div class="sd-card-title"><span class="sd-card-icon" id="sdStrikesCardIcon">&#129461;</span> Strikes</div>
+        <div class="sd-strike-grid">
+          <div class="form-row">
+            <label for="sdStrikeBuy">Buy Strike</label>
+            <div class="total-stepper-wrap">
+              <input id="sdStrikeBuy" type="text" inputmode="decimal" />
+              <div class="total-stepper total-stepper-sm">
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Buy Strike" onclick="stepDecimalField('sdStrikeBuy','up',1,0)">+</button>
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Buy Strike" onclick="stepDecimalField('sdStrikeBuy','down',1,0)">&#8722;</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="sdShort" class="sd-hidden-label">Buy Price</label>
+            <div class="sd-price-wrap">
+              <div class="total-stepper-wrap">
+                <input id="sdShort" type="text" inputmode="decimal" class="sd-price-input" />
+                <span class="sd-dollar-prefix" aria-hidden="true">$</span>
+                <div class="total-stepper total-stepper-sm">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Buy Price" onclick="stepDecimalField('sdShort','up',0.01,2)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Buy Price" onclick="stepDecimalField('sdShort','down',0.01,2)">&#8722;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="sdStrikeSell">Sell Strike</label>
+            <div class="total-stepper-wrap">
+              <input id="sdStrikeSell" type="text" inputmode="decimal" />
+              <div class="total-stepper total-stepper-sm">
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Sell Strike" onclick="stepDecimalField('sdStrikeSell','up',1,0)">+</button>
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Sell Strike" onclick="stepDecimalField('sdStrikeSell','down',1,0)">&#8722;</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="sdLong" class="sd-hidden-label">Sell Price</label>
+            <div class="sd-price-wrap">
+              <div class="total-stepper-wrap">
+                <input id="sdLong" type="text" inputmode="decimal" class="sd-price-input" />
+                <span class="sd-dollar-prefix" aria-hidden="true">$</span>
+                <div class="total-stepper total-stepper-sm">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Sell Price" onclick="stepDecimalField('sdLong','up',0.01,2)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Sell Price" onclick="stepDecimalField('sdLong','down',0.01,2)">&#8722;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button type="submit" id="sdSubmitBtn" class="btn btn-primary">&#128190; Save Deal</button>
+    </div>
+  </form>
+</div>
+
+<div id="closeDealModal" class="modal-backdrop hidden">
+  <form class="modal-panel" onsubmit="submitCloseDeal(event)">
+    <h2 id="cdModalTitle">Close Deal</h2>
+    <p class="modal-sub"><b id="cdDealName">—</b> &mdash; Close the deal with exact values. Deal can be re-opened and updated any time.</p>
+
+    <p class="cd-strikes-info">Buy Strike (Price): <b id="cdBuyPrice">—</b>&nbsp;&nbsp;&nbsp;Sell Strike (Price): <b id="cdSellPrice">—</b></p>
+
+    <div class="form-row">
+      <label for="cdDateDay">Close Date</label>
+      <div class="date-pair">
+        <select id="cdDateDay"></select>
+        <span>.</span>
+        <select id="cdDateMonth"></select>
+        <span>.</span>
+        <select id="cdDateYear"></select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label for="cdPtPct">Profit Taker %</label>
+        <div class="total-stepper-wrap">
+          <input id="cdPtPct" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker %" onclick="stepCdPtPct('up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker %" onclick="stepCdPtPct('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="cdPtVal">Profit Taker $</label>
+        <div class="total-stepper-wrap">
+          <input id="cdPtVal" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker $" onclick="stepCdPtVal('up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker $" onclick="stepCdPtVal('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeCloseModal()">Cancel</button>
+      <button type="submit" id="cdSubmitBtn" class="btn btn-primary">Confirm Close</button>
+    </div>
+  </form>
+</div>
+
+<div id="updateDealConfirm" class="modal-backdrop hidden">
+  <div class="modal-panel update-deal-confirm-panel">
+    <p class="update-deal-confirm-text">Update the deal in Portfolio?</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeUpdateDealConfirm()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="confirmUpdateDeal()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  const BUTTON_EMOJIS = {
+    modeToPortfolio:    '\u{1F4BC}',  
+    modeToCalculator:   '\u{1F9EE}',  
+    hamburger:          '☰',          
+    ratio:               '%',          
+    maxLoss:             '↓',          
+    maxProfit:           '↑',          
+    profitTaker:         '\u{1F4B0}',  
+    dealClose:           '\u{1F512}',  
+    dealEdit:            '✎',          
+    dealDelete:          '✕',          
+    dealReopen:          '↺',          
+
+    hamburgerPhoneMode:      '\u{1F4F1}',        
+    hamburgerDesktopMode:    '\u{1F5A5}\u{FE0F}', 
+    hamburgerLockDisplay:    '\u{1F512}',        
+    hamburgerUnlockDisplay:  '\u{1F513}',        
+
+    hamburgerExport:         '\u{1F4E4}',        
+    hamburgerImport:         '\u{1F4E5}',        
+
+    dealButtonIcon:      '\u{1F4BE}',  
+    sdTickerIcon:        '\u{1F3F7}\u{FE0F}', 
+    sdDatesCardIcon:     '\u{1F4C6}',  
+    sdStrikesCardIcon:   '\u{1F9B5}',  
+    sdRangeArrowIcon:    '\u{21C5}',   
+    sdClockIcon:         '\u{23F1}',   
+
+    syncIdle:            '\u{1F511}',        
+    syncSigningIn:       '\u{23F3}',         
+    syncSyncing:         '\u{1F300}',        
+    syncReconnecting:    '\u{1F50C}',        
+    syncOk:              '\u{2601}',         
+    syncError:           '\u{26A0}\u{FE0F}', 
+    syncUnavailable:     '\u{274C}',         
+    syncNotConfigured:   '\u{2753}'          
+  };
+
+  function dealIconGlyph(key) {
+    return BUTTON_EMOJIS[key];
+  }
+
+  function applyButtonEmojis() {
+    const modeBtn = document.getElementById('modeToggleBtn');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const iconRatio = document.getElementById('metricIconRatio');
+    const iconMaxLoss = document.getElementById('metricIconMaxLoss');
+    const iconMaxProfit = document.getElementById('metricIconMaxProfit');
+    const iconProfitTaker = document.getElementById('metricIconProfitTaker');
+    const exportItem = document.getElementById('hamburgerExportItem');
+    const importLabel = document.getElementById('hamburgerImportLabel');
+
+    if (modeBtn) modeBtn.textContent = BUTTON_EMOJIS.modeToPortfolio;
+    if (hamburgerBtn) hamburgerBtn.textContent = BUTTON_EMOJIS.hamburger;
+    if (iconRatio) iconRatio.textContent = BUTTON_EMOJIS.ratio;
+    if (iconMaxLoss) iconMaxLoss.textContent = BUTTON_EMOJIS.maxLoss;
+    if (iconMaxProfit) iconMaxProfit.textContent = BUTTON_EMOJIS.maxProfit;
+    if (iconProfitTaker) iconProfitTaker.textContent = BUTTON_EMOJIS.profitTaker;
+    if (exportItem) exportItem.textContent = `${BUTTON_EMOJIS.hamburgerExport} Export`;
+    if (importLabel) importLabel.textContent = `${BUTTON_EMOJIS.hamburgerImport} Import`;
+
+    const syncBtn = document.getElementById('googleSyncBtn');
+    if (syncBtn) syncBtn.textContent = BUTTON_EMOJIS.syncIdle;
+
+    ['topSaveBtn', 'topSaveBtnMobile', 'topNewDealBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.textContent = `${BUTTON_EMOJIS.dealButtonIcon} Deal`;
+    });
+    const sdHeaderIcon = document.getElementById('sdHeaderIcon');
+    const sdTickerIcon = document.getElementById('sdTickerIcon');
+    const sdDatesCardIcon = document.getElementById('sdDatesCardIcon');
+    const sdStrikesCardIcon = document.getElementById('sdStrikesCardIcon');
+    const sdRangeArrowIcon = document.getElementById('sdRangeArrowIcon');
+    const sdDatesClockIcon = document.getElementById('sdDatesClockIcon');
+    const sdDteClockIcon = document.getElementById('sdDteClockIcon');
+    if (sdHeaderIcon) sdHeaderIcon.textContent = BUTTON_EMOJIS.dealButtonIcon;
+    if (sdTickerIcon) sdTickerIcon.textContent = BUTTON_EMOJIS.sdTickerIcon;
+    if (sdDatesCardIcon) sdDatesCardIcon.textContent = BUTTON_EMOJIS.sdDatesCardIcon;
+    if (sdStrikesCardIcon) sdStrikesCardIcon.textContent = BUTTON_EMOJIS.sdStrikesCardIcon;
+    if (sdRangeArrowIcon) sdRangeArrowIcon.textContent = BUTTON_EMOJIS.sdRangeArrowIcon;
+    if (sdDatesClockIcon) sdDatesClockIcon.textContent = BUTTON_EMOJIS.sdClockIcon;
+    if (sdDteClockIcon) sdDteClockIcon.textContent = BUTTON_EMOJIS.sdClockIcon;
+  }
+
+  applyButtonEmojis();
+
+  const totalEl = document.getElementById('total');
+  const limitEl = document.getElementById('limit');
+  const ptPctEl = document.getElementById('ptPct');
+  const contractsEl = document.getElementById('contracts');
+
+  const TOTAL_STEPS = [50, 100, 250, 500, 1000];
+
+  function totalStepUp(current) {
+    for (const v of TOTAL_STEPS) if (v > current) return v;
+    return current + 250; 
+  }
+
+  function totalStepDown(current) {
+    if (current > 1000) {
+      const next = current - 250;
+      return next < 1000 ? 1000 : next;
+    }
+    for (let i = TOTAL_STEPS.length - 1; i >= 0; i--) {
+      if (TOTAL_STEPS[i] < current) return TOTAL_STEPS[i];
+    }
+    return 50; 
+  }
+
+  function getContractsValue(raw) {
+    const n = Math.round(number(raw, 1));
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return Math.min(n, 100);
+  }
+
+  function stepContractsField(inputId, direction) {
+    const el = document.getElementById(inputId);
+    const current = getContractsValue(el.value);
+    el.value = String(getContractsValue(direction === 'up' ? current + 1 : current - 1));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur'));
+  }
+
+  function stepTotalField(inputId, direction) {
+    const el = document.getElementById(inputId);
+    const current = parseFloat(el.value) || 0;
+    el.value = String(direction === 'up' ? totalStepUp(current) : totalStepDown(current));
+
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function stepDecimalField(inputId, direction, increment, decimals) {
+    const el = document.getElementById(inputId);
+    const current = parseFloat(el.value) || 0;
+    const next = direction === 'up' ? current + increment : current - increment;
+    const factor = Math.pow(10, decimals);
+    const rounded = Math.round(next * factor) / factor;
+    el.value = decimals > 0 ? rounded.toFixed(decimals) : String(rounded);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur'));
+  }
+
+  (function setupStepperLongPress() {
+    const INITIAL_DELAY_MS = 400;
+    const REPEAT_INTERVAL_MS = 80;
+    let delayTimer = null;
+    let repeatTimer = null;
+
+    function stop() {
+      clearTimeout(delayTimer);
+      clearInterval(repeatTimer);
+      delayTimer = null;
+      repeatTimer = null;
+    }
+
+    function start(btn) {
+      stop();
+      delayTimer = setTimeout(() => {
+        repeatTimer = setInterval(() => {
+          if (!document.body.contains(btn) || btn.disabled) { stop(); return; }
+          btn.click();
+        }, REPEAT_INTERVAL_MS);
+      }, INITIAL_DELAY_MS);
+    }
+
+    document.addEventListener('mousedown', e => {
+      const btn = e.target.closest('.total-stepper-btn');
+      if (btn) start(btn);
+    });
+    document.addEventListener('touchstart', e => {
+      const btn = e.target.closest('.total-stepper-btn');
+      if (btn) start(btn);
+    }, { passive: true });
+    ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => document.addEventListener(evt, stop));
+  })();
+
+  function stepLimitField(inputId, direction) {
+    const el = document.getElementById(inputId);
+    const trueCurrent = -Math.abs(parseFloat(el.value) || 0);
+    const trueNext = direction === 'up' ? trueCurrent + 0.01 : trueCurrent - 0.01;
+    el.value = Math.abs(trueNext).toFixed(2);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur'));
+  }
+
+  function stepWholeField(inputId, direction, alsoBlur) {
+    const el = document.getElementById(inputId);
+    const current = parseFloat(el.value) || 0;
+    let next;
+    if (direction === 'up') {
+      next = Math.floor(current) === current ? current + 1 : Math.ceil(current);
+    } else {
+      next = Math.ceil(current) === current ? current - 1 : Math.floor(current);
+    }
+    el.value = String(next);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    if (alsoBlur !== false) el.dispatchEvent(new Event('blur'));
+  }
+
+  function refinePtPctAgainstLimit(rawPtPct, limit) {
+    const normalized = sanitizePtPct(rawPtPct);
+    const exactProfitTaker = limit * (1 - normalized / 100);
+    const profitTaker = truncate2(exactProfitTaker);
+    return formatTruncated2(derivePtPctFromProfitTaker(limit, profitTaker));
+  }
+
+  function commitPtPctValue(ptElId, limit) {
+    const el = document.getElementById(ptElId);
+    const current = el.value;
+    if (current.trim() === '') return;
+    el.value = refinePtPctAgainstLimit(current, limit);
+  }
+
+  function commitPtPctField(ptElId, limitElId) {
+    commitPtPctValue(ptElId, getLimitValueRaw(document.getElementById(limitElId).value));
+  }
+
+  function stepPtPctValue(ptElId, limit, direction) {
+    const el = document.getElementById(ptElId);
+    const current = parseFloat(el.value) || 0;
+    let candidate = (direction === 'up')
+      ? (Math.floor(current) === current ? current + 1 : Math.ceil(current))
+      : (Math.ceil(current) === current ? current - 1 : Math.floor(current));
+    let refined = parseFloat(refinePtPctAgainstLimit(String(candidate), limit));
+    let guard = 0;
+    while (guard < 50 && ((direction === 'up' && refined <= current) || (direction === 'down' && refined >= current))) {
+      candidate = direction === 'up' ? candidate + 1 : candidate - 1;
+      refined = parseFloat(refinePtPctAgainstLimit(String(candidate), limit));
+      guard++;
+    }
+    el.value = String(candidate);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur')); 
+  }
+
+  function stepPtPctField(ptElId, limitElId, direction) {
+    stepPtPctValue(ptElId, getLimitValueRaw(document.getElementById(limitElId).value), direction);
+  }
+
+  function number(v, fallback) {
+    const n = parseFloat(String(v).replace(/[$,%\s,]/g, ''));
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function truncate2(value) {
+    return Math.trunc(value * 100) / 100;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function formatTruncated2(value) {
+    const truncated = truncate2(value);
+    const abs = Math.abs(truncated).toFixed(2);
+    return truncated < 0 ? '-' + abs : abs;
+  }
+
+  function sanitizePtPct(value) {
+    const raw = String(value).trim();
+    if (raw === '' || raw === '-' || raw === '+' || raw === '.' || raw === '-.' || raw === '+.') return 0;
+
+    const clean = raw.replace(/[^0-9.\-]/g, '');
+    if (clean === '' || clean === '-' || clean === '.' || clean === '-.' || clean === '+.') return 0;
+
+    const n = Number.parseFloat(clean);
+    if (!Number.isFinite(n)) return 0;
+    return clamp(truncate2(n), -200, 100);
+  }
+
+  function money0(n) {
+    return '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+  }
+
+  function derivePtPctFromProfitTaker(limit, profitTaker) {
+    if (limit === 0) return 0;
+    const pct = ((1 - (profitTaker / limit)) * 100);
+    return clamp(truncate2(pct), -200, 100);
+  }
+
+  function getLimitValueRaw(raw) {
+    const magnitudeText = String(raw).replace(/[^0-9.]/g, '');
+    let n = parseFloat(magnitudeText);
+    if (!Number.isFinite(n) || n === 0) n = 0.01;
+    return -Math.abs(n);
+  }
+
+  function getLimitValue() {
+    return getLimitValueRaw(limitEl.value);
+  }
+
+  function normalizeLimitOnBlur() {
+    if (limitEl.value.trim() === '') return null;
+    const n = getLimitValue();
+
+    limitEl.value = Math.abs(n).toFixed(2);
+    return n;
+  }
+
+  function normalizeSdLimitOnBlur() {
+    const el = document.getElementById('sdLimit');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+  document.getElementById('sdLimit').addEventListener('blur', normalizeSdLimitOnBlur);
+
+  function computeMetrics(totalRaw, limitRaw, ptRaw, contractsRaw) {
+    const totalMissing = String(totalRaw).trim() === '';
+    const limitMissing = String(limitRaw).trim() === '';
+    const ptMissing = String(ptRaw).trim() === '';
+
+    const total = totalMissing ? 0 : Math.max(0.01, Math.abs(number(totalRaw, 0)));
+    const limit = limitMissing ? 0 : getLimitValueRaw(limitRaw);
+    const ptPct = ptMissing ? 0 : sanitizePtPct(ptRaw);
+    const contracts = getContractsValue(contractsRaw);
+
+    const maxProfitPerContract = Math.abs(limit) * 100;
+    const maxLossPerContract = Math.max(0, total - maxProfitPerContract);
+    const ratio = maxLossPerContract > 0 ? (maxProfitPerContract / maxLossPerContract) * 100 : 0;
+    const exactProfitTaker = limit * (1 - ptPct / 100);
+
+    const profitTakerPerShare = truncate2(exactProfitTaker);
+    const profitTaker = profitTakerPerShare * contracts;
+    const maxProfit = maxProfitPerContract * contracts;
+    const maxLoss = maxLossPerContract * contracts;
+
+    const maxProfitMissing = limitMissing;
+    const maxLossMissing = totalMissing || limitMissing;
+    const ratioMissing = maxLossMissing;
+    const profitTakerMissing = limitMissing || ptMissing;
+    const fifthMissing = limitMissing || ptMissing;
+    const sideIsLoss = ptPct < 0;
+    const fifthValue = Math.round(maxProfitPerContract * (Math.abs(ptPct) / 100)) * contracts;
+
+    const ratios = [50, 55, 60, 65, 70, 75, 80];
+    const rows = ratios.map(r => {
+      const p = total * (r / (100 + r));
+      const l = total - p;
+      const rowLimit = -(p / 100);
+      const rowPt = truncate2(rowLimit * (1 - ptPct / 100)) * contracts;
+      return { r, limit: rowLimit, pt: rowPt, profit: p * contracts, loss: l * contracts };
+    });
+
+    return {
+      total, limit, ptPct, contracts, maxProfit, maxLoss, ratio, profitTaker,
+      totalMissing, limitMissing, ptMissing,
+      maxProfitMissing, maxLossMissing, ratioMissing, profitTakerMissing,
+      fifthMissing, sideIsLoss, fifthValue, rows
+    };
+  }
+
+  function setMetric(id, missing, computeText, staticColorClass) {
+    const el = document.getElementById(id);
+    if (missing) {
+      el.textContent = 'Missing Value';
+      el.classList.add('missing');
+      if (staticColorClass) el.classList.remove(staticColorClass);
+    } else {
+      el.textContent = computeText();
+      el.classList.remove('missing');
+      if (staticColorClass) el.classList.add(staticColorClass);
+    }
+  }
+
+  function calculate() {
+    const state = computeMetrics(totalEl.value, limitEl.value, ptPctEl.value, contractsEl.value);
+
+    if (!state.totalMissing) totalEl.value = String(state.total);
+
+    setMetric('ratio', state.ratioMissing, () => `${truncate2(state.ratio)}`);
+    setMetric('maxProfit', state.maxProfitMissing, () => money0(state.maxProfit), 'green');
+    setMetric('maxLoss', state.maxLossMissing, () => money0(state.maxLoss), 'red');
+
+    setMetric('profitTaker', state.profitTakerMissing, () => formatTruncated2(state.profitTaker));
+
+    const sideIsLoss = state.sideIsLoss;
+    const stopTitle = document.getElementById('dynamicStopTitle');
+    const stopValue = document.getElementById('dynamicStopValue');
+    const stopIcon = document.getElementById('dynamicStopIcon');
+
+    if (state.fifthMissing) {
+      stopTitle.textContent = '';
+      stopValue.textContent = 'Missing Value';
+      stopValue.classList.remove('red', 'green');
+      stopValue.classList.add('missing');
+      stopIcon.textContent = '?';
+      stopIcon.classList.remove('green');
+      stopIcon.classList.add('red');
+    } else {
+      stopTitle.textContent = sideIsLoss ? 'LOSS' : 'PROFIT';
+      stopValue.textContent = '$' + Math.abs(state.fifthValue).toLocaleString('en-US');
+      stopValue.classList.remove('missing');
+      stopValue.classList.toggle('red', sideIsLoss);
+      stopValue.classList.toggle('green', !sideIsLoss);
+      stopIcon.textContent = sideIsLoss ? '↓' : '↑';
+      stopIcon.classList.toggle('red', sideIsLoss);
+      stopIcon.classList.toggle('green', !sideIsLoss);
+    }
+
+    renderChart(state.maxLoss, state.maxProfit);
+    renderTable(state.ptPct, state.profitTakerMissing, state.rows);
+  }
+
+  function renderChart(loss, profit) {
+
+    const ceiling = Math.max(loss, profit, 1);
+    const lossBar = document.getElementById('lossBar');
+    const profitBar = document.getElementById('profitBar');
+
+    lossBar.style.width = Math.max(10, loss / ceiling * 100) + '%';
+    profitBar.style.width = Math.max(10, profit / ceiling * 100) + '%';
+    lossBar.textContent = money0(loss);
+    profitBar.textContent = money0(profit);
+
+    const step = ceiling / 4;
+    const scale = document.getElementById('scale');
+    scale.innerHTML = [0, 1, 2, 3, 4]
+      .map(i => `<span>${Math.round(step * i).toLocaleString('en-US')}</span>`)
+      .join('');
+  }
+
+  function renderTable(ptPct, ptPctMissing, rows) {
+    const ptHeader = document.getElementById('ptHeader');
+    ptHeader.textContent = ptPctMissing ? 'PT' : `PT (${truncate2(ptPct)}%)`;
+
+    const tbody = document.getElementById('rows');
+    tbody.innerHTML = rows.map(row => `<tr>
+        <td>${row.r}%</td>
+        <td>${row.limit.toFixed(2)}</td>
+        <td>${formatTruncated2(row.pt)}</td>
+        <td>${money0(row.profit)}</td>
+        <td>${money0(row.loss)}</td>
+      </tr>`).join('');
+  }
+
+  totalEl.addEventListener('input', calculate);
+  totalEl.addEventListener('change', calculate);
+  totalEl.addEventListener('blur', calculate);
+
+  contractsEl.addEventListener('input', calculate);
+  contractsEl.addEventListener('change', calculate);
+  contractsEl.addEventListener('blur', () => {
+    contractsEl.value = String(getContractsValue(contractsEl.value));
+    calculate();
+  });
+
+  ptPctEl.addEventListener('input', () => {
+    const value = ptPctEl.value;
+    if (value === '') {
+      calculate();
+      return;
+    }
+    if (value === '-' || value === '.' || value === '-.' || value === '+.') return;
+    const numeric = Number.parseFloat(value.replace(/[^0-9.\-]/g, ''));
+    if (!Number.isFinite(numeric)) {
+      ptPctEl.value = '';
+      return;
+    }
+    const clamped = clamp(sanitizePtPct(value), -200, 100);
+    if (Math.abs(clamped) < 0.01 && value !== '0' && value !== '0.' && value !== '-0' && value !== '-0.') {
+      return;
+    }
+    calculate();
+  });
+
+  let ptPctFocusValue = null;
+
+  ptPctEl.addEventListener('focus', () => {
+    ptPctFocusValue = ptPctEl.value;
+  });
+
+  function commitPtPct() {
+    const current = ptPctEl.value;
+    const unchanged = ptPctFocusValue !== null && current === ptPctFocusValue;
+    ptPctFocusValue = null;
+
+    if (unchanged) return;
+
+    if (current.trim() === '') {
+      calculate();
+      return;
+    }
+
+    commitPtPctField('ptPct', 'limit');
+    calculate();
+  }
+
+  ptPctEl.addEventListener('blur', commitPtPct);
+
+  document.getElementById('sdPt').addEventListener('blur', () => commitPtPctField('sdPt', 'sdLimit'));
+
+  ptPctEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      ptPctEl.blur();
+    }
+  });
+
+  limitEl.addEventListener('input', calculate);
+
+  limitEl.addEventListener('blur', () => {
+    normalizeLimitOnBlur();
+    calculate();
+  });
+
+  limitEl.addEventListener('change', () => {
+    normalizeLimitOnBlur();
+    calculate();
+  });
+
+  limitEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      normalizeLimitOnBlur();
+      calculate();
+      limitEl.blur();
+    }
+  });
+
+  calculate();
+
+  let currentMode = 'calculator';
+
+  function syncTopRowTargets() {
+    const mobileLayout = gPortfolioLayout === 'mobile';
+    document.getElementById(mobileLayout ? 'calcInputsMobileSlot' : 'calcInputsDesktopSlot')
+      .appendChild(document.getElementById('calcInputs'));
+
+    const contractsGroup = document.querySelector('.input-group-contracts');
+    if (mobileLayout) {
+      document.getElementById('contractsMobileSlot').appendChild(contractsGroup);
+    } else {
+      document.getElementById('calcInputs').prepend(contractsGroup);
+    }
+
+    const iconsTargetId = currentMode === 'portfolio'
+      ? 'portfolioIconsSlot'
+      : (mobileLayout ? 'calcIconsSlotMobile' : 'calcIconsSlot');
+    document.getElementById(iconsTargetId).appendChild(document.getElementById('sharedTopIcons'));
+
+    document.getElementById('topSaveBtn').style.display = (currentMode === 'calculator' && !mobileLayout) ? '' : 'none';
+    document.getElementById('topSaveBtnMobile').style.display = (currentMode === 'calculator' && mobileLayout) ? '' : 'none';
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+
+    document.getElementById('calculatorView').style.display = mode === 'calculator' ? 'block' : 'none';
+    document.getElementById('portfolioView').style.display = mode === 'portfolio' ? 'block' : 'none';
+    syncTopRowTargets();
+    const btn = document.getElementById('modeToggleBtn');
+    if (mode === 'calculator') {
+      btn.textContent = BUTTON_EMOJIS.modeToPortfolio;
+      btn.title = 'Switch to Portfolio Mode';
+      btn.onclick = () => setMode('portfolio');
+    } else {
+      btn.textContent = BUTTON_EMOJIS.modeToCalculator;
+      btn.title = 'Switch to Calculator Mode';
+      btn.onclick = () => setMode('calculator');
+      renderPortfolio();
+    }
+  }
+
+  let gPortfolioLayout = 'desktop';   
+  let gLayoutLocked = false;          
+
+  const LAYOUT_LOCKED_KEY = 'optionsPortfolioLayoutLocked';
+  const LAYOUT_VALUE_KEY = 'optionsPortfolioLayoutValue';
+
+  function detectDefaultLayout() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+  }
+
+  function applyPortfolioLayout() {
+    document.body.classList.toggle('portfolio-layout-mobile', gPortfolioLayout === 'mobile');
+    syncTopRowTargets();
+    updateHamburgerMenuLabels();
+    if (currentMode === 'portfolio') renderPortfolio();
+  }
+
+  function initPortfolioLayout() {
+    let locked = false;
+    try { locked = localStorage.getItem(LAYOUT_LOCKED_KEY) === '1'; } catch (err) {  }
+    if (locked) {
+      let saved = null;
+      try { saved = localStorage.getItem(LAYOUT_VALUE_KEY); } catch (err) {  }
+      gPortfolioLayout = (saved === 'mobile' || saved === 'desktop') ? saved : detectDefaultLayout();
+      gLayoutLocked = true;
+    } else {
+      gPortfolioLayout = detectDefaultLayout();
+      gLayoutLocked = false;
+    }
+    applyPortfolioLayout();
+  }
+
+  function togglePortfolioLayoutManual() {
+    gPortfolioLayout = gPortfolioLayout === 'mobile' ? 'desktop' : 'mobile';
+    if (gLayoutLocked) {
+      try { localStorage.setItem(LAYOUT_VALUE_KEY, gPortfolioLayout); } catch (err) {  }
+    }
+    applyPortfolioLayout();
+    closeHamburgerMenu();
+  }
+
+  function toggleLayoutLock() {
+    gLayoutLocked = !gLayoutLocked;
+    try {
+      if (gLayoutLocked) {
+        localStorage.setItem(LAYOUT_LOCKED_KEY, '1');
+        localStorage.setItem(LAYOUT_VALUE_KEY, gPortfolioLayout);
+      } else {
+        localStorage.removeItem(LAYOUT_LOCKED_KEY);
+        localStorage.removeItem(LAYOUT_VALUE_KEY);
+      }
+    } catch (err) {  }
+    updateHamburgerMenuLabels();
+    closeHamburgerMenu();
+  }
+
+  function updateHamburgerMenuLabels() {
+    const layoutItem = document.getElementById('layoutToggleItem');
+    const lockItem = document.getElementById('layoutLockItem');
+    if (layoutItem) {
+      layoutItem.textContent = gPortfolioLayout === 'mobile'
+        ? `${BUTTON_EMOJIS.hamburgerDesktopMode} Desktop Mode`
+        : `${BUTTON_EMOJIS.hamburgerPhoneMode} Phone Mode`;
+    }
+    if (lockItem) {
+      lockItem.textContent = gLayoutLocked
+        ? `${BUTTON_EMOJIS.hamburgerUnlockDisplay} Unlock Display Mode`
+        : `${BUTTON_EMOJIS.hamburgerLockDisplay} Lock Display Mode`;
+    }
+  }
+
+  function toggleHamburgerMenu(evt) {
+    if (evt) evt.stopPropagation();
+    const menu = document.getElementById('hamburgerMenu');
+    const backdrop = document.getElementById('hamburgerMenuBackdrop');
+    if (!menu) return;
+    if (menu.hidden) {
+      menu.hidden = false;
+      if (backdrop) backdrop.hidden = false;
+      document.addEventListener('click', onHamburgerOutsideClick);
+      document.addEventListener('keydown', onHamburgerEscape);
+    } else {
+      closeHamburgerMenu();
+    }
+  }
+
+  function closeHamburgerMenu() {
+    const menu = document.getElementById('hamburgerMenu');
+    const backdrop = document.getElementById('hamburgerMenuBackdrop');
+    if (menu) menu.hidden = true;
+    if (backdrop) backdrop.hidden = true;
+    document.removeEventListener('click', onHamburgerOutsideClick);
+    document.removeEventListener('keydown', onHamburgerEscape);
+  }
+
+  function onHamburgerOutsideClick(evt) {
+    const wrap = document.querySelector('.hamburger-wrap');
+    if (wrap && !wrap.contains(evt.target)) closeHamburgerMenu();
+  }
+
+  function onHamburgerEscape(evt) {
+    if (evt.key === 'Escape') closeHamburgerMenu();
+  }
+
+  initPortfolioLayout();
+
+  let deals = [];
+
+  let tombstones = [];
+  let closingDealId = null;
+  let editingDealId = null;   
+
+  let gEditingDealId = null;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function newDealId() {
+    return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function dealDisplayName(d) {
+    return d.name || d.ticker || 'Untitled Deal';
+  }
+
+  function dealContentSignature(d) {
+    return [d.ticker, d.name, d.spreadType, d.startDate, d.expiryDate,
+            d.shortStrike, d.longStrike, d.strikeSell, d.strikeBuy, d.total, d.limit, d.ptPct]
+      .map(v => String(v == null ? '' : v).trim().toLowerCase()).join('|');
+  }
+
+  function dateToIsoLocal(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function todayStr() {
+    return dateToIsoLocal(new Date());
+  }
+
+  function addDaysStr(dateStr, days) {
+    const base = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    base.setDate(base.getDate() + days);
+    return dateToIsoLocal(base);
+  }
+
+  function fillMonthSelect(sel) {
+    sel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${String(i + 1).padStart(2, '0')}</option>`).join('');
+  }
+
+  function daysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+  }
+
+  function fillDaySelect(sel, count) {
+    const n = count || 31;
+    const prior = parseInt(sel.value, 10);
+    sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}">${String(i + 1).padStart(2, '0')}</option>`).join('');
+    if (prior) sel.value = String(Math.min(prior, n));
+  }
+
+  function refreshDaySelectRange(monthSel, daySel, yearSel) {
+    const month = parseInt(monthSel.value, 10);
+    const year = parseInt(yearSel.value, 10);
+    if (!month || !year) return;
+    fillDaySelect(daySel, daysInMonth(year, month));
+  }
+
+  function fillYearSelect(sel) {
+    const current = new Date().getFullYear();
+    const years = [];
+    for (let y = current - 5; y <= current + 10; y++) years.push(y);
+    sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  }
+
+  function composeDateMD(monthSel, daySel, yearSel) {
+    const m = parseInt(monthSel.value, 10);
+    const d = parseInt(daySel.value, 10);
+    const y = parseInt(yearSel.value, 10);
+    if (!m || !d || !y) return '';
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+
+  function formatDateDisplay(isoDate, withYear) {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    const [y, m, d] = parts;
+    const dd = String(Number(d)), mm = String(Number(m));
+    return withYear ? `${dd}.${mm}.${y}` : `${dd}.${mm}`;
+  }
+
+  function daysBetween(startIso, endIso) {
+    if (!startIso || !endIso) return null;
+    const start = new Date(startIso + 'T00:00:00');
+    const end = new Date(endIso + 'T00:00:00');
+    if (isNaN(start) || isNaN(end)) return null;
+    return Math.round((end - start) / 86400000);
+  }
+
+  function setMonthDayYearFromDateStr(monthSel, daySel, yearSel, dateStr) {
+    const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    monthSel.value = String(month);
+    yearSel.value = String(year);
+
+    fillDaySelect(daySel, daysInMonth(year, month));
+    daySel.value = String(d.getDate());
+  }
+
+  function applyDateToPair(mId, dId, yId, dateStr) {
+    const mSel = document.getElementById(mId);
+    const dSel = document.getElementById(dId);
+    const ySel = document.getElementById(yId);
+    setMonthDayYearFromDateStr(mSel, dSel, ySel, dateStr);
+  }
+
+  [
+    ['sdStartMonth', 'sdStartDay', 'sdStartYear'],
+    ['sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear'],
+    ['cdDateMonth', 'cdDateDay', 'cdDateYear']
+  ].forEach(([mId, dId, yId]) => {
+    const mSel = document.getElementById(mId);
+    const dSel = document.getElementById(dId);
+    const ySel = document.getElementById(yId);
+    fillMonthSelect(mSel);
+    fillDaySelect(dSel);
+    fillYearSelect(ySel);
+
+    const refresh = () => refreshDaySelectRange(mSel, dSel, ySel);
+    mSel.addEventListener('change', refresh);
+    ySel.addEventListener('change', refresh);
+  });
+
+  let rangeGuard = false;
+
+  function refreshRangeAndDte() {
+    const startIso = composeDateMD(document.getElementById('sdStartMonth'), document.getElementById('sdStartDay'), document.getElementById('sdStartYear'));
+    const expiryIso = composeDateMD(document.getElementById('sdExpiryMonth'), document.getElementById('sdExpiryDay'), document.getElementById('sdExpiryYear'));
+    if (!rangeGuard) {
+      const range = daysBetween(startIso, expiryIso);
+      rangeGuard = true;
+      document.getElementById('sdRangeDays').value = range != null ? String(range) : '';
+      rangeGuard = false;
+    }
+    const dte = daysBetween(todayStr(), expiryIso);
+    document.getElementById('sdDte').value = dte != null ? String(dte) : '';
+  }
+
+  function applyRangeToExpiry() {
+    if (rangeGuard) return;
+    const raw = document.getElementById('sdRangeDays').value.trim();
+    if (!raw || isNaN(Number(raw))) return;
+    const startIso = composeDateMD(document.getElementById('sdStartMonth'), document.getElementById('sdStartDay'), document.getElementById('sdStartYear'));
+    if (!startIso) return;
+    const newExpiry = addDaysStr(startIso, parseInt(raw, 10));
+    rangeGuard = true;
+    applyDateToPair('sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear', newExpiry);
+    rangeGuard = false;
+    refreshRangeAndDte();
+  }
+
+  ['sdStartMonth', 'sdStartDay', 'sdStartYear', 'sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear']
+    .forEach(id => document.getElementById(id).addEventListener('change', refreshRangeAndDte));
+  document.getElementById('sdRangeDays').addEventListener('input', applyRangeToExpiry);
+
+  function migrateCloseFields(deal) {
+    if (deal.closePtPct == null || deal.closePtPct === '') {
+      if (deal.exitValue !== undefined && deal.exitValue !== '') {
+        const limit = getLimitValueRaw(deal.limit);
+        deal.closePtPct = String(derivePtPctFromProfitTaker(limit, truncate2(number(deal.exitValue, 0))));
+      } else {
+        deal.closePtPct = deal.ptPct || '0';
+      }
+    }
+  }
+
+  function finalStats(deal) {
+    migrateCloseFields(deal);
+    const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
+    const limit = m.limit;
+    const finalPtPct = sanitizePtPct(deal.closePtPct);
+
+    const finalProfitTakerVal = truncate2(limit * (1 - finalPtPct / 100)) * m.contracts;
+    const finalAmount = Math.round(m.maxProfit * (Math.abs(finalPtPct) / 100));
+    return { finalPtPct, finalProfitTakerVal, finalAmount, finalSideLoss: finalPtPct < 0, maxProfit: m.maxProfit };
+  }
+
+  const PORTFOLIO_COLUMNS = ['TICKER', 'STRIKES', 'STATUS', 'DTE', 'RATIO', 'MAX\nLOSS', 'MAX\nPROFIT',
+                             'PT\n%', 'PT\nVALUE', 'PRICES', 'PROFIT\nLOSS', 'ACTIONS'];
+
+  function dealRowHtml(deal) {
+    const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
+    const isClosed = !!deal.closed;
+    const badge = isClosed
+      ? `<button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span>`
+      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+
+    const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
+
+    const title = (deal.name || '').trim();
+    const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();
+    const titleHtml = showTitle
+      ? `<span class="deal-title-text">${escapeHtml(title)}</span>`
+      : (deal.ticker ? '' : `<span class="deal-title-text">Untitled Deal</span>`);
+
+    const strikesCell = `${escapeHtml(deal.strikeBuy || '—')} / ${escapeHtml(deal.strikeSell || '—')}`;
+
+    const dte = daysBetween(todayStr(), deal.expiryDate);
+    const dteCell = dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—';
+
+    let ptPctCell, ptValueCell, plCell;
+    if (isClosed) {
+
+      const f = finalStats(deal);
+      ptPctCell = `${truncate2(f.finalPtPct)}%`;
+      ptValueCell = formatTruncated2(f.finalProfitTakerVal);
+      plCell = `<b class="deal-metric-cell ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</b>`;
+    } else {
+
+      ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
+      ptValueCell = m.profitTakerMissing ? '—' : formatTruncated2(m.profitTaker);
+      plCell = m.fifthMissing
+        ? `<b class="deal-metric-cell missing">—</b>`
+        : `<b class="deal-metric-cell ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</b>`;
+    }
+
+    return `
+      <div class="portfolio-row deal-row ${isClosed ? '' : 'open'}">
+        <div class="deal-ticker-cell">
+          <div class="deal-name">${tickerHtml} ${titleHtml}</div>
+          <div class="deal-sub">${escapeHtml(deal.spreadType || '')}</div>
+          <div class="deal-ticker-dates">${escapeHtml(formatDateDisplay(deal.startDate) || '—')} - ${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</div>
+        </div>
+        <div class="deal-metric-cell">${strikesCell}</div>
+        <div class="deal-status-cell">${badge}</div>
+        <div class="deal-dte-cell">${dteCell}</div>
+        <b class="deal-metric-cell blue">${truncate2(m.ratio)}%</b>
+        <b class="deal-metric-cell red">${money0(m.maxLoss)}</b>
+        <b class="deal-metric-cell green">${money0(m.maxProfit)}</b>
+        <b class="deal-metric-cell">${ptPctCell}</b>
+        <b class="deal-metric-cell blue">${ptValueCell}</b>
+        <div class="deal-strikes-cell">
+          Buy <b>$${escapeHtml(deal.shortStrike || '—')}</b><br>
+          Sell <b>$${escapeHtml(deal.longStrike || '—')}</b>
+        </div>
+        ${plCell}
+        <div class="deal-actions-cell">
+          <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
+          <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+          <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+        </div>
+      </div>`;
+  }
+
+  function portfolioHeaderHtml() {
+    return `<div class="portfolio-row portfolio-table-header">${PORTFOLIO_COLUMNS.map(c => `<div>${c.split('\n').join('<br>')}</div>`).join('')}</div>`;
+  }
+
+  function dealCardHtml(deal) {
+    const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
+    const isClosed = !!deal.closed;
+    const badge = isClosed
+      ? `<div class="deal-card-status-block"><button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span></div>`
+      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+    const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
+    const title = (deal.name || '').trim();
+    const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();
+    const titleHtml = showTitle
+      ? `<span class="deal-title-text">${escapeHtml(title)}</span>`
+      : (deal.ticker ? '' : `<span class="deal-title-text">Untitled Deal</span>`);
+    const strikesCell = `${escapeHtml(deal.strikeBuy || '—')} / ${escapeHtml(deal.strikeSell || '—')}`;
+    const dte = daysBetween(todayStr(), deal.expiryDate);
+    const dteText = dte != null ? `<span class="dte-num">${dte}</span><span class="dte-label">Days</span>` : '—';
+
+    let ptPctCell, ptValueCell, plHtml;
+    if (isClosed) {
+      const f = finalStats(deal);
+      ptPctCell = `${truncate2(f.finalPtPct)}%`;
+      ptValueCell = formatTruncated2(f.finalProfitTakerVal);
+      plHtml = `<span class="deal-card-metric-value ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</span>`;
+    } else {
+      ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
+      ptValueCell = m.profitTakerMissing ? '—' : formatTruncated2(m.profitTaker);
+      plHtml = m.fifthMissing
+        ? `<span class="deal-card-metric-value missing">—</span>`
+        : `<span class="deal-card-metric-value ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</span>`;
+    }
+
+    return `
+      <div class="deal-card ${isClosed ? '' : 'open'}">
+        <div class="deal-card-header">
+          <div class="deal-card-title-block">
+            <div class="deal-name">${tickerHtml} <span class="deal-card-strikes">${strikesCell}</span></div>
+            <div class="deal-sub">${escapeHtml(deal.spreadType || '')}${showTitle ? ' &middot; ' + titleHtml : ''}</div>
+          </div>
+          <div class="deal-card-header-right">
+            <span class="deal-card-dte-badge">${dteText}</span>
+            ${badge}
+            <div class="deal-card-actions">
+              <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
+              <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+              <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+            </div>
+          </div>
+        </div>
+        <div class="deal-card-metrics">
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Ratio</span><span class="deal-card-metric-value blue">${truncate2(m.ratio)}%</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Loss</span><span class="deal-card-metric-value red">${money0(m.maxLoss)}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Profit</span><span class="deal-card-metric-value green">${money0(m.maxProfit)}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">PT %</span><span class="deal-card-metric-value blue">${ptPctCell}</span></div>
+        </div>
+        <div class="deal-card-metrics">
+          <div class="deal-card-metric deal-card-metric-stacked">
+            <span class="deal-card-metric-label">Start</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.startDate) || '—')}</span>
+            <span class="deal-card-metric-label">Expiry</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</span>
+          </div>
+          <div class="deal-card-metric deal-card-metric-stacked">
+            <span class="deal-card-metric-label">Buy</span><span class="deal-card-metric-stacked-value">$${escapeHtml(deal.shortStrike || '—')}</span>
+            <span class="deal-card-metric-label">Sell</span><span class="deal-card-metric-stacked-value">$${escapeHtml(deal.longStrike || '—')}</span>
+          </div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">P/L</span>${plHtml}</div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">PT Value</span><span class="deal-card-metric-value blue">${ptValueCell}</span></div>
+        </div>
+      </div>`;
+  }
+
+  function fitPortfolioSummaryLine(el, maxWidth) {
+    if (!el || !el.textContent || !(maxWidth > 0)) return;
+    el.style.fontSize = '';
+    const minPx = 8;
+    let guard = 0; 
+    while (el.scrollWidth > maxWidth && guard < 100) {
+      const current = parseFloat(getComputedStyle(el).fontSize);
+      if (!(current > minPx)) break;
+      el.style.fontSize = (current - 1) + 'px';
+      guard++;
+    }
+  }
+
+  function portfolioSummaryMaxWidth() {
+    const logo = document.querySelector('.portfolio-logo-corner');
+    const dealBtn = document.getElementById('topNewDealBtn');
+    if (!logo || !dealBtn) return null;
+    const w = dealBtn.getBoundingClientRect().left - logo.getBoundingClientRect().right - 10;
+    return w > 0 ? w : null;
+  }
+
+  function renderPortfolio() {
+    const grid = document.getElementById('dealGrid');
+    const cards = document.getElementById('dealCardsMobile');
+    const empty = document.getElementById('portfolioEmpty');
+    const count = document.getElementById('dealCount');
+
+    const plSummary = document.getElementById('dealPLSummary');
+    const winLossEl = document.getElementById('dealWinLoss');
+    const winRatioEl = document.getElementById('dealWinRatio');
+    const closedDeals = deals.filter(d => d.closed);
+
+    grid.classList.toggle('has-closed-deals', closedDeals.length > 0);
+    cards.classList.toggle('has-closed-deals', closedDeals.length > 0);
+    if (closedDeals.length === 0) {
+      plSummary.textContent = '';
+      count.textContent = '';
+      winLossEl.textContent = '';
+      winRatioEl.textContent = '';
+    } else {
+      const closedStats = closedDeals.map(finalStats);
+      const totalPL = closedStats.reduce((sum, f) => sum + (f.finalSideLoss ? -Math.abs(f.finalAmount) : Math.abs(f.finalAmount)), 0);
+      const isLoss = totalPL < 0;
+      plSummary.textContent = `${isLoss ? '-' : ''}$${Math.abs(totalPL).toLocaleString('en-US')}`;
+      plSummary.classList.toggle('red', isLoss);
+      plSummary.classList.toggle('green', !isLoss);
+
+      count.textContent = `${closedDeals.length} Deal${closedDeals.length === 1 ? '' : 's'}`;
+
+      const wins = closedStats.filter(f => !f.finalSideLoss).length;
+      const losses = closedStats.length - wins;
+      winLossEl.textContent = `${wins}W-${losses}L`;
+
+      const winRatio = Math.ceil((wins / closedStats.length) * 100);
+      const winRatioGood = winRatio >= 50;
+      winRatioEl.textContent = `Win ${winRatio}%`;
+      winRatioEl.classList.toggle('green', winRatioGood);
+      winRatioEl.classList.toggle('red', !winRatioGood);
+    }
+
+    if (gPortfolioLayout === 'mobile') {
+      const maxW = portfolioSummaryMaxWidth();
+      [plSummary, count, winLossEl, winRatioEl].forEach(el => fitPortfolioSummaryLine(el, maxW));
+    }
+
+    if (deals.length === 0) {
+      grid.innerHTML = '';
+      cards.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+    const sorted = deals.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    if (gPortfolioLayout === 'mobile') {
+      grid.style.display = 'none';
+      cards.style.display = '';
+      grid.innerHTML = '';
+      cards.innerHTML = sorted.map(dealCardHtml).join('');
+    } else {
+      cards.style.display = 'none';
+      grid.style.display = '';
+      cards.innerHTML = '';
+      grid.innerHTML = portfolioHeaderHtml() + sorted.map(dealRowHtml).join('');
+    }
+  }
+
+  function openDealInCalculator(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    gEditingDealId = id;
+    contractsEl.value = String(getContractsValue(deal.contracts));
+    totalEl.value = deal.total || '';
+    limitEl.value = deal.limit || '';
+    ptPctEl.value = deal.ptPct || '';
+    calculate();
+    setMode('calculator');
+
+    window.scrollTo(0, 0);
+    const banner = document.getElementById('calcEditingBanner');
+    const ticker = (deal.ticker || '').trim().toUpperCase();
+    banner.textContent = ticker;
+    banner.style.display = ticker ? 'block' : 'none';
+    setDealButtonEditingState(true);
+  }
+
+  function setDealButtonEditingState(isEditing) {
+    const desktopBtn = document.getElementById('topSaveBtn');
+    const mobileBtn = document.getElementById('topSaveBtnMobile');
+    desktopBtn.textContent = isEditing ? `Update ${BUTTON_EMOJIS.dealButtonIcon}` : `${BUTTON_EMOJIS.dealButtonIcon} Deal`;
+    desktopBtn.classList.toggle('top-deal-btn-editing', isEditing);
+    mobileBtn.textContent = isEditing ? BUTTON_EMOJIS.dealButtonIcon : `${BUTTON_EMOJIS.dealButtonIcon} Deal`;
+    mobileBtn.classList.toggle('top-deal-btn-editing', isEditing);
+    document.getElementById('topCancelBtn').hidden = !isEditing;
+    document.getElementById('topCancelBtnMobile').hidden = !isEditing;
+
+    document.querySelector('.calc-deal-btn-row-mobile').classList.toggle('calc-deal-btn-row-mobile-editing', isEditing);
+  }
+
+  function cancelDealEditing() {
+    gEditingDealId = null;
+    document.getElementById('calcEditingBanner').style.display = 'none';
+    setDealButtonEditingState(false);
+  }
+
+  function handleDealButtonClick() {
+    if (gEditingDealId) {
+      openUpdateDealConfirm();
+    } else {
+      openSaveModal();
+    }
+  }
+
+  function openUpdateDealConfirm() {
+    document.getElementById('updateDealConfirm').classList.remove('hidden');
+  }
+
+  function closeUpdateDealConfirm() {
+    document.getElementById('updateDealConfirm').classList.add('hidden');
+  }
+
+  function confirmUpdateDeal() {
+    const deal = deals.find(d => d.id === gEditingDealId);
+    if (deal) {
+      Object.assign(deal, {
+        contracts: String(getContractsValue(contractsEl.value)),
+        total: totalEl.value.trim(),
+        limit: limitEl.value.trim(),
+        ptPct: ptPctEl.value.trim(),
+        updatedTs: Date.now()
+      });
+      clearResolved(deal.id);
+      pushToDriveDebounced();
+    }
+    gEditingDealId = null;
+    document.getElementById('calcEditingBanner').style.display = 'none';
+    setDealButtonEditingState(false);
+    closeUpdateDealConfirm();
+    if (currentMode === 'portfolio') renderPortfolio();
+  }
+
+  function openSaveModal() {
+    editingDealId = null;
+    document.getElementById('modalTitle').textContent = 'Save Deal';
+    document.getElementById('sdSubmitBtn').textContent = `${BUTTON_EMOJIS.dealButtonIcon} Save Deal`;
+
+    document.getElementById('sdTicker').value = '';
+    document.getElementById('sdSpreadType').value = 'Bull Put Spread';
+    document.getElementById('sdShort').value = '';
+    document.getElementById('sdLong').value = '';
+    document.getElementById('sdStrikeSell').value = '';
+    document.getElementById('sdStrikeBuy').value = '';
+    document.getElementById('sdContracts').value = contractsEl.value;
+    document.getElementById('sdTotal').value = totalEl.value;
+    document.getElementById('sdLimit').value = limitEl.value;
+    document.getElementById('sdPt').value = ptPctEl.value;
+    const start = todayStr();
+    applyDateToPair('sdStartMonth', 'sdStartDay', 'sdStartYear', start);
+    applyDateToPair('sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear', addDaysStr(start, 30));
+    refreshRangeAndDte();
+
+    document.getElementById('saveDealModal').classList.remove('hidden');
+
+  }
+
+  function openEditModal(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    editingDealId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Deal';
+    document.getElementById('sdSubmitBtn').textContent = `${BUTTON_EMOJIS.dealButtonIcon} Save Changes`;
+
+    document.getElementById('sdTicker').value = deal.ticker || '';
+    document.getElementById('sdSpreadType').value = deal.spreadType || 'Bull Put Spread';
+    document.getElementById('sdShort').value = deal.shortStrike || '';
+    document.getElementById('sdLong').value = deal.longStrike || '';
+    document.getElementById('sdStrikeSell').value = deal.strikeSell || '';
+    document.getElementById('sdStrikeBuy').value = deal.strikeBuy || '';
+    applyDateToPair('sdStartMonth', 'sdStartDay', 'sdStartYear', deal.startDate || todayStr());
+    applyDateToPair('sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear', deal.expiryDate || addDaysStr(deal.startDate, 30));
+    refreshRangeAndDte();
+
+    document.getElementById('sdContracts').value = String(getContractsValue(deal.contracts));
+    document.getElementById('sdTotal').value = deal.total || '';
+    document.getElementById('sdLimit').value = deal.limit || '';
+
+    normalizeSdLimitOnBlur();
+    document.getElementById('sdPt').value = deal.ptPct || '';
+
+    document.getElementById('saveDealModal').classList.remove('hidden');
+  }
+
+  function closeSaveModal() {
+    document.getElementById('saveDealModal').classList.add('hidden');
+  }
+
+  function submitSaveDeal(e) {
+    e.preventDefault();
+    const ticker = document.getElementById('sdTicker').value.trim().toUpperCase();
+
+    const payload = {
+      ticker,
+
+      spreadType: document.getElementById('sdSpreadType').value,
+      shortStrike: document.getElementById('sdShort').value.trim(),
+      longStrike: document.getElementById('sdLong').value.trim(),
+      strikeSell: document.getElementById('sdStrikeSell').value.trim(),
+      strikeBuy: document.getElementById('sdStrikeBuy').value.trim(),
+      contracts: String(getContractsValue(document.getElementById('sdContracts').value)),
+      total: document.getElementById('sdTotal').value.trim(),
+      limit: document.getElementById('sdLimit').value.trim(),
+      ptPct: document.getElementById('sdPt').value.trim(),
+      startDate: composeDateMD(document.getElementById('sdStartMonth'), document.getElementById('sdStartDay'), document.getElementById('sdStartYear')),
+      expiryDate: composeDateMD(document.getElementById('sdExpiryMonth'), document.getElementById('sdExpiryDay'), document.getElementById('sdExpiryYear'))
+    };
+
+    if (editingDealId) {
+      const deal = deals.find(d => d.id === editingDealId);
+      if (deal) Object.assign(deal, payload, { updatedTs: Date.now() });
+      clearResolved(editingDealId);
+    } else {
+      deals.push(Object.assign({
+        id: newDealId(),
+        createdTs: Date.now(),
+        updatedTs: Date.now(),
+        closed: false,
+        closeDate: '',
+        closePtPct: ''
+      }, payload));
+    }
+
+    closeSaveModal();
+    setMode('portfolio');
+    pushToDriveDebounced();
+  }
+
+  function cdSyncFromPct() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    commitPtPctValue('cdPtPct', limit);
+    const pct = sanitizePtPct(document.getElementById('cdPtPct').value);
+    const perShare = truncate2(limit * (1 - pct / 100));
+    document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
+  }
+
+  function cdSyncFromVal() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    const enteredVal = number(document.getElementById('cdPtVal').value, 0);
+    const perShare = truncate2(enteredVal / contracts);
+    document.getElementById('cdPtPct').value = String(truncate2(derivePtPctFromProfitTaker(limit, perShare)));
+
+    document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
+  }
+
+  function stepCdPtPct(direction) {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    stepPtPctValue('cdPtPct', getLimitValueRaw(deal.limit), direction);
+  }
+
+  function stepCdPtVal(direction) {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const contracts = getContractsValue(deal.contracts);
+    const el = document.getElementById('cdPtVal');
+    const current = number(el.value, 0);
+    const increment = 0.01 * contracts;
+    const next = direction === 'up' ? current + increment : current - increment;
+    el.value = formatTruncated2(next);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur'));
+  }
+
+  document.getElementById('cdPtPct').addEventListener('blur', cdSyncFromPct);
+  document.getElementById('cdPtVal').addEventListener('blur', cdSyncFromVal);
+
+  function openCloseModal(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    migrateCloseFields(deal);
+    closingDealId = id;
+    document.getElementById('cdModalTitle').textContent = deal.closed ? 'Update Close' : 'Close Deal';
+    document.getElementById('cdSubmitBtn').textContent = deal.closed ? 'Save Update' : 'Confirm Close';
+    document.getElementById('cdDealName').textContent = dealDisplayName(deal);
+    document.getElementById('cdBuyPrice').textContent = deal.shortStrike ? `$${deal.shortStrike}` : '—';
+    document.getElementById('cdSellPrice').textContent = deal.longStrike ? `$${deal.longStrike}` : '—';
+    applyDateToPair('cdDateMonth', 'cdDateDay', 'cdDateYear', deal.closeDate || todayStr());
+    document.getElementById('cdPtPct').value = deal.closed ? deal.closePtPct : (deal.ptPct || '');
+    cdSyncFromPct();
+    document.getElementById('closeDealModal').classList.remove('hidden');
+
+  }
+
+  function closeCloseModal() {
+    document.getElementById('closeDealModal').classList.add('hidden');
+    closingDealId = null;
+  }
+
+  function submitCloseDeal(e) {
+    e.preventDefault();
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+
+    deal.closed = true;
+    deal.closeDate = composeDateMD(document.getElementById('cdDateMonth'), document.getElementById('cdDateDay'), document.getElementById('cdDateYear'));
+    deal.closePtPct = String(sanitizePtPct(document.getElementById('cdPtPct').value));
+    deal.updatedTs = Date.now();
+    delete deal.exitValue;
+    clearResolved(deal.id);
+
+    closeCloseModal();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  function deleteDeal(id) {
+    const deal = deals.find(d => d.id === id);
+    const label = deal ? `“${dealDisplayName(deal)}”` : 'this deal';
+    if (!confirm(`Delete ${label} permanently?`)) return;
+    deals = deals.filter(d => d.id !== id);
+    tombstones = tombstones.filter(t => t.id !== id);
+    tombstones.push({ id, deletedAt: Date.now() });
+    clearResolved(id);
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  function reopenDeal(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    deal.closed = false;
+    deal.updatedTs = Date.now();
+    clearResolved(id);
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  function exportDeals() {
+    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), deals }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'options-portfolio.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importDealsFile(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const incoming = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.deals) ? parsed.deals : null);
+        if (!incoming) throw new Error('bad format');
+
+        const existingIds = new Set(deals.map(d => d.id));
+        const tombstonedIds = new Set(tombstones.map(t => t.id));
+        const existingSignatures = new Set(deals.map(dealContentSignature));
+        let imported = 0, skipped = 0;
+        incoming.forEach(d => {
+          if (!d || typeof d !== 'object' || !(d.name || d.ticker)) return;
+
+          if (d.id && existingIds.has(d.id)) { skipped++; return; }
+
+          const sig = dealContentSignature(d);
+          if (sig && existingSignatures.has(sig)) { skipped++; return; }
+
+          if (!d.id || tombstonedIds.has(d.id)) d.id = newDealId();
+          if (!d.createdTs) d.createdTs = Date.now();
+          if (!d.updatedTs) d.updatedTs = d.createdTs;
+          existingIds.add(d.id);
+          existingSignatures.add(sig);
+          deals.push(d);
+          imported++;
+        });
+        renderPortfolio();
+        pushToDriveDebounced();
+        if (skipped) {
+          alert(`Imported ${imported} deal(s). Skipped ${skipped} already in your portfolio.`);
+        }
+      } catch (err) {
+        alert('Could not read that file — make sure it is a portfolio export from this app.');
+      }
+      evt.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  const GOOGLE_CLIENT_ID = '562729416343-3mb12lrlckvpf8h1l7hjpng5f770e9m8.apps.googleusercontent.com';
+  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+  const DRIVE_FILE_NAME = 'options-portfolio-sync.json';
+  const DRIVE_POLL_INTERVAL_MS = 5000; 
+
+  let gTokenClient = null;
+  let gAccessToken = null;
+  let gDriveFileId = null;
+  let gUserEmail = null;
+  let gSyncBusy = false;
+  let gPushTimer = null;
+
+  function syncConfigured() {
+    return !!GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith('PASTE_');
+  }
+
+  function syncBtnEl() {
+    return document.getElementById('googleSyncBtn');
+  }
+
+  function setSyncButton(text, title) {
+    const btn = syncBtnEl();
+    if (!btn) return;
+    btn.textContent = text;
+    if (title) btn.title = title;
+
+    const stateClass = {
+      [BUTTON_EMOJIS.syncSyncing]: 'sync-busy',
+      [BUTTON_EMOJIS.syncSigningIn]: 'sync-busy',
+      [BUTTON_EMOJIS.syncReconnecting]: 'sync-busy',
+      [BUTTON_EMOJIS.syncOk]: 'sync-ok',
+      [BUTTON_EMOJIS.syncError]: 'sync-error',
+      [BUTTON_EMOJIS.syncUnavailable]: 'sync-error'
+    }[text] || 'sync-idle';
+    btn.classList.remove('sync-idle', 'sync-busy', 'sync-ok', 'sync-error');
+    btn.classList.add(stateClass);
+  }
+
+  const SYNC_TOOLTIP_SIGNED_OUT = 'Sign in';
+
+  const SYNC_REMEMBER_KEY = 'optionsPortfolioGoogleSyncEnabled';
+  const SYNC_TOKEN_KEY = 'optionsPortfolioGoogleSyncToken';
+  const TOKEN_EXPIRY_SAFETY_MS = 60 * 1000; 
+
+  function readSyncRemember() {
+    try { return localStorage.getItem(SYNC_REMEMBER_KEY) === '1'; } catch (err) { return false; }
+  }
+  function writeSyncRemember() {
+    try { localStorage.setItem(SYNC_REMEMBER_KEY, '1'); } catch (err) {  }
+  }
+  function clearSyncRemember() {
+    try { localStorage.removeItem(SYNC_REMEMBER_KEY); } catch (err) {  }
+  }
+  function readStoredToken() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SYNC_TOKEN_KEY) || 'null');
+      return (raw && raw.accessToken && raw.expiresAt) ? raw : null;
+    } catch (err) { return null; }
+  }
+  function writeStoredToken(accessToken, expiresInSeconds) {
+    try {
+      const expiresAt = Date.now() + (Number(expiresInSeconds) || 3300) * 1000;
+      localStorage.setItem(SYNC_TOKEN_KEY, JSON.stringify({ accessToken, expiresAt }));
+    } catch (err) {  }
+  }
+  function clearStoredToken() {
+    try { localStorage.removeItem(SYNC_TOKEN_KEY); } catch (err) {  }
+  }
+
+  async function tryResumeStoredToken() {
+    const stored = readStoredToken();
+    if (!stored || stored.expiresAt - TOKEN_EXPIRY_SAFETY_MS <= Date.now()) return false;
+    gAccessToken = stored.accessToken;
+    gUserEmail = gUserEmail || 'Google account';
+    setSyncButton(BUTTON_EMOJIS.syncReconnecting, 'Reconnecting…');
+    writeSyncRemember();
+
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + gAccessToken } })
+      .then(res => res.ok ? res.json() : null)
+      .then(info => { if (info && info.email) gUserEmail = info.email; })
+      .catch(() => {});
+    await pullFromDrive(true);
+    return true;
+  }
+
+  async function initGoogleSync() {
+    if (!syncConfigured()) {
+      setSyncButton(BUTTON_EMOJIS.syncNotConfigured, 'Google Sync not configured');
+      return;
+    }
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+      setSyncButton(BUTTON_EMOJIS.syncUnavailable, 'Google Sync unavailable');
+      return;
+    }
+    gTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: () => {},
+    });
+
+    const resumed = await tryResumeStoredToken();
+    if (!resumed) {
+      if (readSyncRemember()) {
+        setSyncButton(BUTTON_EMOJIS.syncIdle, 'Sign in');
+      } else {
+        setSyncButton(BUTTON_EMOJIS.syncIdle, SYNC_TOOLTIP_SIGNED_OUT);
+      }
+    }
+  }
+
+  function requestGoogleToken(promptMode) {
+    return new Promise((resolve, reject) => {
+      gTokenClient.callback = (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        gAccessToken = resp.access_token;
+        writeStoredToken(resp.access_token, resp.expires_in);
+        resolve(resp.access_token);
+      };
+      gTokenClient.requestAccessToken(promptMode !== undefined ? { prompt: promptMode } : {});
+    });
+  }
+
+  async function onSyncBtnClick() {
+    if (!syncConfigured() || !gTokenClient) return;
+    if (gAccessToken) {
+      if (confirm('Sign out of Google Sync?')) signOutGoogle();
+      return;
+    }
+    setSyncButton(BUTTON_EMOJIS.syncSigningIn, 'Signing in…');
+    try {
+      await requestGoogleToken();
+      await afterSignIn();
+    } catch (err) {
+      setSyncButton(BUTTON_EMOJIS.syncIdle, 'Sign-in cancelled or failed - try again.');
+    }
+  }
+
+  function signOutGoogle() {
+    if (gAccessToken && google.accounts && google.accounts.oauth2) {
+      google.accounts.oauth2.revoke(gAccessToken, () => {});
+    }
+    gAccessToken = null;
+    gDriveFileId = null;
+    gDriveModifiedTime = null;
+    gUserEmail = null;
+    clearTimeout(gPollTimer);
+    clearSyncRemember();
+    clearStoredToken();
+    gPendingConflicts = [];
+    gDeferredConflictIds = new Set();
+    gResolvedConflicts = {};
+    updateConflictBadge();
+    setSyncButton(BUTTON_EMOJIS.syncIdle, SYNC_TOOLTIP_SIGNED_OUT);
+  }
+
+  async function afterSignIn() {
+    try {
+      const info = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + gAccessToken }
+      }).then(r => r.json());
+      gUserEmail = info.email || 'Google account';
+    } catch (err) {
+      gUserEmail = 'Google account';
+    }
+    writeSyncRemember();
+    await pullFromDrive(true);
+  }
+
+  async function driveApi(fn) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (String(err.message).includes('401')) err.authDead = true;
+      throw err;
+    }
+  }
+
+  async function driveFindFile() {
+    const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+    const url = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + gAccessToken } });
+    if (!res.ok) throw new Error('drive list failed: ' + res.status);
+    const data = await res.json();
+    return (data.files && data.files[0]) || null;
+  }
+
+  async function driveDownload(fileId) {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { Authorization: 'Bearer ' + gAccessToken }
+    });
+    if (!res.ok) throw new Error('drive download failed: ' + res.status);
+    return res.json();
+  }
+
+  async function driveUpload(fileId, payload) {
+    const boundary = 'gsyncboundary';
+    const metadata = fileId ? {} : { name: DRIVE_FILE_NAME, parents: ['appDataFolder'] };
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(payload)}\r\n` +
+      `--${boundary}--`;
+    const url = fileId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,modifiedTime`
+      : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime`;
+    const res = await fetch(url, {
+      method: fileId ? 'PATCH' : 'POST',
+      headers: { Authorization: 'Bearer ' + gAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body,
+    });
+    if (!res.ok) throw new Error('drive upload failed: ' + res.status);
+    return res.json();
+  }
+
+  function mergeDealSets(localDeals, localTombstones, remoteDeals, remoteTombstones, resolved, strictTombstones,
+                          pendingIds) {
+    resolved = resolved || {};
+    const byId = new Map();
+    for (const d of remoteDeals || []) byId.set(d.id, d);
+
+    const tombById = new Map();
+    for (const t of [...(remoteTombstones || []), ...(localTombstones || [])]) {
+      const existing = tombById.get(t.id);
+      if (!existing || t.deletedAt > existing.deletedAt) tombById.set(t.id, t);
+    }
+
+    for (const d of localDeals || []) {
+      const existing = byId.get(d.id);
+      if (!existing || (d.updatedTs || 0) >= (existing.updatedTs || 0)) {
+        byId.set(d.id, d);
+      }
+    }
+
+    const conflicts = [];
+    for (const t of tombById.values()) {
+      const d = byId.get(t.id);
+      if (!d) continue;
+      const action = resolved[t.id];
+      const isPending = !!(pendingIds && pendingIds.has(t.id));
+      const uncontested = !strictTombstones && !isPending && t.deletedAt >= (d.updatedTs || d.createdTs || 0);
+      if (action === 'delete' || (!action && uncontested)) {
+        byId.delete(t.id);
+      } else if (action === 'keep') {
+        tombById.delete(t.id);
+      } else {
+        conflicts.push({ id: t.id, deal: d, tombstone: t });
+      }
+    }
+
+    return { deals: Array.from(byId.values()), tombstones: Array.from(tombById.values()), conflicts };
+  }
+
+  async function fetchRemoteState() {
+    const file = await driveApi(() => driveFindFile());
+    if (!file) return { fileId: null, deals: [], tombstones: [], modifiedTime: null };
+    const remote = await driveApi(() => driveDownload(file.id));
+    return {
+      fileId: file.id,
+      deals: (remote && Array.isArray(remote.deals)) ? remote.deals : [],
+      tombstones: (remote && Array.isArray(remote.tombstones)) ? remote.tombstones : [],
+      modifiedTime: file.modifiedTime || null,
+    };
+  }
+
+  let gPushPending = false;
+
+  function handleSyncError(err) {
+    if (err && err.authDead) {
+      gAccessToken = null;
+      clearStoredToken();
+      setSyncButton(BUTTON_EMOJIS.syncIdle, 'Google session expired - try again.');
+    } else {
+
+      const msg = err && (typeof err === 'string' ? err : err.message);
+      setSyncButton(BUTTON_EMOJIS.syncError, msg || 'Error');
+    }
+  }
+
+  function dealsEqual(a, b) {
+    if (a.length !== b.length) return false;
+    const byId = new Map(a.map(d => [d.id, JSON.stringify(d)]));
+    return b.every(d => byId.get(d.id) === JSON.stringify(d));
+  }
+
+  async function pullFromDrive(isFreshSignIn) {
+    setSyncButton(BUTTON_EMOJIS.syncSyncing, 'Syncing…');
+    try {
+      const remote = await fetchRemoteState();
+      gDriveFileId = remote.fileId;
+      gDriveModifiedTime = remote.modifiedTime;
+      const merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, isFreshSignIn, pendingConflictIds());
+      const changed = !dealsEqual(merged.deals, deals);
+      deals = merged.deals;
+      tombstones = merged.tombstones;
+      if (changed) renderPortfolio();
+      setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
+      offerConflictResolution(merged.conflicts);
+
+      pushToDriveDebounced();
+      scheduleDrivePoll();
+    } catch (err) {
+      handleSyncError(err);
+    }
+  }
+
+  function pushToDriveDebounced() {
+    if (!gAccessToken) return;
+    clearTimeout(gPushTimer);
+    gPushTimer = setTimeout(pushToDrive, 600);
+  }
+
+  async function pushToDrive() {
+    if (!gAccessToken) return;
+    if (gSyncBusy) {
+
+      gPushPending = true;
+      return;
+    }
+    gSyncBusy = true;
+    setSyncButton(BUTTON_EMOJIS.syncSyncing, 'Syncing…');
+    try {
+
+      let remote, merged, payload;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        remote = await fetchRemoteState();
+        merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
+        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones };
+        const recheck = await driveApi(() => driveFindFile());
+        const recheckModified = recheck ? recheck.modifiedTime : null;
+        if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {
+          continue; 
+        }
+        break;
+      }
+      const result = await driveApi(() => driveUpload(remote.fileId, payload));
+      gDriveFileId = result.id || remote.fileId;
+      gDriveModifiedTime = result.modifiedTime || remote.modifiedTime;
+
+      const settled = mergeDealSets(deals, tombstones, merged.deals, merged.tombstones, gResolvedConflicts, false, pendingConflictIds());
+      const changed = !dealsEqual(settled.deals, deals);
+      deals = settled.deals;
+      tombstones = settled.tombstones;
+      if (changed) renderPortfolio();
+      setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
+      offerConflictResolution([...merged.conflicts, ...settled.conflicts]);
+    } catch (err) {
+      handleSyncError(err);
+    } finally {
+      gSyncBusy = false;
+      if (gPushPending) {
+        gPushPending = false;
+        pushToDriveDebounced();
+      }
+      scheduleDrivePoll();
+    }
+  }
+
+  let gDriveModifiedTime = null;
+  let gPollTimer = null;
+
+  function scheduleDrivePoll() {
+    if (!gAccessToken) return;
+    clearTimeout(gPollTimer);
+    gPollTimer = setTimeout(runDrivePoll, DRIVE_POLL_INTERVAL_MS);
+  }
+
+  async function runDrivePoll() {
+    if (!gAccessToken) return;
+    if (gSyncBusy) { scheduleDrivePoll(); return; }
+    try {
+
+      const file = await driveApi(() => driveFindFile());
+      const modified = file ? file.modifiedTime : null;
+      if (modified && modified !== gDriveModifiedTime) {
+
+        await pullFromDrive();
+      } else {
+        scheduleDrivePoll();
+      }
+    } catch (err) {
+      scheduleDrivePoll();
+    }
+  }
+
+  let gPendingConflicts = [];
+  let gDeferredConflictIds = new Set();
+  let gConflictDialogOpen = false;
+  let gResolvedConflicts = {};
+
+  function pendingConflictIds() {
+    return new Set(gPendingConflicts.map(c => c.id));
+  }
+
+  function clearResolved(id) {
+    delete gResolvedConflicts[id];
+    gDeferredConflictIds.delete(id);
+  }
+
+  function updateConflictBadge() {
+    const badge = document.getElementById('syncConflictBadge');
+    if (!badge) return;
+    const n = gPendingConflicts.length;
+    badge.textContent = n ? String(n) : '';
+    badge.style.display = n ? 'flex' : 'none';
+  }
+
+  function offerConflictResolution(newConflicts) {
+    if (!newConflicts || !newConflicts.length) return;
+    const existingIds = new Set(gPendingConflicts.map(c => c.id));
+    let hasNew = false;
+    for (const c of newConflicts) {
+      if (!existingIds.has(c.id)) {
+        gPendingConflicts.push(c);
+        existingIds.add(c.id);
+        hasNew = true;
+      }
+    }
+    updateConflictBadge();
+
+    if (hasNew) showConflictDialog();
+  }
+
+  function showConflictDialog(showAll) {
+    if (gConflictDialogOpen || !gPendingConflicts.length) return;
+    const conflicts = showAll
+      ? gPendingConflicts
+      : gPendingConflicts.filter(c => !gDeferredConflictIds.has(c.id));
+    if (!conflicts.length) return;
+    gConflictDialogOpen = true;
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    const rowsHtml = conflicts.map(c => {
+      const d = c.deal;
+      const label = d.name || d.ticker || 'Untitled Deal';
+      const head = (d.ticker && d.ticker !== label) ? `${escapeHtml(d.ticker)}  —  ${escapeHtml(label)}` : escapeHtml(label);
+      return `
+        <div class="conflict-row" data-id="${escapeHtml(c.id)}">
+          <div class="conflict-row-title" title="${head}">${head}</div>
+          <div class="conflict-row-choice">
+            <button type="button" class="conflict-choice-btn active" data-choice="keep">Keep</button>
+            <button type="button" class="conflict-choice-btn" data-choice="delete">Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+    backdrop.innerHTML = `
+      <div class="modal-panel" id="conflictPanel">
+        <h2>Sync Conflicts</h2>
+        <p class="modal-sub">Saved Deals Mismatch has been identified.</p>
+        <div class="conflict-bulk-row">
+          <button type="button" id="conflictKeepAllBtn" class="btn btn-secondary">Save All</button>
+          <button type="button" id="conflictDeleteAllBtn" class="btn btn-secondary">Delete All</button>
+        </div>
+        <div class="modal-scroll">${rowsHtml}</div>
+        <div class="modal-actions">
+          <button type="button" id="conflictDeferBtn" class="btn btn-secondary">Decide Later</button>
+          <button type="button" id="conflictApplyBtn" class="btn btn-primary">Apply</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+
+    for (const btn of backdrop.querySelectorAll('.conflict-choice-btn')) {
+      btn.onclick = () => {
+        const row = btn.closest('.conflict-row');
+        for (const sib of row.querySelectorAll('.conflict-choice-btn')) sib.classList.remove('active');
+        btn.classList.add('active');
+      };
+    }
+
+    function closeDialog() {
+      backdrop.remove();
+      gConflictDialogOpen = false;
+    }
+
+    function resolveAll(getChoice) {
+      for (const c of conflicts) {
+        const choice = getChoice(c);
+        gResolvedConflicts[c.id] = choice;
+        gDeferredConflictIds.delete(c.id);
+        if (choice === 'delete') {
+          deals = deals.filter(d => d.id !== c.id);
+          tombstones = tombstones.filter(t => t.id !== c.id);
+          tombstones.push({ id: c.id, deletedAt: Date.now() });
+        } else {
+          tombstones = tombstones.filter(t => t.id !== c.id);
+        }
+      }
+      gPendingConflicts = gPendingConflicts.filter(c => !conflicts.some(x => x.id === c.id));
+      updateConflictBadge();
+      closeDialog();
+      renderPortfolio();
+      pushToDriveDebounced();
+      showConflictDialog();
+    }
+
+    backdrop.querySelector('#conflictKeepAllBtn').onclick = () => resolveAll(() => 'keep');
+    backdrop.querySelector('#conflictDeleteAllBtn').onclick = () => resolveAll(() => 'delete');
+    backdrop.querySelector('#conflictApplyBtn').onclick = () => resolveAll(c => {
+      const active = backdrop.querySelector(`.conflict-row[data-id="${CSS.escape(c.id)}"] .conflict-choice-btn.active`);
+      return active ? active.dataset.choice : 'keep';
+    });
+    backdrop.querySelector('#conflictDeferBtn').onclick = () => {
+      for (const c of conflicts) gDeferredConflictIds.add(c.id);
+      closeDialog();
+    };
+  }
+
+  window.addEventListener('load', initGoogleSync);
+</script>
+</body>
+</html>
