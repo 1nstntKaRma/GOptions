@@ -791,7 +791,7 @@
   .portfolio-row {
     display: grid;
 
-    grid-template-columns: 120px 74px 82px 56px 60px 64px 66px 50px 62px 96px 68px 116px;
+    grid-template-columns: 120px 96px 82px 56px 60px 64px 66px 50px 62px 96px 68px 116px;
     align-items: center;
     column-gap: 8px;
 
@@ -1052,10 +1052,12 @@
   .deal-dte-cell.closed { border: 1.5px solid var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 6px; }
 
   .deal-dte-cell.closed.stacked { border: none; background: none; }
+
+  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--border); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
-  .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; }
+  .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; white-space: nowrap; }
   .deal-metric-cell.missing { color: var(--muted); font-weight: 500; }
 
   .deal-strikes-cell { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
@@ -1318,8 +1320,20 @@
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
-  .ep-price-row .form-row { padding: 6px 0; }
+  .ep-price-row #epEntryPrice, .ep-price-row #epClosedPrice,
+  .cd-price-row #cdEntryPrice, .cd-price-row #cdClosedPrice { height: 79px; }
   .ep-price-row.single { grid-template-columns: 1fr; }
+
+  #entryPriceModal .form-row label,
+  #closeDealModal .form-row label { text-align: center; }
+
+  #entryPriceModal .date-pair span,
+  #closeDealModal .date-pair span { display: none; }
+
+  #entryPriceModal .date-pair,
+  #closeDealModal .date-pair { gap: 8px; justify-content: center; }
+  #entryPriceModal .date-pair select,
+  #closeDealModal .date-pair select { width: 78px; }
 
   .form-row-compact { margin-bottom: 0; }
   .form-row-compact label { font-size: 11px; }
@@ -1989,7 +2003,7 @@
     <p class="cd-strikes-info">Buy Strike (Price): <b id="cdBuyPrice">—</b>&nbsp;&nbsp;&nbsp;Sell Strike (Price): <b id="cdSellPrice">—</b></p>
 
     <div class="form-row">
-      <label for="cdDateDay">Close Date</label>
+      <label for="cdDateDay">&#128274; Date Closed</label>
       <div class="date-pair">
         <select id="cdDateDay"></select>
         <span>.</span>
@@ -2021,6 +2035,29 @@
       </div>
     </div>
 
+    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
+      <div class="form-row">
+        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdEntryPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="cdClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeCloseModal()">Cancel</button>
       <button type="submit" id="cdSubmitBtn" class="btn btn-primary">Confirm Close</button>
@@ -2034,7 +2071,7 @@
     <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
 
     <div class="form-row" id="epDateRow">
-      <label for="epDateDay">Closed Date</label>
+      <label for="epDateDay">&#128274; Date Closed</label>
       <div class="date-pair">
         <select id="epDateDay"></select>
         <span>.</span>
@@ -2048,20 +2085,20 @@
       <div class="form-row">
         <label for="epEntryPrice">&#127991;&#65039; Entry Price</label>
         <div class="total-stepper-wrap">
-          <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <input id="epEntryPrice" type="text" inputmode="decimal" />
           <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2,0)">&#8722;</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
           </div>
         </div>
       </div>
       <div class="form-row" id="epClosedRow">
         <label for="epClosedPrice">&#128176; Closed Price</label>
         <div class="total-stepper-wrap">
-          <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <input id="epClosedPrice" type="text" inputmode="decimal" />
           <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2,0)">&#8722;</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -2964,8 +3001,9 @@
   function dealDtePriceCellHtml(deal) {
     const hasEntry = !!deal.entryStockPrice;
     const hasClosed = !!deal.closedStockPrice;
+
     if (!hasEntry || !hasClosed) {
-      return `<button type="button" class="deal-dte-price-btn" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">\u{1F9FE}</button>`;
+      return `<button type="button" class="deal-dte-price-btn" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">\u{1F5C3}\u{FE0F}</button>`;
     }
     return `<button type="button" class="deal-dte-price-btn stacked" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price"><span class="deal-dte-price-val">\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}</span><span class="deal-dte-price-val">\u{1F4B0} $${formatStockPrice(deal.closedStockPrice)}</span></button>`;
   }
@@ -3000,7 +3038,7 @@
 
     const dteCell = isClosed ? dealDtePriceCellHtml(deal) : (dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—');
 
-    const dteCellClass = isClosed ? (dealDtePriceStacked(deal) ? ' closed stacked' : ' closed') : '';
+    const dteCellClass = isClosed ? (dealDtePriceStacked(deal) ? ' closed stacked' : ' closed icon-only') : '';
 
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
@@ -3452,6 +3490,9 @@
     applyDateToPair('cdDateMonth', 'cdDateDay', 'cdDateYear', deal.closeDate || todayStr());
     document.getElementById('cdPtPct').value = deal.closed ? deal.closePtPct : (deal.ptPct || '');
     cdSyncFromPct();
+
+    document.getElementById('cdEntryPrice').value = deal.entryStockPrice || '';
+    document.getElementById('cdClosedPrice').value = deal.closedStockPrice || '';
     document.getElementById('closeDealModal').classList.remove('hidden');
 
   }
@@ -3469,6 +3510,8 @@
     deal.closed = true;
     deal.closeDate = composeDateMD(document.getElementById('cdDateMonth'), document.getElementById('cdDateDay'), document.getElementById('cdDateYear'));
     deal.closePtPct = String(sanitizePtPct(document.getElementById('cdPtPct').value));
+    deal.entryStockPrice = document.getElementById('cdEntryPrice').value.trim();
+    deal.closedStockPrice = document.getElementById('cdClosedPrice').value.trim();
     deal.updatedTs = Date.now();
     delete deal.exitValue;
     clearResolved(deal.id);
@@ -3502,12 +3545,6 @@
 
   let entryPriceDealId = null;
 
-  ['epEntryPrice', 'epClosedPrice'].forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
-      if (this.value.includes('-')) this.value = this.value.replace(/-/g, '');
-    });
-  });
-
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -3531,10 +3568,9 @@
     e.preventDefault();
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
-
-    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim().replace(/-/g, '');
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
     if (deal.closed) {
-      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim().replace(/-/g, '');
+      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
     }
     deal.updatedTs = Date.now();

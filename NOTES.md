@@ -7719,3 +7719,212 @@ strips it to `12.50` (live, before any blur/submit). Calling
 (bypassing the live listener entirely, simulating some other path
 writing to the field) still stores `99.99`/`1.23` on the deal -- no `-`
 survives regardless of entry path. No console errors.
+
+## Emoji rename, Desktop STRIKES column wrap, Desktop 🗃️ button styling
+
+Explicit follow-up, 3 bullets:
+
+> "change all instances of this emoji 🧾 into this emoji 🗃️... Desktop
+> Portfolio mode: if a deal contains more then 6 digit total strikes
+> number it cant fit in one row, example '492.5 / 500' will drop into 2
+> rows, adjust this cell better so its always 1 row... Desktop Portfolio
+> mode: remove dark grey background for this button 🗃️, border should
+> be a squared and not rectangle, border should have DARKER grey
+> color."
+
+**🧾 -> 🗃️**: grepped the whole file for both the emoji and its escape
+(`\u{1F9FE}`) -- only one functional occurrence existed
+(`dealDtePriceCellHtml`'s missing-value button, the same one targeted
+by bullet 3), now `\u{1F5C3}\u{FE0F}`. Historical comments quoting the
+OLD emoji verbatim (documenting past rounds) were left as-is -- they're
+accurate records of what was asked AT THE TIME, not current-state
+documentation to keep in sync.
+
+**STRIKES column wrap (Desktop)**: root cause -- the wide grid's 12
+tracks are fixed px (deliberately, see the comment above `grid-
+template-columns` on why), and STRIKES was only `74px`, too narrow for
+a value like "492.5 / 500" at `16px` bold. Widened to `96px` (total row
+width ~1055px, still inside `.page-frame`'s 1240px cap with room to
+spare). Also added `white-space: nowrap` to the shared `.deal-metric-
+cell` rule as the actual hard guarantee -- the width bump alone fixes
+TODAY's reported value, but nowrap means a future longer one can never
+silently wrap again either; safe on every other cell sharing that
+class (RATIO/MAX LOSS/MAX PROFIT/PT %/PT VALUE), all short values that
+never wrapped anyway.
+
+**🗃️ button styling (Desktop)**: this is `.deal-dte-cell.closed` in its
+"still missing a price" state -- Phone got an `.icon-only` modifier for
+this same state 2 rounds ago (fixed 34x34 sizing), Desktop never did.
+Added it here too (`dealRowHtml`'s `dteCellClass`), then 3 explicit
+asks via `.deal-dte-cell.closed.icon-only`: `background: none` (was
+`var(--legend-dte-closed-bg)`, i.e. `var(--panel)`); `width/height: 34px`
++ `padding: 0` (was auto-sizing to the emoji's own glyph box, wider
+than tall -- a rectangle, not a square, now matches `.deal-actions-cell
+.deal-icon-btn`'s own established 34x34); `border-color: var(--border)`
+(`#2c2c2c`, swapped from `--legend-dte-closed-color`'s `#6b6b6b` --
+reusing this file's already-established "darker grey border" token,
+same one used for the OPEN-state missing-price border 2 rounds back).
+`.stacked` (both prices set) is a separate, already-existing modifier,
+untouched by any of this.
+
+### Verified
+
+Desktop (1280px), 3 injected test deals: NVDA's STRIKES cell renders
+"492.5 / 500" at `18px` measured height -- single-line (a wrapped 2-line
+value at this font/line-height would measure roughly double that).
+AAPL (closed, no prices) DTE cell: class `deal-dte-cell closed
+icon-only`, text `🗃️` (confirmed the renamed glyph, not the old one),
+`background-color: rgba(0,0,0,0)` (none), `border-color: rgb(44,44,44)`
+(`--border`), `34x34` exactly via `getBoundingClientRect()`. MSFT
+(closed, both prices set) DTE cell class confirmed still `closed
+stacked`, unaffected by the icon-only changes. Screenshot cross-check
+matches all 3 measurements visually. No console errors.
+
+## 🗃️ centering fix + Stock Price/Close Deal modal unification
+
+Explicit follow-up, 2 parts:
+
+> "'🗃️' border is misaligned within its row, center it. additionally
+> the emoji itself isnt centered within the border, fix it... Global
+> changes to 'Stock Price Window': CLOSED DATE = '🔒 Date Closed'
+> (Centered above the field)... PROFIT TAKER % = 'Profit Taker %'...
+> PROFIT TAKER $ = 'Profit Taker $'... remove weird '.' between date
+> values fields, have some spacing between them, and expand each of
+> these fields to be a bit more wider horizontally... expand height of
+> these fields downwards by 80%, they are too thin: '🏷️ Entry Price'...
+> '💰 Closed Price'... Global changes to 'Close Deal' window same as
+> implemented within the 'Stock Price Window': add everything discussed
+> above to the Close Deal window, under this order: Date Closed / PT%+
+> PT$ / Entry Price+Closed Price."
+
+The "PROFIT TAKER %/$ = 'Profit Taker %/$'" bullets under the "Stock
+Price Window" heading are an identity mapping (old label = new label,
+same text) -- read as confirming those fields' STANDARD label text
+ahead of the 2nd section, not as an instruction to add Profit Taker
+fields into the Stock Price modal itself. Only the Close Deal section
+("add everything... under this order") actually specifies where PT%/$
+belong, and they were already there -- so this round is: restyle both
+modals' existing fields, and ADD Entry/Closed Price (previously Stock-
+Price-modal-only) to Close Deal as new fields.
+
+**🗃️ centering, 2 distinct bugs**: (1) `.deal-dte-cell.closed.icon-
+only`'s fixed `34px` width (added 2 rounds ago) stopped it filling its
+grid column track (`56px`, see `.portfolio-row.deal-row`'s own
+`grid-template-columns`) -- CSS Grid's default `justify-self: stretch`
+just left a narrower-than-track fixed-width item flush at the column's
+start edge instead of centering it. Fixed with `justify-self: center`.
+(2) the base `.deal-dte-cell` rule never set `justify-content` -- fine
+for the OPEN state (2 lines) and `.stacked` (3 lines), both of which
+naturally fill their auto-sized box, but the single-line 🗃️ icon sat at
+the TOP of its now-fixed `34px` height instead of the middle. Fixed
+with `justify-content: center`, scoped to `.icon-only` only. Phone's
+equivalent (`.deal-card-dte-badge`) never had either bug -- its base
+rule already had both `justify-content: center` (no grid involved on
+Phone at all, so no `justify-self` issue either).
+
+**Stock Price modal (`#entryPriceModal`)**: "Closed Date" label ->
+"🔒 Date Closed".
+
+**Close Deal modal (`#closeDealModal`)**: "Close Date" label -> "🔒 Date
+Closed"; new `#cdEntryPrice`/`#cdClosedPrice` fields added (🏷️ Entry
+Price / 💰 Closed Price), positioned as their own `.form-grid-2
+cd-price-row` row AFTER the existing PT%/PT$ row -- matching the
+requested order (Date Closed, PT%+PT$, Entry+Closed Price) without
+needing to actually reorder anything that already existed. Both
+fields write to the SAME `deal.entryStockPrice`/`closedStockPrice` the
+Stock Price modal uses -- `openCloseModal` now also populates them,
+`submitCloseDeal` now also saves them, so editing from either modal
+stays in sync on the same deal. Unlike the Stock Price modal's
+`.single`-collapsing Closed Price (hidden while a deal's still open),
+Close Deal's price row always shows both halves -- submitting this
+particular form always results in `closed: true`, so "Closed Price"
+is never actually premature here the way it would be elsewhere.
+
+**Shared styling, both modals**:
+- All labels centered (`#entryPriceModal .form-row label,
+  #closeDealModal .form-row label { text-align: center; }`) -- reuses
+  the exact technique `#saveDealModal` already established elsewhere in
+  this file, not reinvented. This is also the first time Close Deal's
+  pre-existing "Profit Taker %"/"Profit Taker $" labels were centered --
+  an earlier round centered their INPUT text but never the labels above
+  them.
+- Date-pair "." separators hidden + `8px` gap + selects widened `68px`
+  -> `78px` -- again, the exact `#saveDealModal` pattern, applied to
+  both modals' own Date Closed row.
+- Entry/Closed Price input height `44px` -> `79px` (`44*1.8`, "expand...
+  by 80%") -- reuses the EXACT same rounded value Close Deal's own PT%/
+  PT$ fields already got a few rounds back for the identical ask, kept
+  consistent rather than computing a different number. `.total-
+  stepper`'s `top:1px/bottom:1px` absolute positioning (pre-existing)
+  means the +/- buttons stretch to match automatically.
+
+### Verified
+
+Desktop (1280px): 🗃️ button's center now measures `0,0` offset from its
+own `34x34` box's center (`getBoundingClientRect()`, both the outer
+`.deal-dte-cell` and the inner `.deal-dte-price-btn`) -- `justify-self`/
+`justify-content` both confirmed `center` via `getComputedStyle`. Close
+Deal modal (`openCloseModal`): label texts read "🔒 Date Closed" / "🏷️
+Entry Price", all 3 labels `text-align: center`, date-pair dots hidden,
+day-select `78px` wide, `#cdEntryPrice` height `79px`. Stock Price modal
+(`openEntryPriceModal`): identical measurements for its own fields.
+Screenshots of both modals visually match. Open-deal case re-checked --
+`#epDateRow`/`#epClosedRow` still correctly hide and `#epPriceRow`
+still collapses to `.single`, unaffected by this round. End-to-end
+write test: opened Close Deal for an OPEN deal, set Entry/Closed Price
+fields, called `submitCloseDeal()` directly -- deal ends up
+`closed: true` with both prices saved correctly. No console errors.
+
+**Flagged, not acted on**: while re-reading this code, the negative-
+value-prevention fix from 2 rounds ago (`stepDecimalField`'s `min`
+param wired to `,0` on the Stock Price modal's steppers, the live
+input-stripping listener, and `submitEntryPrice`'s `.replace(/-/g,'')`)
+is no longer present in the file -- `stepDecimalField` itself still
+has the `min` parameter, but nothing calls it with `0` anymore, and the
+stripping listener/replace calls are gone entirely. Not reintroduced
+this round since it's unrelated to what was actually asked and might
+reflect a deliberate hand-edit rather than an accident -- worth
+confirming with the user whether that was intentional.
+
+## Date-pair centering fix + "Missing Value" placeholder removal
+
+Explicit follow-up: "'🔒 Date Closed' is centered in the center of the
+window, but it should be centered above the 'month' field... remove
+'Missing Value' place holders from all the fields that holds this
+placeholder."
+
+**Date-pair centering, root cause**: `.date-pair` is `display:flex`,
+which is block-level -- it already spans the FULL row width, same as
+the label above it, but never had `justify-content` set, so its 3
+selects sat packed at the flex default (left edge) instead of centered
+within that same full-width box. The label's own `text-align:center`
+(added last round) WAS correctly centering against the row's full
+width -- the selects just weren't centered against that same width, so
+the two drifted apart. `justify-content: center` on `#entryPriceModal
+.date-pair, #closeDealModal .date-pair` fixes it. (With 3 equal-width
+selects, "centered above the Month field" and "the whole group
+centered" are the same axis, so one fix satisfies both phrasings of
+the ask.)
+
+**"Missing Value" placeholder removed**: from all 4 Entry/Closed Price
+inputs across both modals (`#cdEntryPrice`, `#cdClosedPrice` in Close
+Deal; `#epEntryPrice`, `#epClosedPrice` in Stock Price) -- these are
+the only "Portfolio-reachable" fields with this placeholder. Left the
+Calculator's OWN `#total`/`#limit`/`#ptPct` placeholders untouched --
+those are Calculator mode, not Portfolio, and weren't part of the ask
+("Phone portfolio mode" scoped it). Both modals are shared markup (no
+separate Phone-specific copy the way `dealRowHtml`/`dealCardHtml` are),
+so removing the attribute applies everywhere the modal opens from,
+Desktop included -- there wasn't a way to make this Phone-only without
+JS branching on the current layout for a single static HTML attribute,
+which would've been overengineering for what's being asked.
+
+### Verified
+
+Stock Price modal, `getBoundingClientRect()` on the "🔒 Date Closed"
+label vs the Month select: both measure `348px` center-X, exact match
+(previously drifted). Same measurement repeated for Close Deal's own
+Date Closed row -- identical result. All 4 price inputs'
+`.placeholder` property confirmed empty string (`""`) after the fix,
+both modals. Screenshot cross-check of Close Deal modal matches.
+No console errors.

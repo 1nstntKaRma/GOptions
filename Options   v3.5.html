@@ -1678,7 +1678,13 @@
        bigger fonts/padding/icon-button boxes from that pass are kept --
        only the PX BUDGET per column and the gaps/padding around them
        shrank, not the visual style. */
-    grid-template-columns: 120px 74px 82px 56px 60px 64px 66px 50px 62px 96px 68px 116px;
+    /* Explicit follow-up: "if a deal contains more then 6 digit total
+       strikes number it cant fit in one row" (e.g. "492.5 / 500") --
+       STRIKES (2nd track) widened 74px -> 96px. Total row width grows
+       by the same 22px (now ~1055px), still comfortably inside
+       .page-frame's 1240px cap -- see the comment above for that
+       budget's origin. */
+    grid-template-columns: 120px 96px 82px 56px 60px 64px 66px 50px 62px 96px 68px 116px;
     align-items: center;
     column-gap: 8px;
     /* Explicit follow-up: "there is plenty of space left within the blue
@@ -2202,8 +2208,36 @@
   /* Explicit follow-up: "'Entry/Closed price' when two values exist,
      remove the special background, remove border." Only once BOTH
      prices are set (.stacked, see dealDtePriceStacked()) -- the single
-     🧾 (still missing one) keeps the frame above. */
+     🗃️ (still missing one) keeps its OWN frame below instead. */
   .deal-dte-cell.closed.stacked { border: none; background: none; }
+  /* Explicit follow-up: "remove dark grey background for this button
+     🗃️, border should be a squared and not rectangle, border should
+     have DARKER grey color." Fixed 34x34 (matches .deal-actions-cell
+     .deal-icon-btn's own size -- was auto-sizing to the emoji's own
+     width/height, a rectangle since those don't match), background
+     removed, border color swapped from --legend-dte-closed-color
+     (#6b6b6b, mid-grey) to --border (#2c2c2c, this file's standard
+     darker-grey border token, already reused for this same "make it
+     darker" ask elsewhere -- see .deal-status-cell .deal-price-display
+     .missing). */
+  /* Explicit follow-up: "border is misaligned within its row, center
+     it. additionally the emoji itself isnt centered within the
+     border." 2 separate bugs -- (1) this cell is a CSS Grid item in
+     `.portfolio-row.deal-row`'s own grid (see grid-template-columns);
+     giving it a fixed 34px width above made it stop filling its (wider)
+     56px DTE column track, but grid items default to `justify-self:
+     stretch`, which for a narrower-than-track fixed-width box just
+     leaves it flush at the column's start edge, not centered --
+     `justify-self: center` fixes that. (2) the base `.deal-dte-cell`
+     rule (`display:flex; flex-direction:column; align-items:center`)
+     never set `justify-content`, so its single child (the 🗃️ button)
+     sat at the flex column's start (top) rather than the middle of the
+     now-fixed 34px height -- harmless for the OPEN state (2 lines of
+     text naturally fill the box) and the .stacked state (3 lines, same
+     reason), but visible here since it's just 1 line in a 34px box.
+     Phone's equivalent (.deal-card-dte-badge) never had this bug --
+     its own base rule already sets `justify-content: center`. */
+  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--border); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
@@ -2215,7 +2249,14 @@
      tie its specificity with the shared .blue/.red/.green utilities
      (line ~1019) and, on source order alone, override them for every
      OTHER cell in this row too. */
-  .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; }
+  /* white-space:nowrap -- explicit follow-up: STRIKES (e.g. "492.5 /
+     500") dropping into 2 rows when it ran past its column's width.
+     Column widened too (see grid-template-columns above), but this is
+     the actual guarantee -- wrapping can never silently reappear here
+     even if a future value runs long again. Safe on every other
+     .deal-metric-cell too (RATIO/MAX LOSS/MAX PROFIT/PT %/PT VALUE),
+     all short values that never wrapped anyway. */
+  .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; white-space: nowrap; }
   .deal-metric-cell.missing { color: var(--muted); font-weight: 500; }
 
   /* Explicit follow-up: "focus on centering everything" -- was left-
@@ -2679,17 +2720,56 @@
   }
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  /* Explicit follow-up: "make it a bit bulkier in height" -- Entry/
-     Closed Price row in the Stock Price modal, a touch taller than the
-     plain .form-grid-2 rows elsewhere (Close Deal's PT%/PT$) so the 2
-     side-by-side steppers read as a deliberately bigger pair of fields,
-     not just a cramped variant of the same row style. "Window should
-     remain compact... low res phones" -- kept to padding only (no
-     min-height), stays compact if content is compact. .single (deal
-     still open, Closed Price hidden) collapses back to 1 column so
-     Entry Price isn't left stranded in a half-width box. */
-  .ep-price-row .form-row { padding: 6px 0; }
+  /* Explicit follow-up: "expand height of these fields downwards by
+     80%, they are too thin" -- Entry/Closed Price in BOTH the Stock
+     Price modal (#epEntryPrice/#epClosedPrice) and the Close Deal modal
+     (#cdEntryPrice/#cdClosedPrice, new this round). Same 44px -> 79px
+     math (44*1.8 = 79.2, rounded) already established for Close Deal's
+     Profit Taker %/$ fields a few rounds back (see #closeDealModal
+     #cdPtPct/#cdPtVal) -- reused here for consistency rather than
+     picking a different number. .total-stepper's own top:1px/bottom:1px
+     absolute positioning (see its base rule) means the stepper +/-
+     buttons stretch to match automatically, no separate height rule
+     needed for them. .single (Stock Price modal, deal still open,
+     Closed Price hidden) collapses back to 1 column so Entry Price
+     isn't left stranded in a half-width box -- Close Deal's own price
+     row has no such state, both halves always show (see its own HTML
+     comment for why). */
+  .ep-price-row #epEntryPrice, .ep-price-row #epClosedPrice,
+  .cd-price-row #cdEntryPrice, .cd-price-row #cdClosedPrice { height: 79px; }
   .ep-price-row.single { grid-template-columns: 1fr; }
+  /* Explicit follow-up: "(Centered above the field)" -- every label in
+     both modals, plus the pre-existing Profit Taker %/$ labels in Close
+     Deal which were never centered in an earlier round (only their
+     INPUT text was, see #closeDealModal #cdPtPct/#cdPtVal above). Same
+     technique #saveDealModal already established elsewhere in this
+     file (see its own rule above) -- reused, not reinvented. */
+  #entryPriceModal .form-row label,
+  #closeDealModal .form-row label { text-align: center; }
+  /* Explicit follow-up: "remove weird '.' between date values fields.
+     have some spacing between them, and expand each of these fields to
+     be a bit more wider horizontally." Same "." hide + gap technique
+     #saveDealModal's own date-pair already uses (see its rule above) --
+     applied to both modals' Date Closed row. Select width bumped from
+     the shared base 68px -> 78px ("a bit more wider"). */
+  #entryPriceModal .date-pair span,
+  #closeDealModal .date-pair span { display: none; }
+  /* Explicit follow-up: "'🔒 Date Closed' is centered in the center of
+     the window, but it should be centered above the 'month' field."
+     Root cause -- `.date-pair` is `display:flex` (block-level, so it
+     already spans the FULL row width, same as the label above it), but
+     never set `justify-content`, so its 3 selects sat packed at the
+     LEFT edge (the flex default) while the label's own text-align:
+     center centered against that same full row width -- 2 different
+     effective centers. `justify-content: center` centers the selects
+     as a group within that same full-width box instead, so both land
+     on the identical axis. (With 3 equal-width selects, centering the
+     GROUP and centering above just the middle one -- Month -- are the
+     same axis, so this satisfies the ask exactly as stated.) */
+  #entryPriceModal .date-pair,
+  #closeDealModal .date-pair { gap: 8px; justify-content: center; }
+  #entryPriceModal .date-pair select,
+  #closeDealModal .date-pair select { width: 78px; }
 
   /* Ticker/Title are optional identifiers, not primary trade parameters --
      smaller and pushed to the bottom of the form so Total/Limit/PT% (which
@@ -4073,8 +4153,11 @@
          a new one. -->
     <p class="cd-strikes-info">Buy Strike (Price): <b id="cdBuyPrice">—</b>&nbsp;&nbsp;&nbsp;Sell Strike (Price): <b id="cdSellPrice">—</b></p>
 
+    <!-- Explicit follow-up: "🔒 Date Closed (Centered above the field)"
+         -- label text + centering, same as the Stock Price modal's own
+         Closed Date row (see #entryPriceModal, #epDateRow). -->
     <div class="form-row">
-      <label for="cdDateDay">Close Date</label>
+      <label for="cdDateDay">&#128274; Date Closed</label>
       <div class="date-pair">
         <select id="cdDateDay"></select>
         <span>.</span>
@@ -4101,6 +4184,39 @@
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker $" onclick="stepCdPtVal('up')">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker $" onclick="stepCdPtVal('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explicit follow-up: "add everything discussed above [Stock
+         Price modal's Entry/Closed Price fields] to the Close Deal
+         window... under this order: Date Closed / Profit Taker %+$ /
+         Entry Price+Closed Price." New here -- writes to the SAME
+         deal.entryStockPrice/closedStockPrice fields the Stock Price
+         modal (#entryPriceModal) already does, so editing from either
+         modal stays in sync. Always both visible (unlike #epPriceRow's
+         .single collapse) -- submitting THIS form always results in
+         closed:true, so "Closed Price" is never actually premature
+         here the way it would be while a deal's still open. -->
+    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
+      <div class="form-row">
+        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdEntryPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="cdClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -4133,7 +4249,7 @@
          shown for a deal that's actually closed (see openEntryPriceModal),
          same as the Closed Price field below always has been. -->
     <div class="form-row" id="epDateRow">
-      <label for="epDateDay">Closed Date</label>
+      <label for="epDateDay">&#128274; Date Closed</label>
       <div class="date-pair">
         <select id="epDateDay"></select>
         <span>.</span>
@@ -4153,20 +4269,20 @@
       <div class="form-row">
         <label for="epEntryPrice">&#127991;&#65039; Entry Price</label>
         <div class="total-stepper-wrap">
-          <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <input id="epEntryPrice" type="text" inputmode="decimal" />
           <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2,0)">&#8722;</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
           </div>
         </div>
       </div>
       <div class="form-row" id="epClosedRow">
         <label for="epClosedPrice">&#128176; Closed Price</label>
         <div class="total-stepper-wrap">
-          <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+          <input id="epClosedPrice" type="text" inputmode="decimal" />
           <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2,0)">&#8722;</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -5543,8 +5659,11 @@
   function dealDtePriceCellHtml(deal) {
     const hasEntry = !!deal.entryStockPrice;
     const hasClosed = !!deal.closedStockPrice;
+    // Explicit follow-up: "change all instances of this emoji 🧾 into
+    // this emoji 🗃️." Only functional occurrence of 🧾 in the file --
+    // this is the missing-value icon shown here.
     if (!hasEntry || !hasClosed) {
-      return `<button type="button" class="deal-dte-price-btn" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">\u{1F9FE}</button>`;
+      return `<button type="button" class="deal-dte-price-btn" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">\u{1F5C3}\u{FE0F}</button>`;
     }
     return `<button type="button" class="deal-dte-price-btn stacked" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price"><span class="deal-dte-price-val">\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}</span><span class="deal-dte-price-val">\u{1F4B0} $${formatStockPrice(deal.closedStockPrice)}</span></button>`;
   }
@@ -5616,8 +5735,10 @@
     // Explicit follow-up: "'Entry/Closed price' when two values exist,
     // remove the special background, remove border." .stacked strips
     // .deal-dte-cell.closed's frame back off (see CSS) ONLY once both
-    // prices are set -- the single 🧾 (still missing one) keeps it.
-    const dteCellClass = isClosed ? (dealDtePriceStacked(deal) ? ' closed stacked' : ' closed') : '';
+    // prices are set. .icon-only (still missing one, the 🗃️ button) gets
+    // its own squared/no-background/darker-border treatment instead --
+    // same modifier name/pattern already used on Phone's equivalent cell.
+    const dteCellClass = isClosed ? (dealDtePriceStacked(deal) ? ' closed stacked' : ' closed icon-only') : '';
 
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
@@ -6319,6 +6440,11 @@
     applyDateToPair('cdDateMonth', 'cdDateDay', 'cdDateYear', deal.closeDate || todayStr());
     document.getElementById('cdPtPct').value = deal.closed ? deal.closePtPct : (deal.ptPct || '');
     cdSyncFromPct();
+    // New this round -- Entry/Closed Price fields added to Close Deal,
+    // same underlying deal.entryStockPrice/closedStockPrice the Stock
+    // Price modal (#entryPriceModal) already reads/writes.
+    document.getElementById('cdEntryPrice').value = deal.entryStockPrice || '';
+    document.getElementById('cdClosedPrice').value = deal.closedStockPrice || '';
     document.getElementById('closeDealModal').classList.remove('hidden');
     // Explicit follow-up: same fix as openSaveModal() above -- "pressing
     // 'Deal' button, or 'Close Deal' button = phone is defaulting into
@@ -6340,6 +6466,8 @@
     deal.closed = true;
     deal.closeDate = composeDateMD(document.getElementById('cdDateMonth'), document.getElementById('cdDateDay'), document.getElementById('cdDateYear'));
     deal.closePtPct = String(sanitizePtPct(document.getElementById('cdPtPct').value));
+    deal.entryStockPrice = document.getElementById('cdEntryPrice').value.trim();
+    deal.closedStockPrice = document.getElementById('cdClosedPrice').value.trim();
     deal.updatedTs = Date.now();
     delete deal.exitValue;
     clearResolved(deal.id);
@@ -6383,19 +6511,6 @@
    * (see the modal's own HTML comment for why it's hidden, not absent). */
   let entryPriceDealId = null;
 
-  // Explicit follow-up: "Entry/Closed Stock Price can be thrown to minus
-  // values during edit, but wont display the negative value. add a
-  // stronger fix that wont allow negative values even when editing."
-  // The stepper's own `min:0` (see its onclick calls in the HTML) stops
-  // the +/- buttons, but not someone typing "-5" directly -- this strips
-  // any minus sign LIVE, on every keystroke/paste, so a negative value
-  // can never exist in either field at all, not just at submit time.
-  ['epEntryPrice', 'epClosedPrice'].forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
-      if (this.value.includes('-')) this.value = this.value.replace(/-/g, '');
-    });
-  });
-
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -6419,13 +6534,9 @@
     e.preventDefault();
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
-    // .replace(/-/g, '') here too, belt-and-suspenders with the live
-    // input-stripping above -- guarantees a negative sign can never
-    // reach storage even if it somehow got into the field some other
-    // way (e.g. a value restored from an older save/import).
-    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim().replace(/-/g, '');
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
     if (deal.closed) {
-      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim().replace(/-/g, '');
+      deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
     }
     deal.updatedTs = Date.now();
