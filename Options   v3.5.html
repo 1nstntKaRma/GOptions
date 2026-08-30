@@ -196,18 +196,26 @@
     --legend-profitTaker-bg: transparent;
     --legend-metric-icon-size: 22px;
 
-    /* -- Portfolio deal-row action icons: Close / Edit / Delete -- */
+    /* -- Portfolio deal-row action icons: Close / Edit / Delete / Reopen -- */
     --legend-dealClose-color: #b46c00;
     --legend-dealClose-bg: var(--panel);
     --legend-dealEdit-color: var(--text);   /* card-view border stays var(--border) -- see NOTES.md */
     --legend-dealEdit-bg: var(--panel);
     --legend-dealDelete-color: var(--red);
     --legend-dealDelete-bg: var(--panel);
+    /* New: Reopen (♻️) frame -- replaces the Close (🔒) action once a
+       deal is closed, same squircle-button treatment, own color. */
+    --legend-dealReopen-color: #0a8f3c;
+    --legend-dealReopen-bg: var(--panel);
     --legend-deal-icon-size-table: 15px;  /* desktop table row (bare, no button box) */
     --legend-deal-icon-size-card: 16px;   /* phone card (bordered button box) */
     /* Explicit follow-up: "change DTE font into STRONG ORANGE, this is
        too pale." #e8963c (muted amber) -> #ff7a00 (vivid/saturated). */
     --legend-dte-color: #c85701;  /* Desktop Portfolio table DTE number + "Days" label */
+    /* New: once closed, DTE shows 🔒 instead of the day count -- own
+       frame color, independent of the open-state DTE color above. */
+    --legend-dte-closed-color: #6b6b6b;
+    --legend-dte-closed-bg: var(--panel);
 
     /* -- P/L graph (Calculator mode's Max Loss/Max Profit bar chart) -- */
     --legend-graph-loss-bg: #6e0000;
@@ -1768,14 +1776,43 @@
      above. */
   .deal-cards-mobile.has-closed-deals { top: var(--portfolio-dealsClosed-phone-y); }
 
+  /* Explicit follow-up: "8 cell mesh layout, smaller gaps and spacing
+     form lateral sides... lower frames external and internal spacing
+     are smaller." Lateral padding 14px -> 11px, margin-bottom 12px ->
+     9px; the 2 metric grids' own gap/padding are tightened separately,
+     see .deal-card-metrics/.deal-card-metric further down.
+     position:relative -- new containing block for .deal-card-border-
+     badge (straddles the top border, see its own rule), which didn't
+     exist before this round. */
   .deal-card {
+    position: relative;
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
+    padding: 12px 11px;
+    margin-bottom: 9px;
     background: var(--panel);
   }
   .deal-card.open { border-color: var(--blue); }
+  /* Explicit follow-up: "new space efficient... label ('OPEN'/'CLOSED')
+     attached to border of the relevant deal." Straddles the card's own
+     1px top border -- half the badge's own height above it. background
+     needed now (base .badge never set one) since it's no longer purely
+     inside the card's own fill; var(--bg) matches the page background
+     the OUTER half sits over (the inner half, over var(--panel), reads
+     close enough to identical -- the 2 tones are only a few RGB steps
+     apart). */
+  /* Explicit follow-up: "'CLOSED' label should be centered above stock
+     'TICKER'." 14px -> 24px -- ticker text (26px bold) starts at the
+     card's own 11px padding, so this is a fixed nudge toward its rough
+     visual center for a typical 4-5 letter ticker, not a per-instance
+     measurement against each deal's actual ticker width (that would
+     need live JS layout per card; this is a reasonable single value
+     instead). Retune this number directly if it still reads off for
+     your actual tickers. */
+  .deal-card-border-badge { position: absolute; top: -10px; left: 24px; display: flex; align-items: center; gap: 6px; }
+  .deal-card .badge { background: var(--bg); }
+  /* Explicit follow-up: "(WITHOUT A BACKGROUND BEHIND THE VALUE)." */
+  .deal-card-close-date { font-size: 11px; color: var(--muted); padding: 0 2px; }
 
   /* Ticker ~2x the base .deal-name size (was inheriting a plain 14px) --
      scoped to .deal-card so the wide grid's own .deal-ticker (shared
@@ -1811,13 +1848,34 @@
 
 .deal-card-dte-badge .dte-num { font-size: 16px; font-weight: 700; line-height: 1; }
 .deal-card-dte-badge .dte-label { font-size: 11px; line-height: 1; color: var(--muted); }
-  /* Reopen arrow stacked above the CLOSED badge, centered -- same
-     technique as the wide grid's .deal-status-cell (flex-direction:
-     column), just under its own wrapper here since this badge sits
-     inline with the DTE badge/actions rather than in a column of its
-     own already. */
-  .deal-card-status-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  /* Explicit follow-up: "upon closing a deal current 'DTE' value... will
+     now show 🔒." Recolors the SAME box (own Legend frame color) instead
+     of nesting a second bordered box inside it. */
+  .deal-card-dte-badge.closed { border-color: var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); }
 
+  /* Explicit follow-up (corrected): "Entry/Closed stock price seems
+     wrong... should display centered within the blue/grey frame,
+     without a background, above the '3 Buttons'." First pass put the
+     price line as a normal flex child ABOVE .deal-card-actions in this
+     column -- looked wrong because the price text ("$491.20 - $503.75")
+     is often WIDER than the 3-icon row (~118px), which stretched this
+     whole stack to the price's own width and dragged the icon row's
+     centering (and the rest of .deal-card-header-right beside it) along
+     with it. Fixed by taking the price OUT of normal flow entirely:
+     this container just wraps the icon row now (back to its own natural
+     ~118px width), position:relative as the anchor for the price line,
+     which is absolutely positioned above it (see .deal-card-actions-
+     stack .deal-price-display) and centered independent of its own
+     text width. */
+  .deal-card-actions-stack { position: relative; }
+  .deal-card-actions-stack .deal-price-display {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
   .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; }
   /* Same square-rounded follow-up as the 3 top-bar icon buttons above --
      8px here instead of their 14px, scaled down for this box's smaller
@@ -1837,17 +1895,29 @@
   }
   .deal-card-actions .deal-icon-btn.close { border-color: var(--legend-dealClose-color); background: var(--legend-dealClose-bg); }
   .deal-card-actions .deal-icon-btn.delete { border-color: var(--legend-dealDelete-color); background: var(--legend-dealDelete-bg); }
-  /* Explicit follow-up: "slightly bigger 'reopen button'." 15px -> 17px
-     here (Phone card view); the desktop table-row version further down
-     goes 13px -> 15px, same +2px step. */
-  .deal-card-status-block .deal-icon-btn {
-    background: none;
-    border: none;
-    font-size: 17px;
-    padding: 0;
-  }
+  /* Explicit follow-up: "'close deal' button (🔒) will now change into
+     Reopen Deal button... Green Frame." Same squircle box, new color. */
+  .deal-card-actions .deal-icon-btn.reopen { border-color: var(--legend-dealReopen-color); background: var(--legend-dealReopen-bg); }
 
-  .deal-card-metrics {
+  /* Shared by dealRowHtml (Desktop) and dealCardHtml (Phone) --
+     dealPriceDisplayHtml() in the script emits one of these 2 classes.
+     Plain text button, no frame -- matches the reference image (no box
+     around "$378.15", just colored text). */
+  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; }
+  .deal-price-display.blue { color: var(--blue); }
+  .deal-price-display.grey { color: var(--muted); }
+
+  /* Explicit follow-up: "Mesh/Cells design is still separated into 2
+     rows of 4, there is no reason doing this... group this into a
+     unified mesh field of 8 cells, better using the space, while
+     haveing less 'spacing' from every item." Was 2 separate grids (own
+     border/background/margin-top each, a visible gap between them) --
+     ONE grid now, 8 `.deal-card-metric` children, 4 columns wraps them
+     into 2 rows automatically (no grid-template-rows needed). Renamed
+     from .deal-card-metrics (no longer used anywhere, see grep before
+     assuming otherwise) to make the "one mesh, not two boxes" change
+     obvious at the call site too. */
+  .deal-card-metrics-mesh {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1px;
@@ -1855,11 +1925,15 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    margin-top: 10px;
+    margin-top: 8px;
   }
+  /* Explicit follow-up: "8 cell mesh layout, smaller gaps and spacing
+     form lateral sides." Lateral padding 6px -> 4px; vertical 10px ->
+     8px this round (less "spacing from every item", reinforcing the
+     same ask). */
   .deal-card-metric {
     background: var(--bg);
-    padding: 10px 6px;
+    padding: 8px 4px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -1958,11 +2032,17 @@
      never made into one, not something toggled on/off per deal. */
   button.badge-open { cursor: pointer; }
   .badge-closed { color: var(--muted); }
-  /* Reopen arrow stacked above the CLOSED badge, not beside it -- the
-     STATUS column was narrowed and a side-by-side badge+button no longer
-     fit comfortably. */
+  /* Reopen used to stack here too (above CLOSED) -- moved into
+     .deal-actions-cell (replaces Close there once closed), per "remove
+     original 'reopen deal' small white arrow above 'CLOSED' label."
+     This cell is now just the badge, plus the new Date Closed line
+     below it once closed. */
   .deal-status-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .deal-status-cell .deal-icon-btn { padding: 0; font-size: 15px; }
+  /* Explicit follow-up: "should be displayed... above the 'OPEN/CLOSED'
+     label" -- font a touch smaller than the Phone version (11px vs
+     13px) since this column is narrower; still the same background:none
+     from the shared base rule. */
+  .deal-status-cell .deal-price-display { font-size: 11px; margin-bottom: 1px; }
   /* Explicit follow-up: "Desktop Mode - Portfolio redesign" -- the OPEN
      badge in the reference image reads as a chunkier bordered rectangle,
      not the thin 20px-radius pill the shared .badge base rule gives it.
@@ -1974,6 +2054,23 @@
     padding: 6px 16px;
     border-width: 1.5px;
   }
+  /* Explicit follow-up: "'CLOSED' under status column must be
+     vertically centered." Dropped the earlier margin-top:-10px "push
+     upwards" -- that was fighting .portfolio-row's own align-items:
+     center instead of just letting it center the (now taller, price+
+     badge+date) block naturally, which is what actually looks right.
+     Matches .badge-open's own size bump above (was the plain 10px/2px
+     7px .badge base). */
+  .deal-status-cell .badge-closed {
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-width: 1.5px;
+  }
+  /* Explicit follow-up: "bigger font, colored the... more whitelike
+     color instead of grey." var(--muted) (#646464) -> var(--text)
+     (#9c9c9c); 11px -> 13px. */
+  .deal-status-close-date { font-size: 13px; color: var(--text); margin-top: 2px; }
 
   /* DATE column removed (folded into .deal-ticker-dates, see above) --
      .deal-dates-cell is no longer used by dealRowHtml. */
@@ -1984,6 +2081,11 @@
      a new hand-editable Legend token (see :root), same pattern as the
      dealClose/dealEdit/dealDelete colors above it. */
   .deal-dte-cell { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+  /* Explicit follow-up: "upon closing a deal current 'DTE' value... will
+     now show 🔒." A thin frame (own Legend color) around the icon --
+     the cell never had a border before (open state still doesn't), this
+     is new only for the closed state. */
+  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 8px; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
@@ -2009,7 +2111,15 @@
      justify-content:space-between on the row itself (see grid-template-
      columns above) already gives this column its own breathing room on
      both sides, so flush-right no longer serves a purpose. */
-  .deal-actions-cell { display: flex; gap: 6px; justify-content: center; }
+  /* Explicit follow-up (corrected): "Entry/Closed stock price seems
+     wrong... should be displayed... above the 'OPEN/CLOSED' label" --
+     moved to .deal-status-cell instead (see dealRowHtml()), so this
+     cell is back to being just the 3-icon row, same as before that
+     detour. .deal-actions-row is a leftover wrapper from that attempt,
+     kept only because the markup still nests the 3 buttons inside it --
+     harmless, but the ACTUAL row styling now lives here again. */
+  .deal-actions-cell { display: flex; align-items: center; justify-content: center; }
+  .deal-actions-row { display: flex; gap: 6px; justify-content: center; }
   .deal-icon-btn {
     background: none; border: none; cursor: pointer; font-size: var(--legend-deal-icon-size-table);
     padding: 3px 5px; line-height: 1; color: var(--legend-dealEdit-color); border-radius: 6px;
@@ -2051,6 +2161,13 @@
   .deal-actions-cell .deal-icon-btn.delete {
     border-color: var(--legend-dealDelete-color);
     background: var(--legend-dealDelete-bg);
+  }
+  /* Explicit follow-up: "'close deal' button (🔒) will now change into
+     Reopen Deal button... Green Frame." Same dark-fill-plus-colored-
+     border treatment as Close/Delete above, own color. */
+  .deal-actions-cell .deal-icon-btn.reopen {
+    border-color: var(--legend-dealReopen-color);
+    background: var(--legend-dealEdit-bg);
   }
 
   /* ---------- modal ---------- */
@@ -3874,6 +3991,47 @@
   </form>
 </div>
 
+<!-- Explicit follow-up: "Entry $"/"Entry $ - CLOSED $" stock-price
+     display, both Portfolio modes -- clicking it opens this, "similar to
+     (Close deal popup)... they must utilize the SAME popup window, leave
+     room for second parameter title & field below the 1st one in
+     advance." One modal handles both cases: #epClosedRow (Closed Stock
+     Price) is always in the DOM, just hidden via CSS unless the deal
+     being edited is closed (see openEntryPriceModal()) -- not built
+     dynamically per open, matching "in advance". Steppers reuse
+     stepDecimalField() (already generic, already used for Buy/Sell
+     Price in the Save Deal modal) at 0.01/2 decimals, same as asked. -->
+<div id="entryPriceModal" class="modal-backdrop hidden">
+  <form class="modal-panel" onsubmit="submitEntryPrice(event)">
+    <h2>Stock Price</h2>
+    <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
+    <div class="form-row">
+      <label for="epEntryPrice">Entry Stock Price</label>
+      <div class="total-stepper-wrap">
+        <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+        <div class="total-stepper total-stepper-sm">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row" id="epClosedRow">
+      <label for="epClosedPrice">Closed Stock Price</label>
+      <div class="total-stepper-wrap">
+        <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+        <div class="total-stepper total-stepper-sm">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeEntryPriceModal()">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
 <!-- Explicit follow-up: pressing "Deal" while editing an existing deal
      (opened via its OPEN badge, see openDealInCalculator() in the
      script) pops this "compact notification" instead of the full Save
@@ -3929,7 +4087,7 @@
     dealClose:           '\u{1F512}',  // 🔒 Deal Row: Close / Update Close
     dealEdit:            '✎',          // Deal Row: Edit
     dealDelete:          '✕',          // Deal Row: Delete
-    dealReopen:          '↺',          // Deal Row: Reopen a closed deal (was hardcoded, excluded from an earlier round -- now included per "all the emojis")
+    dealReopen:          '\u{267B}\u{FE0F}', // ♻️ Deal Row: Reopen a closed deal (was ↺)
     // Hamburger menu items -- hamburgerPhoneMode/hamburgerDesktopMode and
     // hamburgerLockDisplay/hamburgerUnlockDisplay are destination-icon
     // pairs (matching the mode-toggle convention above): each shows what
@@ -5189,18 +5347,48 @@
   // CSS class, so the browser computes identical column tracks for all of
   // them -- unlike the Tkinter build, no manual per-column width-sync pass
   // is needed on this side.
+
+  // Shared by dealRowHtml (Desktop) and dealCardHtml (Phone) -- both
+  // want the exact same "Entry $"/"Entry $ - Closed $" button, just
+  // positioned differently by each layout's own CSS. Missing-value
+  // placeholders ("Entry $"/"Closed $") double as the button's own
+  // label until a real value exists, per the reference image/example --
+  // once set, the placeholder is replaced by the actual "$X.XX".
+  function dealPriceDisplayHtml(deal) {
+    const entryTxt = deal.entryStockPrice ? `$${escapeHtml(deal.entryStockPrice)}` : 'Entry $';
+    if (!deal.closed) {
+      return `<button type="button" class="deal-price-display blue" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry Stock Price">${entryTxt}</button>`;
+    }
+    const closedTxt = deal.closedStockPrice ? `$${escapeHtml(deal.closedStockPrice)}` : 'Closed $';
+    return `<button type="button" class="deal-price-display grey" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">${entryTxt} - ${closedTxt}</button>`;
+  }
+
   function dealRowHtml(deal) {
     const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
     const isClosed = !!deal.closed;
+    // Explicit follow-up: "remove original 'reopen deal' small white
+    // arrow above 'CLOSED' label" -- reopen used to be stacked in THIS
+    // cell, above the CLOSED span (same pattern Phone had, see
+    // dealCardHtml()). Moved into .deal-actions-cell instead (replaces
+    // Close there once closed, see closeOrReopenBtn below) -- this cell
+    // is now just the badge plus, once closed, the new Date Closed line
+    // ("Desktop Portfolio - below 'CLOSED' label 'Date Closed'...").
     const badge = isClosed
-      ? `<button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span>`
+      ? `<span class="badge badge-closed">CLOSED</span><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
       : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+    // Explicit follow-up: "'close deal' button (🔒) will now change into
+    // Reopen Deal button... Green Frame." Same slot in .deal-actions-
+    // cell, icon/handler/frame swap -- see .deal-actions-cell .deal-icon-
+    // btn.reopen. Same trade-off note as the Phone version: this removes
+    // this button's "Update Close" job for already-closed deals (Edit
+    // still only opens ticker/strikes, not Close Deal's own fields).
+    const closeOrReopenBtn = isClosed
+      ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
+      : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
     // Deal action icons -- emoji comes from dealIconGlyph() (reads
     // BUTTON_EMOJIS, see the LEGEND section in the script below), not a
     // hardcoded literal, so editing BUTTON_EMOJIS takes effect on the
-    // very next renderPortfolio() call. Reopen's own glyph above
-    // deliberately stays fixed -- it isn't in BUTTON_EMOJIS, but it
-    // DOES share dealEdit's --legend-dealEdit-color.
+    // very next renderPortfolio() call.
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     // Only show the title alongside the ticker if it's a REAL, distinct
     // title -- a blank Title used to get silently defaulted to the ticker
@@ -5223,7 +5411,11 @@
     // deal's original start-to-expiry span, which is what the Save/Edit
     // form's DTE field computes FROM instead of what this displays).
     const dte = daysBetween(todayStr(), deal.expiryDate);
-    const dteCell = dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—';
+    // Explicit follow-up: "upon closing a deal current 'DTE' value...
+    // will now show 🔒." .deal-dte-cell.closed gets its own frame color
+    // (see CSS) -- same technique as Phone's .deal-card-dte-badge.closed,
+    // same underlying Legend tokens.
+    const dteCell = isClosed ? dealIconGlyph('dealClose') : (dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—');
 
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
@@ -5258,8 +5450,11 @@
           <div class="deal-ticker-dates">${escapeHtml(formatDateDisplay(deal.startDate) || '—')} - ${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</div>
         </div>
         <div class="deal-metric-cell">${strikesCell}</div>
-        <div class="deal-status-cell">${badge}</div>
-        <div class="deal-dte-cell">${dteCell}</div>
+        <div class="deal-status-cell">
+          ${dealPriceDisplayHtml(deal)}
+          ${badge}
+        </div>
+        <div class="deal-dte-cell${isClosed ? ' closed' : ''}">${dteCell}</div>
         <b class="deal-metric-cell blue">${truncate2(m.ratio)}%</b>
         <b class="deal-metric-cell red">${money0(m.maxLoss)}</b>
         <b class="deal-metric-cell green">${money0(m.maxProfit)}</b>
@@ -5271,9 +5466,11 @@
         </div>
         ${plCell}
         <div class="deal-actions-cell">
-          <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
-          <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
-          <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+          <div class="deal-actions-row">
+            ${closeOrReopenBtn}
+            <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+            <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+          </div>
         </div>
       </div>`;
   }
@@ -5290,12 +5487,21 @@
   // fully independent" design (see the CSS comment above .deal-cards-
   // mobile) exists to avoid. A few duplicated lines here is the accepted
   // cost of that isolation.
+  // Explicit follow-up: "Phone Portfolio - Redesign overhaul!" OPEN/
+  // CLOSED badge moves off the header row and onto the card's own top
+  // border (see .deal-card-border-badge); Closed deals get their close
+  // date adjacent to it, on the border too ("adjacent to it on the
+  // left"). Old .deal-card-status-block (reopen arrow stacked above
+  // CLOSED) is gone -- reopen is now a normal action-row icon (see
+  // below), no longer needs its own separate slot near the badge.
   function dealCardHtml(deal) {
     const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
     const isClosed = !!deal.closed;
-    const badge = isClosed
-      ? `<div class="deal-card-status-block"><button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span></div>`
-      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+    // Explicit follow-up: "closing date shouuld be displayed to the
+    // right side of the closed label" -- was date-then-CLOSED, swapped.
+    const borderBadge = isClosed
+      ? `<div class="deal-card-border-badge"><span class="badge badge-closed">CLOSED</span><span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></div>`
+      : `<div class="deal-card-border-badge"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
     const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();
@@ -5303,8 +5509,23 @@
       ? `<span class="deal-title-text">${escapeHtml(title)}</span>`
       : (deal.ticker ? '' : `<span class="deal-title-text">Untitled Deal</span>`);
     const strikesCell = `${escapeHtml(deal.strikeBuy || '—')} / ${escapeHtml(deal.strikeSell || '—')}`;
+    // Explicit follow-up: "upon closing a deal current 'DTE' value...
+    // will now show 🔒 instead of original value." .closed modifier
+    // recolors the SAME badge box (own Legend frame color) rather than
+    // nesting a second bordered box inside it.
     const dte = daysBetween(todayStr(), deal.expiryDate);
-    const dteText = dte != null ? `<span class="dte-num">${dte}</span><span class="dte-label">Days</span>` : '—';
+    const dteText = isClosed ? dealIconGlyph('dealClose') : (dte != null ? `<span class="dte-num">${dte}</span><span class="dte-label">Days</span>` : '—');
+    // Explicit follow-up: "'close deal' button (🔒) will now change into
+    // Reopen Deal button" once closed -- same action-row slot, icon/
+    // handler/frame color swap instead of the old separate reopen-arrow
+    // element. Trade-off flagged, not silently dropped: this removes
+    // this button's other job ("Update Close", editing the recorded
+    // close date/PT% after the fact) for closed deals -- Edit (pencil)
+    // still opens the ticker/strikes editor only, not Close Deal's own
+    // fields. Say if that access needs to live somewhere else.
+    const closeOrReopenBtn = isClosed
+      ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
+      : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
 
     let ptPctCell, ptValueCell, plHtml;
     if (isClosed) {
@@ -5322,28 +5543,35 @@
 
     return `
       <div class="deal-card ${isClosed ? '' : 'open'}">
+        ${borderBadge}
         <div class="deal-card-header">
           <div class="deal-card-title-block">
             <div class="deal-name">${tickerHtml} <span class="deal-card-strikes">${strikesCell}</span></div>
             <div class="deal-sub">${escapeHtml(deal.spreadType || '')}${showTitle ? ' &middot; ' + titleHtml : ''}</div>
           </div>
           <div class="deal-card-header-right">
-            <span class="deal-card-dte-badge">${dteText}</span>
-            ${badge}
-            <div class="deal-card-actions">
-              <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
-              <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
-              <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+            <span class="deal-card-dte-badge${isClosed ? ' closed' : ''}">${dteText}</span>
+            <div class="deal-card-actions-stack">
+              ${dealPriceDisplayHtml(deal)}
+              <div class="deal-card-actions">
+                ${closeOrReopenBtn}
+                <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+                <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="deal-card-metrics">
+        <!-- Explicit follow-up: "Mesh/Cells design is still separated
+             into 2 rows of 4, there is no reason doing this... group
+             this into a unified mesh field of 8 cells." Was 2 separate
+             .deal-card-metrics grids (own border+background each,
+             margin-top gap between them) -- now ONE grid, 8 cells,
+             styled by .deal-card-metrics-mesh (see CSS). -->
+        <div class="deal-card-metrics-mesh">
           <div class="deal-card-metric"><span class="deal-card-metric-label">Ratio</span><span class="deal-card-metric-value blue">${truncate2(m.ratio)}%</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">Max Loss</span><span class="deal-card-metric-value red">${money0(m.maxLoss)}</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">Max Profit</span><span class="deal-card-metric-value green">${money0(m.maxProfit)}</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">PT %</span><span class="deal-card-metric-value blue">${ptPctCell}</span></div>
-        </div>
-        <div class="deal-card-metrics">
           <div class="deal-card-metric deal-card-metric-stacked">
             <span class="deal-card-metric-label">Start</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.startDate) || '—')}</span>
             <span class="deal-card-metric-label">Expiry</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</span>
@@ -5924,6 +6152,42 @@
     deal.closed = false;
     deal.updatedTs = Date.now();
     clearResolved(id);
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  /* ---------- entry/closed stock price (reference only) ----------
+   * "Entry $"/"Entry $ - CLOSED $" display, both Portfolio modes. Same
+   * open/close/submit shape as openCloseModal() above -- global id
+   * tracks which deal is being edited, submit writes back + re-renders +
+   * pushes to Drive. #epClosedRow only shown for deals already closed
+   * (see the modal's own HTML comment for why it's hidden, not absent). */
+  let entryPriceDealId = null;
+
+  function openEntryPriceModal(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    entryPriceDealId = id;
+    document.getElementById('epDealName').textContent = dealDisplayName(deal);
+    document.getElementById('epEntryPrice').value = deal.entryStockPrice || '';
+    document.getElementById('epClosedPrice').value = deal.closedStockPrice || '';
+    document.getElementById('epClosedRow').hidden = !deal.closed;
+    document.getElementById('entryPriceModal').classList.remove('hidden');
+  }
+
+  function closeEntryPriceModal() {
+    document.getElementById('entryPriceModal').classList.add('hidden');
+    entryPriceDealId = null;
+  }
+
+  function submitEntryPrice(e) {
+    e.preventDefault();
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
+    if (deal.closed) deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
+    deal.updatedTs = Date.now();
+    closeEntryPriceModal();
     renderPortfolio();
     pushToDriveDebounced();
   }

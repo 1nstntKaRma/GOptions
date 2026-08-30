@@ -7204,3 +7204,158 @@ moved to exactly `-40px`, independent of the original knob (left at its
 0px default throughout). Same test on Phone
 (`--portfolio-dealsClosed-phone-y: -15px` -> `#dealCardsMobile`'s `top`
 exactly `-15px`, `has-closed-deals` class present). No console errors.
+
+## Portfolio redesign: badge-on-border, Entry/Closed stock price, reopen/DTE-lock icons
+
+Large round, planned with the user first (2 reference images -- a low-
+res-phone bug report, then a desired mockup) before any code. One
+clarifying question asked (Desktop had no mockup for the new price
+display -- confirmed: stacked above the 3 action icons, same idea as
+Phone). Everything else implemented directly per explicit instructions,
+verified live, flagged in comments where a judgment call was made.
+
+**New Legend tokens** (`:root`): `--legend-dealReopen-color/-bg` (green
+frame for the reopen action once closed), `--legend-dte-closed-color/-bg`
+(frame around the 🔒 that replaces DTE once closed). `BUTTON_EMOJIS.
+dealReopen` changed from `↺` to `♻️`.
+
+**New shared helper** `dealPriceDisplayHtml(deal)` -- one function, used
+by both `dealRowHtml` (Desktop) and `dealCardHtml` (Phone), returns the
+"Entry $"/"Entry $ - Closed $" button (missing values fall back to
+`Entry $`/`Closed $` as their own placeholder label, per the reference
+image's before/after example). Colored blue while open, grey once
+closed.
+
+**New Entry/Closed stock price feature**: `deal.entryStockPrice`/
+`deal.closedStockPrice`, reference-only (not used in any calculation).
+New `#entryPriceModal`, styled like Close Deal's popup -- Entry Stock
+Price field always present, Closed Stock Price field always in the DOM
+("leave room... in advance") but `hidden` unless the deal being edited
+is already closed. Steppers reuse `stepDecimalField()` (already
+generic, already used for Buy/Sell Price in Save Deal) at 0.01/2
+decimals -- no new stepper code needed.
+
+**Phone card redesign** (`dealCardHtml`): OPEN/CLOSED badge moved off
+the header row onto the card's own top border (`.deal-card-border-
+badge`, `position:absolute; top:-10px`, background `var(--bg)` so it
+reads solid straddling the border). Closed deals show their close date
+adjacent to the badge, same border strip. Old `.deal-card-status-block`
+(reopen arrow stacked above CLOSED) removed -- reopen is now a normal
+action-row icon (green frame) replacing Close once closed. DTE badge
+shows 🔒 (own frame color) instead of the day count once closed. New
+price display stacked above the action-icon row (`.deal-card-actions-
+stack`). Metrics grid tightened (`8 cell mesh... smaller gaps... lower
+frames... smaller`): card padding 14px->12px/11px, margin-bottom 12px
+->9px, metric cell lateral padding 6px->4px.
+
+**Desktop table** (`dealRowHtml`): mirrors the Phone closed-state
+changes for consistency (reopen icon+green frame in `.deal-actions-
+cell`, DTE->🔒 with its own frame) since the instructions describing them
+weren't Phone-scoped. STATUS cell: `.badge-closed` gets the same
+bigger-rectangle treatment `.badge-open` already had, `margin-top:-10px`
+("push upwards") when closed, new `.deal-status-close-date` line below
+("CLOSED label > Below > Date closed, dark grey"). ACTIONS cell:
+`display:flex` row -> column (price line above), new `.deal-actions-row`
+wrapper for the 3 icons that used to be the cell's only content.
+
+**One flagged trade-off, both layouts**: turning the Close (🔒) button
+into Reopen (♻️) once a deal is closed removes that button's other job
+-- "Update Close" (editing the recorded close date/PT% after the fact).
+Edit (pencil) still only opens the ticker/strikes editor, not Close
+Deal's own fields. Implemented literally as asked; flagging in case
+that access needs to live somewhere else.
+
+### Verified
+
+Phone (400px + a genuine 320px low-res pass): pushed 1 open + 1 closed
+test deal, confirmed live via `getComputedStyle`: open price `$378.15`
+blue (`rgb(4,126,187)`), closed price `$491.20 - $503.75` grey
+(`rgb(100,100,100)`), DTE-closed frame `rgb(107,107,107)` (=
+`--legend-dte-closed-color`), reopen frame `rgb(10,143,60)` (=
+`--legend-dealReopen-color`), close-date `"1.9"`. Modal: `openEntry
+PriceModal` correctly hides `#epClosedRow` for an open deal, shows it
+pre-filled for a closed one; `submitEntryPrice` persists and re-renders
+correctly; `reopenDeal` still flips `closed` to `false`. 320px screenshot
+confirms no cramping/overlap.
+
+Desktop (1280px): same open/closed test pair, same computed-style spot
+checks, all matching. `#dealGrid.scrollWidth === clientWidth` (no
+horizontal scroll reintroduced by the wider price text). Reopen, Edit,
+and the new price modal all functionally re-verified via direct calls.
+No console errors across the full Phone + Desktop test pass.
+
+## Portfolio redesign follow-up: corrections after seeing it live
+
+Feedback round after the previous redesign shipped -- some of it was
+"my bad" reversing the user's own earlier request once they saw it in
+practice, so this round undoes/moves pieces from last time rather than
+adding new ones.
+
+**Desktop STATUS column**: dropped `.deal-status-cell.closed { margin-
+top: -10px }` entirely -- that "push upwards" (asked for last round) was
+fighting `.portfolio-row`'s own `align-items: center` instead of letting
+it center the (now taller, price+badge+date) block naturally; removing
+the override is what actually reads as "vertically centered" once there
+were 3 lines to center, not 1. `.deal-status-close-date`: `var(--muted)`
+(#646464) -> `var(--text)` (#9c9c9c, "more whitelike"), 11px -> 13px.
+
+**Desktop Entry/Closed price moved**: was stacked above the 3 action
+icons in `.deal-actions-cell` (last round's literal read of "above the
+edit/close buttons") -- moved to `.deal-status-cell`, above the OPEN/
+CLOSED badge, per this round's correction ("should be displayed...
+above the 'OPEN/CLOSED' label"). `.deal-actions-cell` reverted to a
+plain icon row (its `.deal-actions-row` inner wrapper is now a harmless
+leftover, not removed to keep the diff small).
+
+**Phone border-badge order fixed**: was date-then-CLOSED (date on the
+badge's left) -- swapped to CLOSED-then-date per "closing date shouuld
+be displayed to the right side of the closed label." Close-date's
+`background: var(--bg)` removed per "(WITHOUT A BACKGROUND BEHIND THE
+VALUE)."
+
+**Phone border-badge horizontal position**: `left: 14px` -> `24px`,
+nudging it toward the rough visual center of a typical 4-5 letter
+ticker (26px bold). Documented as an estimate, not a per-deal
+measurement -- true pixel-perfect centering over every specific ticker's
+own rendered width would need live JS layout per card; flagged as
+retunable directly if it still reads off.
+
+**Phone Entry/Closed price -- an actual layout bug, not just
+repositioning**: the previous round's price line was a normal flex
+child stacked above `.deal-card-actions` in a column -- looked "wrong"
+because price text like `"$491.20 - $503.75"` is often WIDER than the
+3-icon row (~118px), which stretched the whole stack to the price's own
+width and dragged the icon row's centering (and the DTE cluster beside
+it) along with it. Fixed by taking the price out of normal flow: `.deal-
+card-actions-stack` is `position:relative` around just the icon row
+again (back to its natural ~118px width), and `.deal-card-actions-stack
+.deal-price-display` is `position:absolute; bottom:100%; left:50%;
+transform:translateX(-50%);` -- centered on the icon row independent of
+its own text width, can't distort anything around it.
+
+**Phone metrics mesh unified**: "there is no reason doing this [2 rows
+of 4]... group this into a unified mesh field of 8 cells." Was 2
+separate `.deal-card-metrics` grids (own border/background/margin-top
+each, a visible gap between them) -- now ONE `.deal-card-metrics-mesh`
+grid, 8 cells, 4 columns auto-wraps to 2 rows, single border/background.
+Old class confirmed unused anywhere else via grep before removing it
+from the call site. Padding tightened further (10px->8px vertical, on
+top of last round's 6px->4px lateral) per "less spacing from every
+item," reinforcing the same ask.
+
+### Verified
+
+Phone (400px): `getBoundingClientRect()` on the open card -- price
+center-x `326.2` vs action-row center-x `327.2` (effectively identical),
+price sits `4px` above the icon row (`bottom:120.3` vs `actionsTop:
+124.3`), background transparent. Closed card:
+`.deal-card-metrics-mesh` count `1` (not 2), old `.deal-card-metrics`
+count `0`, cell count `8` -- confirms the unified mesh. Desktop
+(1280px): closed status cell's `getBoundingClientRect()` height `75px`
+(3 lines: price/badge/date) vs open's `43.8px` (2 lines) -- both same
+column width (`82px`), no more manual margin-top fighting the row's own
+centering. Close-date color `rgb(156,156,156)` (= `--text`), `13px`.
+Price confirmed absent from `.deal-actions-cell` on both rows. Full
+functional re-check both modes: Entry Price modal opens with the right
+fields shown/hidden, Reopen still flips `closed`, Edit still opens the
+Save/Edit modal. No console errors.

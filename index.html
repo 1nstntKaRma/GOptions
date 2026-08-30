@@ -96,10 +96,16 @@
     --legend-dealEdit-bg: var(--panel);
     --legend-dealDelete-color: var(--red);
     --legend-dealDelete-bg: var(--panel);
+
+    --legend-dealReopen-color: #0a8f3c;
+    --legend-dealReopen-bg: var(--panel);
     --legend-deal-icon-size-table: 15px;  
     --legend-deal-icon-size-card: 16px;   
 
     --legend-dte-color: #c85701;  
+
+    --legend-dte-closed-color: #6b6b6b;
+    --legend-dte-closed-bg: var(--panel);
 
     --legend-graph-loss-bg: #6e0000;
     --legend-graph-profit-bg: #067200;
@@ -818,13 +824,19 @@
   .deal-cards-mobile.has-closed-deals { top: var(--portfolio-dealsClosed-phone-y); }
 
   .deal-card {
+    position: relative;
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
+    padding: 12px 11px;
+    margin-bottom: 9px;
     background: var(--panel);
   }
   .deal-card.open { border-color: var(--blue); }
+
+  .deal-card-border-badge { position: absolute; top: -10px; left: 24px; display: flex; align-items: center; gap: 6px; }
+  .deal-card .badge { background: var(--bg); }
+
+  .deal-card-close-date { font-size: 11px; color: var(--muted); padding: 0 2px; }
 
   .deal-card .deal-ticker { font-size: 26px; }
   .deal-card .deal-sub { font-size: 13px; }
@@ -858,8 +870,17 @@
 .deal-card-dte-badge .dte-num { font-size: 16px; font-weight: 700; line-height: 1; }
 .deal-card-dte-badge .dte-label { font-size: 11px; line-height: 1; color: var(--muted); }
 
-  .deal-card-status-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .deal-card-dte-badge.closed { border-color: var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); }
 
+  .deal-card-actions-stack { position: relative; }
+  .deal-card-actions-stack .deal-price-display {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
   .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; }
 
   .deal-card-actions .deal-icon-btn {
@@ -878,14 +899,13 @@
   .deal-card-actions .deal-icon-btn.close { border-color: var(--legend-dealClose-color); background: var(--legend-dealClose-bg); }
   .deal-card-actions .deal-icon-btn.delete { border-color: var(--legend-dealDelete-color); background: var(--legend-dealDelete-bg); }
 
-  .deal-card-status-block .deal-icon-btn {
-    background: none;
-    border: none;
-    font-size: 17px;
-    padding: 0;
-  }
+  .deal-card-actions .deal-icon-btn.reopen { border-color: var(--legend-dealReopen-color); background: var(--legend-dealReopen-bg); }
 
-  .deal-card-metrics {
+  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; }
+  .deal-price-display.blue { color: var(--blue); }
+  .deal-price-display.grey { color: var(--muted); }
+
+  .deal-card-metrics-mesh {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1px;
@@ -893,11 +913,12 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    margin-top: 10px;
+    margin-top: 8px;
   }
+
   .deal-card-metric {
     background: var(--bg);
-    padding: 10px 6px;
+    padding: 8px 4px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -961,7 +982,8 @@
   .badge-closed { color: var(--muted); }
 
   .deal-status-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .deal-status-cell .deal-icon-btn { padding: 0; font-size: 15px; }
+
+  .deal-status-cell .deal-price-display { font-size: 11px; margin-bottom: 1px; }
 
   .deal-status-cell .badge-open {
     border-radius: 8px;
@@ -970,7 +992,18 @@
     border-width: 1.5px;
   }
 
+  .deal-status-cell .badge-closed {
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-width: 1.5px;
+  }
+
+  .deal-status-close-date { font-size: 13px; color: var(--text); margin-top: 2px; }
+
   .deal-dte-cell { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+
+  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 8px; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
@@ -980,7 +1013,8 @@
   .deal-strikes-cell { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
   .deal-strikes-cell b { color: var(--text); font-weight: 700; }
 
-  .deal-actions-cell { display: flex; gap: 6px; justify-content: center; }
+  .deal-actions-cell { display: flex; align-items: center; justify-content: center; }
+  .deal-actions-row { display: flex; gap: 6px; justify-content: center; }
   .deal-icon-btn {
     background: none; border: none; cursor: pointer; font-size: var(--legend-deal-icon-size-table);
     padding: 3px 5px; line-height: 1; color: var(--legend-dealEdit-color); border-radius: 6px;
@@ -1011,6 +1045,11 @@
   .deal-actions-cell .deal-icon-btn.delete {
     border-color: var(--legend-dealDelete-color);
     background: var(--legend-dealDelete-bg);
+  }
+
+  .deal-actions-cell .deal-icon-btn.reopen {
+    border-color: var(--legend-dealReopen-color);
+    background: var(--legend-dealEdit-bg);
   }
 
   .modal-backdrop {
@@ -1940,6 +1979,37 @@
   </form>
 </div>
 
+<div id="entryPriceModal" class="modal-backdrop hidden">
+  <form class="modal-panel" onsubmit="submitEntryPrice(event)">
+    <h2>Stock Price</h2>
+    <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
+    <div class="form-row">
+      <label for="epEntryPrice">Entry Stock Price</label>
+      <div class="total-stepper-wrap">
+        <input id="epEntryPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+        <div class="total-stepper total-stepper-sm">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('epEntryPrice','up',0.01,2)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('epEntryPrice','down',0.01,2)">&#8722;</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row" id="epClosedRow">
+      <label for="epClosedPrice">Closed Stock Price</label>
+      <div class="total-stepper-wrap">
+        <input id="epClosedPrice" type="text" inputmode="decimal" placeholder="Missing Value" />
+        <div class="total-stepper total-stepper-sm">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('epClosedPrice','up',0.01,2)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('epClosedPrice','down',0.01,2)">&#8722;</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeEntryPriceModal()">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
 <div id="updateDealConfirm" class="modal-backdrop hidden">
   <div class="modal-panel update-deal-confirm-panel">
     <p class="update-deal-confirm-text">Update the deal in Portfolio?</p>
@@ -1963,7 +2033,7 @@
     dealClose:           '\u{1F512}',  
     dealEdit:            '✎',          
     dealDelete:          '✕',          
-    dealReopen:          '↺',          
+    dealReopen:          '\u{267B}\u{FE0F}', 
 
     hamburgerPhoneMode:      '\u{1F4F1}',        
     hamburgerDesktopMode:    '\u{1F5A5}\u{FE0F}', 
@@ -2814,12 +2884,26 @@
   const PORTFOLIO_COLUMNS = ['TICKER', 'STRIKES', 'STATUS', 'DTE', 'RATIO', 'MAX\nLOSS', 'MAX\nPROFIT',
                              'PT\n%', 'PT\nVALUE', 'PRICES', 'PROFIT\nLOSS', 'ACTIONS'];
 
+  function dealPriceDisplayHtml(deal) {
+    const entryTxt = deal.entryStockPrice ? `$${escapeHtml(deal.entryStockPrice)}` : 'Entry $';
+    if (!deal.closed) {
+      return `<button type="button" class="deal-price-display blue" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry Stock Price">${entryTxt}</button>`;
+    }
+    const closedTxt = deal.closedStockPrice ? `$${escapeHtml(deal.closedStockPrice)}` : 'Closed $';
+    return `<button type="button" class="deal-price-display grey" onclick="openEntryPriceModal('${deal.id}')" title="Edit Entry/Closed Stock Price">${entryTxt} - ${closedTxt}</button>`;
+  }
+
   function dealRowHtml(deal) {
     const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
     const isClosed = !!deal.closed;
+
     const badge = isClosed
-      ? `<button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span>`
+      ? `<span class="badge badge-closed">CLOSED</span><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
       : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+
+    const closeOrReopenBtn = isClosed
+      ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
+      : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
 
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
 
@@ -2832,7 +2916,8 @@
     const strikesCell = `${escapeHtml(deal.strikeBuy || '—')} / ${escapeHtml(deal.strikeSell || '—')}`;
 
     const dte = daysBetween(todayStr(), deal.expiryDate);
-    const dteCell = dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—';
+
+    const dteCell = isClosed ? dealIconGlyph('dealClose') : (dte != null ? `<span class="deal-dte-num">${dte}</span><span class="deal-dte-label">Days</span>` : '—');
 
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
@@ -2858,8 +2943,11 @@
           <div class="deal-ticker-dates">${escapeHtml(formatDateDisplay(deal.startDate) || '—')} - ${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</div>
         </div>
         <div class="deal-metric-cell">${strikesCell}</div>
-        <div class="deal-status-cell">${badge}</div>
-        <div class="deal-dte-cell">${dteCell}</div>
+        <div class="deal-status-cell">
+          ${dealPriceDisplayHtml(deal)}
+          ${badge}
+        </div>
+        <div class="deal-dte-cell${isClosed ? ' closed' : ''}">${dteCell}</div>
         <b class="deal-metric-cell blue">${truncate2(m.ratio)}%</b>
         <b class="deal-metric-cell red">${money0(m.maxLoss)}</b>
         <b class="deal-metric-cell green">${money0(m.maxProfit)}</b>
@@ -2871,9 +2959,11 @@
         </div>
         ${plCell}
         <div class="deal-actions-cell">
-          <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
-          <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
-          <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+          <div class="deal-actions-row">
+            ${closeOrReopenBtn}
+            <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+            <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+          </div>
         </div>
       </div>`;
   }
@@ -2885,9 +2975,10 @@
   function dealCardHtml(deal) {
     const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
     const isClosed = !!deal.closed;
-    const badge = isClosed
-      ? `<div class="deal-card-status-block"><button type="button" class="deal-icon-btn" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button><span class="badge badge-closed">CLOSED</span></div>`
-      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+
+    const borderBadge = isClosed
+      ? `<div class="deal-card-border-badge"><span class="badge badge-closed">CLOSED</span><span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></div>`
+      : `<div class="deal-card-border-badge"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
     const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();
@@ -2895,8 +2986,13 @@
       ? `<span class="deal-title-text">${escapeHtml(title)}</span>`
       : (deal.ticker ? '' : `<span class="deal-title-text">Untitled Deal</span>`);
     const strikesCell = `${escapeHtml(deal.strikeBuy || '—')} / ${escapeHtml(deal.strikeSell || '—')}`;
+
     const dte = daysBetween(todayStr(), deal.expiryDate);
-    const dteText = dte != null ? `<span class="dte-num">${dte}</span><span class="dte-label">Days</span>` : '—';
+    const dteText = isClosed ? dealIconGlyph('dealClose') : (dte != null ? `<span class="dte-num">${dte}</span><span class="dte-label">Days</span>` : '—');
+
+    const closeOrReopenBtn = isClosed
+      ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
+      : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
 
     let ptPctCell, ptValueCell, plHtml;
     if (isClosed) {
@@ -2914,28 +3010,35 @@
 
     return `
       <div class="deal-card ${isClosed ? '' : 'open'}">
+        ${borderBadge}
         <div class="deal-card-header">
           <div class="deal-card-title-block">
             <div class="deal-name">${tickerHtml} <span class="deal-card-strikes">${strikesCell}</span></div>
             <div class="deal-sub">${escapeHtml(deal.spreadType || '')}${showTitle ? ' &middot; ' + titleHtml : ''}</div>
           </div>
           <div class="deal-card-header-right">
-            <span class="deal-card-dte-badge">${dteText}</span>
-            ${badge}
-            <div class="deal-card-actions">
-              <button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="${isClosed ? 'Update Close' : 'Close Deal'}">${dealIconGlyph('dealClose')}</button>
-              <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
-              <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+            <span class="deal-card-dte-badge${isClosed ? ' closed' : ''}">${dteText}</span>
+            <div class="deal-card-actions-stack">
+              ${dealPriceDisplayHtml(deal)}
+              <div class="deal-card-actions">
+                ${closeOrReopenBtn}
+                <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+                <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="deal-card-metrics">
+        <!-- Explicit follow-up: "Mesh/Cells design is still separated
+             into 2 rows of 4, there is no reason doing this... group
+             this into a unified mesh field of 8 cells." Was 2 separate
+             .deal-card-metrics grids (own border+background each,
+             margin-top gap between them) -- now ONE grid, 8 cells,
+             styled by .deal-card-metrics-mesh (see CSS). -->
+        <div class="deal-card-metrics-mesh">
           <div class="deal-card-metric"><span class="deal-card-metric-label">Ratio</span><span class="deal-card-metric-value blue">${truncate2(m.ratio)}%</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">Max Loss</span><span class="deal-card-metric-value red">${money0(m.maxLoss)}</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">Max Profit</span><span class="deal-card-metric-value green">${money0(m.maxProfit)}</span></div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">PT %</span><span class="deal-card-metric-value blue">${ptPctCell}</span></div>
-        </div>
-        <div class="deal-card-metrics">
           <div class="deal-card-metric deal-card-metric-stacked">
             <span class="deal-card-metric-label">Start</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.startDate) || '—')}</span>
             <span class="deal-card-metric-label">Expiry</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</span>
@@ -3308,6 +3411,36 @@
     deal.closed = false;
     deal.updatedTs = Date.now();
     clearResolved(id);
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  let entryPriceDealId = null;
+
+  function openEntryPriceModal(id) {
+    const deal = deals.find(d => d.id === id);
+    if (!deal) return;
+    entryPriceDealId = id;
+    document.getElementById('epDealName').textContent = dealDisplayName(deal);
+    document.getElementById('epEntryPrice').value = deal.entryStockPrice || '';
+    document.getElementById('epClosedPrice').value = deal.closedStockPrice || '';
+    document.getElementById('epClosedRow').hidden = !deal.closed;
+    document.getElementById('entryPriceModal').classList.remove('hidden');
+  }
+
+  function closeEntryPriceModal() {
+    document.getElementById('entryPriceModal').classList.add('hidden');
+    entryPriceDealId = null;
+  }
+
+  function submitEntryPrice(e) {
+    e.preventDefault();
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
+    if (deal.closed) deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
+    deal.updatedTs = Date.now();
+    closeEntryPriceModal();
     renderPortfolio();
     pushToDriveDebounced();
   }
