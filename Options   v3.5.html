@@ -974,7 +974,7 @@
      50. Desktop-only -- reset back to the original symmetric 46/46 at
      narrower tiers (see the 700px media block) so this doesn't eat into
      the field's already-tight low-res-phone width budget. */
-  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
   /* Close Deal's Profit Taker %/$ fields use the plain `.form-row input`
      styling (padding: 0 12px, defined further down this stylesheet) --
      same specificity as the rule above (1 class + 1 element each) and
@@ -1907,16 +1907,38 @@
   .deal-card .deal-sub { font-size: 13px; }
   .deal-card .badge { font-size: 12px; padding: 3px 9px; }
 
+  /* Explicit follow-up: "low res phone... line pushed downwards cause of
+     low horizontal space... i wish to maintain the 4 buttons within the
+     same line as 'Ticker' & 'Strikes'." Root cause: flex-wrap:wrap let
+     .deal-card-header-right (price/DTE badge + 3 action icons) drop to
+     its own row below .deal-card-title-block whenever their combined
+     minimum width didn't fit. nowrap forces them to stay on one row --
+     harmless at any width where they already fit (wrap only ever
+     mattered once they didn't), and .deal-card-title-block's own
+     flex:1 1 auto + min-width:0 (below) is what lets IT shrink instead,
+     with .deal-name's OWN flex-wrap (search ".deal-name {" below)
+     letting Strikes drop below Ticker within that shrunk block once
+     Ticker+Strikes no longer both fit on one line together -- exactly
+     the "Strikes goes below Ticker, Ticker never moves" behavior asked
+     for, already built into .deal-name, just never reachable before
+     because the OUTER wrap always fired first and away the whole
+     button cluster instead. */
   .deal-card-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   .deal-card-title-block { min-width: 0; flex: 1 1 auto; }
   .deal-card-strikes { font-weight: 600; color: var(--text); font-size: 16px; }
-  .deal-card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* flex-shrink:0 -- without it, `nowrap` above could still let the
+     browser try to shrink this cluster instead of .deal-card-title-
+     block, squishing/overlapping the icons rather than properly
+     resizing (they're fixed 34x34 boxes, not text that shrinks
+     gracefully). This makes the button cluster the "fixed" side of the
+     row and the title block the one thing that actually gives. */
+  .deal-card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex-shrink: 0; }
   .deal-card-dte-badge {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -1993,7 +2015,7 @@
   .deal-dte-price-btn.stacked { flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
   .deal-dte-price-val { line-height: 1.15; white-space: nowrap; color: var(--text); }
 
-  .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; }
+  .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; flex-shrink: 0; }
   /* Same square-rounded follow-up as the 3 top-bar icon buttons above --
      8px here instead of their 14px, scaled down for this box's smaller
      34px size. */
@@ -2808,7 +2830,7 @@
   #closeDealModal .cd-price-row .total-stepper-wrap { width: 100%; margin: 0; }
   #closeDealModal .cd-price-row .total-stepper-sm { width: 48px; }
   #closeDealModal .cd-price-row .total-stepper-sm .total-stepper-btn { font-size: 22px; }
-  #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
+  #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
   /* Explicit follow-up: "(Centered above the field)" -- every label in
      both modals, plus the pre-existing Profit Taker %/$ labels in Close
      Deal which were never centered in an earlier round (only their
@@ -3574,8 +3596,8 @@
        block's own #closeDealModal-wide overrides just above -- being
        explicit here instead. */
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; }
-    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 46px; }
-    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 46px; }
+    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
+    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
   }
 
   @media (max-width: 345px) {
@@ -3596,6 +3618,15 @@
     .calc-top-row, .portfolio-header { gap: 6px; }
     .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons { gap: 4px; }
     .top-deal-btn { padding: 0 8px; font-size: 12px; }
+    /* Explicit follow-up: "maintain the 4 buttons within the same line
+       as 'Ticker' & 'Strikes'" -- trims spacing/padding around the Phone
+       card's header row for extra slack at this tier, on top of the
+       nowrap/flex-shrink fix above (search ".deal-card-header {") that
+       does the actual structural work. */
+    .deal-card { padding: 10px 8px; }
+    .deal-card-header { gap: 6px; }
+    .deal-card-actions { gap: 6px; }
+    .deal-card .deal-sub { font-size: 11px; }
     /* Total $ stepper, narrower still -- confirmed live (scrollWidth >
        clientWidth) that the 700px tier's already-shrunk 30px padding-
        right/26px stepper still clipped a 4-digit value like "1250" once

@@ -396,7 +396,7 @@
   .total-stepper-wrap { position: relative; width: 100%; }
   .total-stepper-wrap input { padding-right: 46px; }
 
-  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
 
   #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
   #closeDealModal .total-stepper-sm { width: 65px; }
@@ -857,11 +857,12 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   .deal-card-title-block { min-width: 0; flex: 1 1 auto; }
   .deal-card-strikes { font-weight: 600; color: var(--text); font-size: 16px; }
-  .deal-card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .deal-card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex-shrink: 0; }
   .deal-card-dte-badge {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -910,7 +911,7 @@
   .deal-dte-price-btn.stacked { flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
   .deal-dte-price-val { line-height: 1.15; white-space: nowrap; color: var(--text); }
 
-  .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; }
+  .deal-card-actions { display: flex; align-items: center; gap: 8px; margin-left: 2px; flex-shrink: 0; }
 
   .deal-card-actions .deal-icon-btn {
     width: 34px;
@@ -1331,7 +1332,7 @@
   #closeDealModal .cd-price-row .total-stepper-wrap { width: 100%; margin: 0; }
   #closeDealModal .cd-price-row .total-stepper-sm { width: 48px; }
   #closeDealModal .cd-price-row .total-stepper-sm .total-stepper-btn { font-size: 22px; }
-  #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 96px; padding-right: 46px; text-align: center; }
+  #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
 
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
@@ -1570,8 +1571,8 @@
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
 
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; }
-    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 46px; }
-    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 46px; }
+    #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
+    #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
   }
 
   @media (max-width: 345px) {
@@ -1580,6 +1581,11 @@
     .calc-top-row, .portfolio-header { gap: 6px; }
     .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons { gap: 4px; }
     .top-deal-btn { padding: 0 8px; font-size: 12px; }
+
+    .deal-card { padding: 10px 8px; }
+    .deal-card-header { gap: 6px; }
+    .deal-card-actions { gap: 6px; }
+    .deal-card .deal-sub { font-size: 11px; }
 
     .total-stepper-wrap input { padding-right: 40px; font-size: 18px; }
 

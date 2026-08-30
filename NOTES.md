@@ -8055,3 +8055,66 @@ reset back to symmetric `0px 46px` and `0px 40px` respectively in BOTH
 modals, `scrollWidth === clientWidth` (`clipped: false`) confirmed with
 "583.99"/"497.64" actually filled in -- the shift doesn't reach these
 narrower tiers, no clipping introduced. No console errors.
+
+## Phone Portfolio: action-button cluster no longer drops to its own row at low-res
+
+Explicit follow-up (planned with the user before implementing, per their
+own request): a low-res Phone screenshot showing the price badge + 3
+action icons dropped below "AAAA 125/130 / Bull Put Spread" onto their
+own row, instead of staying beside the ticker. User supplied their own
+correct diagnosis up front ("header container allows wrapping... force
+nowrap, protect buttons from shrinking, reduce spacing on small
+viewports") -- confirmed against the actual code before touching
+anything, then implemented as planned. Follow-up clarification on one
+open question (what happens if Ticker+Strikes still don't fit): "Ticker
+will always stay in the top left... if still too cramped, 'Strikes'
+will go below the Ticker, and push 'Bull Put Spread'... reduce font
+size as well."
+
+**Root cause, confirmed**: `.deal-card-header` was `flex-wrap: wrap` --
+whenever `.deal-card-title-block` (Ticker+Strikes+subtitle) and
+`.deal-card-header-right` (price/DTE badge + 3 icons) didn't both fit
+on one row, the WHOLE `.deal-card-header-right` cluster dropped to a
+new line, rather than the title block itself shrinking (which it's
+already set up to do -- `flex:1 1 auto; min-width:0`).
+
+**Fix**:
+- `.deal-card-header { flex-wrap: nowrap; }` -- stops the cluster from
+  ever dropping to its own row. No-op at any width where things already
+  fit (wrap only ever mattered once they didn't).
+- `.deal-card-header-right { flex-wrap: nowrap; flex-shrink: 0; }` and
+  `.deal-card-actions { flex-shrink: 0; }` -- protects the price badge +
+  3 icon buttons from being squished/overlapped now that nowrap forces
+  something to give; makes them the fixed side of the row so the title
+  block is the only thing that shrinks.
+- Turned out `.deal-name` (Ticker + Strikes) was ALREADY `display:flex;
+  flex-wrap:wrap` -- meaning Strikes dropping below Ticker when they
+  don't both fit was already built in, just unreachable before because
+  the OUTER wrap always fired first and took the whole button cluster
+  with it. No change needed there once the outer wrap was fixed --
+  confirmed live rather than assumed.
+- `@media (max-width:345px)`: trimmed `.deal-card` padding (`12px 11px`
+  -> `10px 8px`), `.deal-card-header` gap (`8px` -> `6px`),
+  `.deal-card-actions` gap (`8px` -> `6px`), and `.deal-card .deal-sub`
+  ("Bull Put Spread") font-size (`13px` -> `11px`) for extra slack at
+  the tightest tier, on top of the structural fix above.
+
+### Verified
+
+Phone, genuine 320px mobile-UA viewport, recreating the exact reported
+case (ticker "AAAA", strikes "125 / 130", closed, both stock prices
+set -- the widest/worst-case row): `.deal-card-header`'s computed
+`flexWrap` is `nowrap`; `.deal-card-title-block` and `.deal-card-
+header-right`'s `getBoundingClientRect().top` are IDENTICAL (same row,
+confirmed programmatically, not just visually); all 3 action icons
+still render at their full `34px` width with zero overlap between
+them. Screenshot confirms Strikes dropped to its own line below Ticker
+(matching the user's explicit ask), "Bull Put Spread" pushed down
+below that at the smaller font, and the price badge + 3 icons sitting
+beside "AAAA" on its own top line. Re-tested at 400px (more breathing
+room) with both this deal and a second, shorter-ticker OPEN deal --
+"AAAA 125 / 130" now fits on one line at this width (used naturally,
+no forced wrap), NVDA's row is unaffected, no regression. Desktop
+re-checked at 1280px -- untouched, since none of these selectors
+(`.deal-card*`) exist in `dealRowHtml`'s wide-grid markup. No console
+errors in either mode.
