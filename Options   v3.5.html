@@ -77,31 +77,6 @@
     --portfolio-winratio-phone-fs: 14px;
     --portfolio-deals-phone-y: 20px;
     --portfolio-dealsClosed-phone-y: -50px;
-
-
-    /* Explicit follow-up: "after recent change, portfolio columns +
-       saved deals (desktop & phone) have been push downwards
-       unwillingly." The 2 new stat lines above grew .portfolio-title-
-       block's own height, which pushed the deal grid/cards below it
-       further down (normal document flow -- nothing broken, just taller
-       content above). 2 new knobs instead of undoing the 4-line feature
-       -- same +Y = down technique as everything above, applied to the
-       WHOLE deals area as one unit (table header + every row together
-       on Desktop, every card together on Phone) so it can be pulled back
-       up (negative) to compensate, independently per mode. */
-
-    /* Explicit follow-up: "Position knobs arent working as intended!
-       there's a big UI difference once a deal is closed, and before."
-       The 4 stat lines (P/L, Total Deals, W-L, Win Ratio) are only
-       visible once at least 1 closed deal exists (all 4 are `:empty` ->
-       `display:none` before that) -- .portfolio-title-block is
-       genuinely a different height in these 2 states, so the single
-       flat offset above can only ever be correct for ONE of them.
-       These 2 apply ONLY once a closed deal exists (renderPortfolio()
-       toggles a `has-closed-deals` class on #dealGrid/#dealCardsMobile
-       -- see their CSS rules); the pair above still applies at 0 closed
-       deals. Tune each independently for its own state. */
-
     /* ============================================================ */
     /* ============================================================
        DESKTOP TOP-RIGHT BUTTONS POSITION -- EDIT HERE
@@ -119,6 +94,10 @@
        number below, save, reload -- nothing else in this file needs to
        change to match. */
     --desktop-topright-nudge-x: 0px;
+    --EditTickerPurplePosition-CalculatorDesktop: 1155px, 70px;
+    --EditTickerPurpleFontSize-CalculatorDesktop: 24px;
+    --EditTickerPurplePosition-CalculatorPhone: 35px, 70px;
+    --EditTickerPurpleFontSize-CalculatorPhone: 14px;
     /* ============================================================ */
     /* ============================================================
        DESKTOP CALCULATOR VERTICAL SPACING -- EDIT HERE
@@ -350,15 +329,41 @@
      any existing field. position:absolute (same technique as the logo
      itself, same nearest positioned ancestor) keeps it completely out
      of normal document flow -- hidden by default, shown/populated only
-     while gEditingDealId is set. Position values below are each tuned
-     to sit just under their own tier's logo (Desktop's is scaled 150%
-     and sits higher; Phone's is unscaled and sits lower) -- see the
-     "LOGO POSITION & SIZE" block just above for the source values
-     these are derived from. */
+     while gEditingDealId is set.
+     Explicit follow-up: "edit the code and provide 1 line for desktop
+     mode, 1 line for phone mode that controls these positions and ill
+     edit it... positioned below the Calculator logo." Base anchor is a
+     fixed top-left corner (0,0 of the same positioned ancestor the logo
+     itself uses); `transform: translate()` does the actual nudge from
+     ONE variable each, `<x> <y>` order (+X = right, +Y = down, same
+     sign convention as every other position knob in this file). Switched
+     from the standalone `translate` property (this file's usual
+     preference, e.g. `scale` on the logo below) to the older, far more
+     widely-supported `transform` shorthand after it kept failing to
+     render on the user's real browser despite working in every test
+     here -- standalone `translate` is a newer property than this
+     specific case can safely assume support for; `transform` has been
+     supported everywhere for well over a decade. Safe here specifically
+     because this element has no descendants and no z-index-dependent
+     children of its own, unlike the hamburger-menu stacking-context bug
+     documented elsewhere in NOTES.md that `transform` usually gets
+     avoided for. Defaults below are computed FROM the logo's own
+     top/left/scale (see .calc-logo-corner rules) so it starts flush
+     under its own tier's logo, not guessed. Change the number, save,
+     reload -- nothing else needs to change to match. */
   .calc-editing-banner {
     display: none;
     position: absolute;
-    font-size: 12px;
+    top: 0;
+    left: 0;
+    transform: translate(var(--EditTickerPurplePosition-CalculatorDesktop));
+    /* z-index -- absolute-positioned elements with z-index:auto don't
+       automatically win against later-painted normal-flow siblings the
+       way you'd expect; this guarantees it's always on top wherever
+       it's positioned. Well below any real overlay (modals/hamburger
+       menu use 69-70) so it can never cover those. */
+    z-index: 5;
+    font-size: var(--EditTickerPurpleFontSize-CalculatorDesktop);
     font-weight: 800;
     letter-spacing: 0.8px;
     /* Explicit follow-up: "Ticker = Will now also show in 'Darker
@@ -368,6 +373,7 @@
     white-space: nowrap;
     pointer-events: none;
   }
+  body.portfolio-layout-mobile .calc-editing-banner { transform: translate(var(--EditTickerPurplePosition-CalculatorPhone)); font-size: var(--EditTickerPurpleFontSize-CalculatorPhone); }
   /* Desktop: logo top 15px + (58px * 150% scale) visual height 87px =
   /* Portfolio logo Desktop */
   .portfolio-logo-corner { top: 5px; left: -97px; width: 52px; height: 54px; scale: 150%; }
@@ -928,12 +934,6 @@
     border: 1px solid #4b4e52;
     border-radius: 13px;
     background: #010101;
-    /* Explicit follow-up: "White Text... is way too white, and hard on
-       the eyes, use this color instead: c4c3c3... everywhere white is
-       being used and will be used." var(--text) is already exactly
-       #c4c3c3 (this file's existing "readable text" token) -- reused
-       here, and at every other former `white`/`#fff` below, instead of
-       introducing a second variable for the identical value. */
     color: var(--text);
     text-align: center;
     font-size: 32px;
@@ -973,69 +973,57 @@
      ID selector (#entryPriceModal + the field's own ID) so it wins
      outright and both properties are correct, not just mirrored off an
      already-wrong number. */
-  /* Explicit follow-up: "move the values within these fields to a bit
-     to the right side of the field box, by 25px." text-align:center
-     centers within the CONTENT box (width minus both paddings), so
-     shifting the visible midpoint by +25px while keeping padding-right
-     fixed (it's sized to just clear the stepper -- shrinking it would
-     put text back under the stepper) needs padding-left to grow by
-     DOUBLE that, +50px (46 -> 96) -- the new, narrower content area
-     re-centers itself, landing its midpoint 25px right of before, not
-     50. Desktop-only -- reset back to the original symmetric 46/46 at
-     narrower tiers (see the 700px media block) so this doesn't eat into
-     the field's already-tight low-res-phone width budget. */
-  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
+  /* Explicit follow-up (most recent): "move the value within these
+     fields 15px to the left" -- THIS line controls it. text-align:
+     center centers within the CONTENT box (width minus both paddings),
+     so shifting the visible midpoint by -15px while keeping padding-
+     right fixed at 61px (it's sized to just clear the stepper --
+     shrinking it would put text back under the stepper) needs padding-
+     left to shrink by DOUBLE that, -30px (81 -> 51) -- the new, wider
+     content area re-centers itself, landing its midpoint 15px left of
+     before, not 30. To move it further yourself: every 1px you want the
+     VALUE to shift left/right, change padding-left here by 2px in that
+     same direction (left = subtract, right = add) -- padding-right
+     stays put. Desktop-only, matching the original "move it right"
+     round -- narrower tiers reset to plain symmetric padding (see the
+     700px media block) so this doesn't eat into the field's already-
+     tight low-res-phone width budget. */
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 51px; padding-right: 61px; text-align: center; }
   /* Close Deal's Profit Taker %/$ fields use the plain `.form-row input`
      styling (padding: 0 12px, defined further down this stylesheet) --
      same specificity as the rule above (1 class + 1 element each) and
      LATER in source order, so without this it would silently win the tie
      and strip the padding-right the stepper needs, hiding it behind the
      digits. #closeDealModal (an ID) beats that regardless of order. */
-  /* Explicit follow-up: "Desktop mode Close Deal: Increase +/- buttons
-     of (Profit Taker %, Profit Taker $) by x2.5 [and] make those fields
-     a little bit less wider." 26px -> 65px (26*2.5 = 65). padding-right
-     bumped from 34px to clear the much bigger stepper. */
-  #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
-  #closeDealModal .total-stepper-sm { width: 65px; }
-  /* Explicit follow-up: "move the values within these fields to center
-     of the field box... different sizes for fields, and different
-     sizes for steppers [at Desktop/Phone/low-res Phone]... always
-     centered and not cut in low res phones." Scoped to JUST Entry/
-     Closed Price (not PT%/$, which weren't part of this ask) -- text-
-     align:center alone isn't enough here because the stepper (position:
-     absolute, reserved via padding-right above) makes the box
-     ASYMMETRIC: 12px padding-left (base .form-row input) vs 71px
-     padding-right, so "centered" text would actually center within
-     that lopsided gap, landing visibly left of the box's true visual
-     center. Mirroring padding-right's own value as padding-left here
-     (and at each of ITS breakpoints below -- see the matching
-     padding-right rules at 700px/345px) keeps the gap symmetric no
-     matter which breakpoint's stepper width is currently in play, so
-     centering stays correct everywhere instead of just working by
-     coincidence at one specific size. #closeDealModal ID selector
-     (2 IDs) beats the shared `.total-stepper-wrap input` rule's own
-     specificity regardless of source order, same reasoning as the
-     comment above this block for padding-right. */
-  #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 71px; text-align: center; }
-  /* Explicit follow-up, "Global" (both Desktop and Phone -- unscoped by
-     any media query, same as everything else on this line): "Increase
-     the vertical size of Close Deal 'Profit Taker %' & 'Profit Taker $'
-     by 80% [and] make the fields a bit less wide, [and] Center the
-     values within the fields." 44px -> 79px (44*1.8 = 79.2, rounded).
-     Width narrowed from the full grid cell to 85% (centered via
-     `margin: 0 auto` -- a block element's own width:85% otherwise still
-     starts flush left, leaving the 15% blank on the right only).
-     Centering was a real, separate bug -- these 2 fields use the plain
-     `.form-row input` styling (further down this stylesheet), which is
-     `text-align: left` with no override, unlike every other field in
-     this dialog (#sdTotal/Limit/PT/Strike/Price all got their own
-     text-align:center fix in earlier rounds -- Close Deal's PT%/PT$
-     were simply never included in that pass). */
-  #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { height: 79px; text-align: center; }
-  /* Narrowed again (85% -> 70%) -- explicit follow-up, "make those
-     fields a little bit less wider," on top of the x2.5 stepper above
-     which needed the extra room back. */
-  #closeDealModal .total-stepper-wrap { width: 70%; margin: 0 auto; }
+  /* Explicit follow-up (most recent, supersedes the x2.5-stepper/70%-
+     width history this block used to document): "'Close Deal' window
+     modification: adapt field sizes of Profit Taker % / Profit Taker $
+     to be just like Entry Price / Closed Price." Rather than picking
+     new numbers, this just points PT%/PT$ at the EXACT same modal-wide
+     defaults `.cd-price-row` (Entry/Closed Price's own wrapper, see its
+     scoped overrides further down) already uses -- `.cd-price-row`'s
+     own rules are MORE specific (1 ID + 2 classes vs this block's 1 ID
+     + 1 class) so they keep winning for Entry/Closed Price regardless
+     of what these plain modal-wide values are, meaning this change only
+     actually affects PT%/PT$, which have no such override of their own. */
+  #closeDealModal .total-stepper-wrap input { padding-right: 61px; }
+  #closeDealModal .total-stepper-sm { width: 48px; }
+  #closeDealModal .total-stepper-wrap { width: 100%; margin: 0; }
+  /* PT%/PT$ centering -- own padding-left added (61px, matching padding-
+     right above) since they'd otherwise fall through to the plain
+     `.form-row input` 12px and re-create the exact ASYMMETRIC-box bug
+     Entry/Closed Price had 2 rounds ago (text-align:center centers
+     within whatever padding gap exists -- 12px vs 61px is not that gap).
+     "Do no break centering of titles above the respected fields" --
+     unaffected either way, the LABEL's own `text-align:center` (see
+     `#closeDealModal .form-row label`) is a completely separate rule
+     from this one, on the label element, not the input. Height (79px,
+     "increase... by 80%" from a much earlier round) already matched
+     Entry/Closed Price's own height exactly, unchanged here. */
+  #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { height: 79px; padding-left: 61px; text-align: center; }
+  /* Button glyph -- matches `.cd-price-row`'s own plain 22px (was 34px,
+     sized for the old 65px stepper this block no longer uses). */
+  #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 22px; }
   /* Button half-height went from ~21px to ~38.5px -- glyph bumped to
      match, same reasoning as every other stepper-height change in this
      file. This is the Desktop/global value; the existing 700px-tier
@@ -2012,7 +2000,13 @@
      display Entry/Closed prices" -- box still recolors (own Legend frame
      color) same as before, just holds .deal-dte-price-btn now instead of
      the old 🔒 glyph. */
-  .deal-card-dte-badge.closed { border-color: var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); padding: 4px 6px; }
+  /* Explicit follow-up: "copy frame color of 'Close Deal' and apply it
+     to 'Edit Entry/Closed Stock Price'." Reuses --legend-dealClose-color
+     (the Close Deal action button's own frame token) instead of a new
+     hardcoded hex, so the 2 stay linked if that token is ever retuned.
+     Only visible in the icon-only (still-missing-a-price) state --
+     .stacked (below) has no border at all, unaffected by this. */
+  .deal-card-dte-badge.closed { border-color: var(--legend-dealClose-color); background: var(--legend-dte-closed-bg); padding: 4px 6px; }
   /* Explicit follow-up: "show 🧾 as a button universalized by its size
      dimension according to the 3 buttons on the right side (currently
      border is too small and not correct)." Fixed 34x34 box, matching
@@ -2086,6 +2080,12 @@
   }
   .deal-card-actions .deal-icon-btn.close { border-color: var(--legend-dealClose-color); background: var(--legend-dealClose-bg); }
   .deal-card-actions .deal-icon-btn.delete { border-color: var(--legend-dealDelete-color); background: var(--legend-dealDelete-bg); }
+  /* Explicit follow-up: "copy frame color of 'Edit Entry/Closed Stock
+     Price' and apply it to 'Edit' (pencil) button." Reuses the SAME
+     Legend token the price button's own frame uses (--legend-dte-
+     closed-color) rather than a new hardcoded hex, so the 2 stay linked
+     if that token is ever retuned. */
+  .deal-card-actions .deal-icon-btn.edit { border-color: var(--legend-dte-closed-color); }
   /* Explicit follow-up: "'close deal' button (🔒) will now change into
      Reopen Deal button... Green Frame." Same squircle box, new color. */
   .deal-card-actions .deal-icon-btn.reopen { border-color: var(--legend-dealReopen-color); background: var(--legend-dealReopen-bg); }
@@ -2326,7 +2326,12 @@
      the cell -- the open state still has none, this is new only for the
      closed state, now holding .deal-dte-price-btn instead of the old 🔒
      glyph. */
-  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 6px; }
+  /* Explicit follow-up: "copy frame color of 'Close Deal' and apply it
+     to 'Edit Entry/Closed Stock Price'." Same swap as the Phone version
+     (.deal-card-dte-badge.closed) -- --legend-dealClose-color instead of
+     --legend-dte-closed-color, only visible in the icon-only state
+     (.stacked has no border). */
+  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dealClose-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 6px; }
   /* Explicit follow-up: "'Entry/Closed price' when two values exist,
      remove the special background, remove border." Only once BOTH
      prices are set (.stacked, see dealDtePriceStacked()) -- the single
@@ -2359,7 +2364,12 @@
      reason), but visible here since it's just 1 line in a 34px box.
      Phone's equivalent (.deal-card-dte-badge) never had this bug --
      its own base rule already sets `justify-content: center`. */
-  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--border); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
+  /* Explicit follow-up: "copy frame color of 'Close Deal' and apply it
+     to 'Edit Entry/Closed Stock Price'." This more-specific rule was
+     overriding the base .closed border-color (just above/earlier) back
+     to var(--border) -- the base rule's new color never actually showed
+     for the icon-only case without also fixing this one. */
+  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--legend-dealClose-color); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
@@ -2443,6 +2453,11 @@
     border-color: var(--legend-dealDelete-color);
     background: var(--legend-dealDelete-bg);
   }
+  /* Explicit follow-up: "copy frame color of 'Edit Entry/Closed Stock
+     Price' and apply it to 'Edit' (pencil) button." Same Legend token
+     (--legend-dte-closed-color) as the price button's own frame, same
+     reasoning as the Phone version above. */
+  .deal-actions-cell .deal-icon-btn.edit { border-color: var(--legend-dte-closed-color); }
   /* Explicit follow-up: "'close deal' button (🔒) will now change into
      Reopen Deal button... Green Frame." Same dark-fill-plus-colored-
      border treatment as Close/Delete above, own color. */
@@ -3653,22 +3668,24 @@
     #saveDealModal .sd-price-wrap .sd-price-input { font-size: 11px; }
     #saveDealModal .sd-price-wrap .total-stepper-sm { width: 60px; }
     #saveDealModal .sd-price-wrap .total-stepper-sm .total-stepper-btn { font-size: 26px; }
-    /* Close Deal's Profit Taker %/$ never had ANY Phone-specific stepper
-       sizing before this round (its 26px width / 34px padding-right / the
-       generic 12px button font were all base, unscoped-by-media rules --
-       confirmed via grep -- meaning it looked identical, and just as
-       small, on Desktop and Phone alike). Doubling it here for the first
-       time, matching every other field in this round. */
-    #closeDealModal .total-stepper-sm { width: 52px; }
-    #closeDealModal .total-stepper-wrap input { padding-right: 62px; }
-    /* Mirrors padding-right at THIS tier -- see the base-tier comment
-       (search "always centered and not cut in low res phones") for the
-       full reasoning. */
-    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 62px; }
-    /* Bumped again (18px -> 28px) now that the field itself grew another
-       80% taller (see the global height rule near the top of this
-       stylesheet) -- button half-height here is now ~38.5px, same as
-       Desktop, so it gets the same glyph size. */
+    /* Explicit follow-up (most recent): "adapt field sizes of Profit
+       Taker % / Profit Taker $ to be just like Entry Price / Closed
+       Price" -- matches `.cd-price-row`'s OWN 700px values (55px, see
+       its rule just below) instead of this tier's earlier stand-alone
+       52px/62px x2 sizing. `.cd-price-row .total-stepper-sm` has no
+       width override of its own at this tier -- it was ALREADY falling
+       back to this same rule, so changing it keeps both fields in sync
+       rather than only fixing PT%/PT$. */
+    #closeDealModal .total-stepper-sm { width: 48px; }
+    #closeDealModal .total-stepper-wrap input { padding-right: 55px; }
+    /* PT%/PT$'s own symmetric centering at this tier (55/55, matching
+       the stepper-clearance value above) -- NOT `.cd-price-row`'s own
+       25px/55px (that asymmetry is Entry/Closed Price's separate "move
+       it left" shift, never asked for PT%/PT$). */
+    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { padding: 0 55px; }
+    /* Button glyph at this tier was ALREADY shared with `.cd-price-row`
+       (no override of its own there either) -- unchanged, already
+       "just like" by coincidence of both relying on this same rule. */
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
     /* Explicit follow-up: "move the values... by 25px" is Desktop-only
        (see the base-tier rule) -- reset back to symmetric 46/46 here so
@@ -3797,13 +3814,18 @@
        same trade-off already accepted for Strike/Price just above at
        this exact breakpoint. */
     #closeDealModal .total-stepper-sm { width: 40px; }
-    #closeDealModal .total-stepper-wrap input { padding-right: 46px; }
-    /* Mirrors padding-right at THIS tier -- see the base-tier comment
-       (search "always centered and not cut in low res phones") for the
-       full reasoning. */
-    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 46px; }
+    /* Explicit follow-up (most recent): "adapt field sizes of Profit
+       Taker % / Profit Taker $ to be just like Entry Price / Closed
+       Price" -- 46px -> 40px, matching `.cd-price-row`'s own value at
+       this tier (see its rule below) instead of the slightly-different
+       number this tier had picked independently. */
+    #closeDealModal .total-stepper-wrap input { padding-right: 40px; }
+    /* PT%/PT$'s own symmetric centering (40/40, matching padding-right
+       above) -- NOT `.cd-price-row`'s own padding (also 40/40 at THIS
+       tier, so coincidentally identical here, but kept as its own rule
+       rather than assumed, same reasoning as the 700px tier). */
+    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { padding: 0 40px; font-size: 12px; }
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 20px; }
-    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { font-size: 12px; }
     /* "copy dimensions from Stock Price" continued at this tier -- Stock
        Price's OWN Entry/Closed Price fields drop to 40px padding here
        (see #entryPriceModal's matching rule at this exact breakpoint),
@@ -4136,8 +4158,10 @@
         <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
         <!-- Explicit follow-up: "new exact titles + emojis for each
-             button" -- &#128193; (folder) + &#129704; (bricks). -->
-        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;&#129704;  Order Deals By</button>
+             button" -- &#128193; (folder) leading, &#129518; (abacus)
+             trailing, matching the toggle items' leading/trailing
+             emoji pattern above. -->
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;  Order Deals By  &#129518;</button>
       </div>
       <div class="portfolio-header">
         <div class="top-row-left">
@@ -5645,21 +5669,22 @@
     if (evt.key === 'Escape') closePortfolioMenu();
   }
 
-  // Destination-icon convention, matching updateHamburgerMenuLabels()
-  // above -- each item shows what clicking it will DO, not the current
-  // state. Explicit follow-up: "all toggle buttons will have changing
-  // name accordingly."
-  // Explicit follow-up: "new exact titles + emojis for each button" --
-  // 🙈/👀 (destination state: what you'll SEE after clicking, matching
-  // the "shows what clicking it will DO" convention above) + a 2nd
-  // emoji identifying WHICH toggle (🔒 Closed, ⚡ Active, 🏷️ Entry Price).
+  // Explicit follow-up: "these are the default settings, so every new
+  // user will see everything and if he chooses, he can hide it" --
+  // the given default-state label text ("Show Closed Deals" etc. while
+  // hideClosedDeals is false, i.e. nothing hidden yet) confirmed this is
+  // a CURRENT-STATE readout, not the destination-action convention
+  // updateHamburgerMenuLabels() uses ("what clicking it will DO") --
+  // reversed from the previous round to match. 👀 = currently showing,
+  // 🙈 = currently hidden; leading emoji still identifies WHICH toggle
+  // (🔒 Closed, ⚡ Active, 🏷️ Entry Price).
   function updatePortfolioMenuLabels() {
     const hideClosedItem = document.getElementById('pmHideClosedItem');
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
-    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F440}\u{1F512}  Show Closed Deals' : '\u{1F648}\u{1F512}  Hide Closed Deals';
-    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{1F440}\u{26A1}  Show Active Deals' : '\u{1F648}\u{26A1}  Hide Active Deals';
-    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F440}\u{1F3F7}\u{FE0F}  Show Entry Price' : '\u{1F648}\u{1F3F7}\u{FE0F}  Hide Entry Price';
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}  Hide Closed Deals  \u{1F648}' : '\u{1F512}  Show Closed Deals  \u{1F440}';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{26A1}  Hide Active Deals  \u{1F648}' : '\u{26A1}  Show Active Deals  \u{1F440}';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}  Hide Entry Price  \u{1F648}' : '\u{1F3F7}\u{FE0F}  Show Entry Price  \u{1F440}';
   }
 
   function togglePortfolioSetting(key) {
@@ -5687,9 +5712,13 @@
     renderPortfolio();
   }
 
+  // "Reset" restores the actual default (Status, ascending) -- not
+  // `null` (the plain-createdTs fallback) -- since Status/asc IS the
+  // default now, per the explicit follow-up in portfolioSettings' own
+  // declaration above.
   function clearPortfolioSort() {
-    portfolioSettings.sortField = null;
-    portfolioSettings.sortDir = 'desc';
+    portfolioSettings.sortField = 'status';
+    portfolioSettings.sortDir = 'asc';
     savePortfolioSettings();
     updateOrderModalUI();
     renderPortfolio();
@@ -5730,8 +5759,14 @@
     hideClosedDeals: false,
     hideActiveDeals: false,
     hideEntryPrice: false,
-    sortField: null,   // null = default (createdTs, newest first) | 'startDate' | 'closeDate' | 'status' | 'profit' | 'ratio'
-    sortDir: 'desc',   // 'asc' | 'desc'
+    // Explicit follow-up: "define 'Order Deals By' default value as
+    // 'Status' (ARROW UP)." `sortDealsForDisplay()` still supports
+    // `sortField: null` as a defensive fallback (plain createdTs order)
+    // in case this ever needs resetting to "no active sort" again, but
+    // that's no longer reachable from the UI -- clearPortfolioSort()
+    // (the "Reset" button) restores THIS default now, not null.
+    sortField: 'status',   // 'startDate' | 'closeDate' | 'status' | 'profit' | 'ratio' | null (defensive fallback only, see sortDealsForDisplay)
+    sortDir: 'asc',   // 'asc' | 'desc'
     updatedAt: 0
   };
 
@@ -6248,7 +6283,7 @@
         <div class="deal-actions-cell">
           <div class="deal-actions-row">
             ${closeOrReopenBtn}
-            <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+            <button type="button" class="deal-icon-btn edit" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
             <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
           </div>
         </div>
@@ -6353,7 +6388,7 @@
             </div>
             <div class="deal-card-actions">
               ${closeOrReopenBtn}
-              <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+              <button type="button" class="deal-icon-btn edit" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
               <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
             </div>
           </div>

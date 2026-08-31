@@ -57,6 +57,10 @@
     --portfolio-dealsClosed-phone-y: -50px;
 
     --desktop-topright-nudge-x: 0px;
+    --EditTickerPurplePosition-CalculatorDesktop: 1155px, 70px;
+    --EditTickerPurpleFontSize-CalculatorDesktop: 24px;
+    --EditTickerPurplePosition-CalculatorPhone: 35px, 70px;
+    --EditTickerPurpleFontSize-CalculatorPhone: 14px;
 
     --calc-vspacing-top-row-gap-min: 22px;   
     --calc-vspacing-metrics-gap-min: 16px;   
@@ -171,7 +175,12 @@
   .calc-editing-banner {
     display: none;
     position: absolute;
-    font-size: 12px;
+    top: 0;
+    left: 0;
+    transform: translate(var(--EditTickerPurplePosition-CalculatorDesktop));
+
+    z-index: 5;
+    font-size: var(--EditTickerPurpleFontSize-CalculatorDesktop);
     font-weight: 800;
     letter-spacing: 0.8px;
 
@@ -179,6 +188,7 @@
     white-space: nowrap;
     pointer-events: none;
   }
+  body.portfolio-layout-mobile .calc-editing-banner { transform: translate(var(--EditTickerPurplePosition-CalculatorPhone)); font-size: var(--EditTickerPurpleFontSize-CalculatorPhone); }
 
   .portfolio-logo-corner { top: 5px; left: -97px; width: 52px; height: 54px; scale: 150%; }
   @media (max-width: 700px) {
@@ -385,7 +395,6 @@
     border: 1px solid #4b4e52;
     border-radius: 13px;
     background: #010101;
-
     color: var(--text);
     text-align: center;
     font-size: 32px;
@@ -399,16 +408,15 @@
   .total-stepper-wrap { position: relative; width: 100%; }
   .total-stepper-wrap input { padding-right: 46px; }
 
-  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
+  #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding-left: 51px; padding-right: 61px; text-align: center; }
 
-  #closeDealModal .total-stepper-wrap input { padding-right: 71px; }
-  #closeDealModal .total-stepper-sm { width: 65px; }
+  #closeDealModal .total-stepper-wrap input { padding-right: 61px; }
+  #closeDealModal .total-stepper-sm { width: 48px; }
+  #closeDealModal .total-stepper-wrap { width: 100%; margin: 0; }
 
-  #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 71px; text-align: center; }
+  #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { height: 79px; padding-left: 61px; text-align: center; }
 
-  #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { height: 79px; text-align: center; }
-
-  #closeDealModal .total-stepper-wrap { width: 70%; margin: 0 auto; }
+  #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 22px; }
 
   #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 34px; }
 
@@ -885,7 +893,7 @@
 .deal-card-dte-badge .dte-num { font-size: 16px; font-weight: 700; line-height: 1; }
 .deal-card-dte-badge .dte-label { font-size: 11px; line-height: 1; color: var(--muted); }
 
-  .deal-card-dte-badge.closed { border-color: var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); padding: 4px 6px; }
+  .deal-card-dte-badge.closed { border-color: var(--legend-dealClose-color); background: var(--legend-dte-closed-bg); padding: 4px 6px; }
 
   .deal-card-dte-badge.closed.icon-only { width: 34px; height: 34px; min-width: 34px; padding: 0; }
 
@@ -932,6 +940,8 @@
   }
   .deal-card-actions .deal-icon-btn.close { border-color: var(--legend-dealClose-color); background: var(--legend-dealClose-bg); }
   .deal-card-actions .deal-icon-btn.delete { border-color: var(--legend-dealDelete-color); background: var(--legend-dealDelete-bg); }
+
+  .deal-card-actions .deal-icon-btn.edit { border-color: var(--legend-dte-closed-color); }
 
   .deal-card-actions .deal-icon-btn.reopen { border-color: var(--legend-dealReopen-color); background: var(--legend-dealReopen-bg); }
 
@@ -1058,11 +1068,11 @@
 
   .deal-dte-cell { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
 
-  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dte-closed-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 6px; }
+  .deal-dte-cell.closed { border: 1.5px solid var(--legend-dealClose-color); background: var(--legend-dte-closed-bg); border-radius: 8px; padding: 4px 6px; }
 
   .deal-dte-cell.closed.stacked { border: none; background: none; }
 
-  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--border); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
+  .deal-dte-cell.closed.icon-only { background: none; border-color: var(--legend-dealClose-color); width: 34px; height: 34px; padding: 0; justify-self: center; justify-content: center; }
   .deal-dte-num { font-size: 18px; font-weight: 800; color: var(--legend-dte-color); }
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
@@ -1105,6 +1115,8 @@
     border-color: var(--legend-dealDelete-color);
     background: var(--legend-dealDelete-bg);
   }
+
+  .deal-actions-cell .deal-icon-btn.edit { border-color: var(--legend-dte-closed-color); }
 
   .deal-actions-cell .deal-icon-btn.reopen {
     border-color: var(--legend-dealReopen-color);
@@ -1595,10 +1607,10 @@
     #saveDealModal .sd-price-wrap .total-stepper-sm { width: 60px; }
     #saveDealModal .sd-price-wrap .total-stepper-sm .total-stepper-btn { font-size: 26px; }
 
-    #closeDealModal .total-stepper-sm { width: 52px; }
-    #closeDealModal .total-stepper-wrap input { padding-right: 62px; }
+    #closeDealModal .total-stepper-sm { width: 48px; }
+    #closeDealModal .total-stepper-wrap input { padding-right: 55px; }
 
-    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 62px; }
+    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { padding: 0 55px; }
 
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
 
@@ -1642,11 +1654,11 @@
     #saveDealModal .sd-strike-grid .form-row > .total-stepper-wrap .total-stepper-sm .total-stepper-btn { font-size: 20px; }
 
     #closeDealModal .total-stepper-sm { width: 40px; }
-    #closeDealModal .total-stepper-wrap input { padding-right: 46px; }
 
-    #closeDealModal #cdEntryPrice, #closeDealModal #cdClosedPrice { padding-left: 46px; }
+    #closeDealModal .total-stepper-wrap input { padding-right: 40px; }
+
+    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { padding: 0 40px; font-size: 12px; }
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 20px; }
-    #closeDealModal #cdPtPct, #closeDealModal #cdPtVal { font-size: 12px; }
 
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 40px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 40px; }
@@ -1852,7 +1864,7 @@
         <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
 
-        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;&#129704;  Order Deals By</button>
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;  Order Deals By  &#129518;</button>
       </div>
       <div class="portfolio-header">
         <div class="top-row-left">
@@ -2953,9 +2965,9 @@
     const hideClosedItem = document.getElementById('pmHideClosedItem');
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
-    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F440}\u{1F512}  Show Closed Deals' : '\u{1F648}\u{1F512}  Hide Closed Deals';
-    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{1F440}\u{26A1}  Show Active Deals' : '\u{1F648}\u{26A1}  Hide Active Deals';
-    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F440}\u{1F3F7}\u{FE0F}  Show Entry Price' : '\u{1F648}\u{1F3F7}\u{FE0F}  Hide Entry Price';
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}  Hide Closed Deals  \u{1F648}' : '\u{1F512}  Show Closed Deals  \u{1F440}';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{26A1}  Hide Active Deals  \u{1F648}' : '\u{26A1}  Show Active Deals  \u{1F440}';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}  Hide Entry Price  \u{1F648}' : '\u{1F3F7}\u{FE0F}  Show Entry Price  \u{1F440}';
   }
 
   function togglePortfolioSetting(key) {
@@ -2983,8 +2995,8 @@
   }
 
   function clearPortfolioSort() {
-    portfolioSettings.sortField = null;
-    portfolioSettings.sortDir = 'desc';
+    portfolioSettings.sortField = 'status';
+    portfolioSettings.sortDir = 'asc';
     savePortfolioSettings();
     updateOrderModalUI();
     renderPortfolio();
@@ -3008,8 +3020,9 @@
     hideClosedDeals: false,
     hideActiveDeals: false,
     hideEntryPrice: false,
-    sortField: null,   
-    sortDir: 'desc',   
+
+    sortField: 'status',   
+    sortDir: 'asc',   
     updatedAt: 0
   };
 
@@ -3316,7 +3329,7 @@
         <div class="deal-actions-cell">
           <div class="deal-actions-row">
             ${closeOrReopenBtn}
-            <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+            <button type="button" class="deal-icon-btn edit" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
             <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
           </div>
         </div>
@@ -3380,7 +3393,7 @@
             </div>
             <div class="deal-card-actions">
               ${closeOrReopenBtn}
-              <button type="button" class="deal-icon-btn" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
+              <button type="button" class="deal-icon-btn edit" onclick="openEditModal('${deal.id}')" title="Edit">${dealIconGlyph('dealEdit')}</button>
               <button type="button" class="deal-icon-btn delete" onclick="deleteDeal('${deal.id}')" title="Delete">${dealIconGlyph('dealDelete')}</button>
             </div>
           </div>

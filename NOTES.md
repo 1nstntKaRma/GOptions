@@ -8306,3 +8306,141 @@ browser + real Google sign-in. Worth a real-browser check: toggle a
 setting, reload, confirm it's still applied; and if signed into Drive
 sync, confirm a setting change made on one device shows up on another
 after a sync cycle.
+
+## Menu label emoji order, default sort = Status, -15px shift, Close Deal field-size matching
+
+Explicit follow-up, 4 parts in one round:
+
+> "new exact titles + emojis for each button... define 'Order Deals By'
+> default value as 'Status' (ARROW UP)... move the value within these
+> fields 15px to the left... 'Close Deal' window modification: adapt
+> field sizes of Profit Taker % / Profit Taker $ to be just like Entry
+> Price / Closed Price... Do no break centering of titles above the
+> respected fields."
+
+**Menu emoji order**: leading emoji identifies which toggle (🔒/⚡/🏷️),
+trailing emoji is destination state (🙈/👀) -- swapped from the
+previous round's opposite order.
+
+**Default sort = Status/ascending**: `portfolioSettings.sortField`
+default changed from `null` to `'status'`, `sortDir` from `'desc'` to
+`'asc'`. `sortDealsForDisplay()` still supports `sortField: null` as a
+defensive fallback (plain createdTs order), just no longer reachable
+from the UI -- `clearPortfolioSort()` ("Reset") now restores THIS
+default (Status/asc), not the old null/desc.
+
+**Stock Price modal, -15px**: found the actual live values had already
+drifted from what an earlier round's comment described (81px/61px
+padding, not the documented 96px/46px) -- treated the LIVE value as
+ground truth rather than trusting stale comments, and applied the same
+halving relationship (`shift = (padding-left - padding-right) / 2`)
+in reverse: -15px shift needs padding-left to shrink by 30px (81 -> 51),
+padding-right untouched (61px, still sized to clear the stepper).
+Verified via the same content-center-offset formula used 2 rounds ago:
+measures exactly `-5` (i.e. 15px left of the prior `+10` position).
+
+**Close Deal PT%/PT$ now matches Entry/Closed Price's size exactly**:
+root cause of "utilizing space horribly" (persisting from an earlier
+round) -- PT%/PT$ have no scoping class of their own, so they were
+still using this modal's OLD stand-alone sizing (70%-width stepper-wrap,
+65px stepper, 34px button glyph) from several rounds back, never
+updated when Entry/Closed Price (`.cd-price-row`) got its own "copy
+Stock Price's dimensions" pass. Fixed by pointing the plain modal-wide
+rules (`#closeDealModal .total-stepper-wrap`, `.total-stepper-sm`, its
+`.total-stepper-btn`) at the SAME values `.cd-price-row` already uses at
+every tier (Desktop: 100% width/48px stepper/22px glyph; 700px: 48px
+stepper/55px padding; 345px: 40px padding) -- `.cd-price-row`'s own
+rules are more specific (1 ID + 2 classes vs this block's 1 ID + 1
+class) so they keep winning for Entry/Closed Price regardless, meaning
+this change only actually affects PT%/PT$. Deliberately did NOT copy
+Entry/Closed Price's own asymmetric "shifted" padding onto PT%/PT$ --
+that shift is a separate ask that was never made for PT fields; PT%/PT$
+get plain SYMMETRIC padding instead (61/61 Desktop, 55/55 @700px, 40/40
+@345px), properly centered rather than mimicking a shift nobody asked
+for. Removed 3 now-fully-dead `#cdEntryPrice`/`#cdClosedPrice`-specific
+rules along the way (one per tier) that `.cd-price-row`'s own overrides
+had already superseded. "Do no break centering of titles above the
+fields" -- unaffected either way; label centering is a completely
+separate rule (`#closeDealModal .form-row label`) targeting the LABEL
+element, not these input-padding changes.
+
+### Verified
+
+Stock Price modal content-center-offset measures `-5` (Desktop, correct
+15px-left delta from the prior `+10`). Close Deal: `#cdPtPct` and
+`#cdEntryPrice` both measure identical `343x79` boxes and identical
+`48px` steppers via `getBoundingClientRect()`; label `text-align` still
+`center`. Screenshot confirms both rows now look visually identical in
+size. No console errors.
+
+## Purple ticker-banner position knobs + toggle label state-readout fix
+
+Explicit follow-up, 2 parts:
+
+> "edit the code and provide 1 line for desktop mode, 1 line for phone
+> mode that controls these positions and ill edit it. named:
+> 'EditTickerPurplePosition-CalculatorPhone' /
+> '...CalculatorDesktop'... these are the default settings, so every
+> new user will see everything and if he chooses, he can hide it" +
+> corrected label text for all 3 toggles' DEFAULT (nothing-hidden) state.
+
+**Position knobs**: `.calc-editing-banner` (the purple ticker shown near
+the logo while editing a deal in Calculator mode) previously had NO
+working position at all -- confirmed live (`getComputedStyle` showed
+`top:auto;left:auto`) that an earlier round's own CSS comment describing
+"tuned position values" no longer matched the actual rule, which never
+had `top`/`left` in it. Fixed with exactly the 1-line-per-mode structure
+asked for: fixed `top:0;left:0` anchor, then a single standalone
+`translate` property (NOT the `transform` shorthand -- matches this
+file's own precedent of using individual modern properties like `scale`
+on the logo right next to it, for the same "avoid `transform`'s side
+effects" reasoning already established elsewhere in NOTES.md) reading
+ONE new `:root` variable per mode, in `<x> <y>` order (same "+X=right,
++Y=down" sign convention as every other knob in this file) --
+`--EditTickerPurplePosition-CalculatorDesktop` / `-CalculatorPhone`,
+named exactly as given. Defaults land it roughly under its own tier's
+logo, freely retunable.
+
+**Toggle labels, current-state not destination-action**: the given
+default text ("Show Closed Deals" while nothing is hidden yet) revealed
+the PREVIOUS round's "destination action" convention (borrowed from
+`updateHamburgerMenuLabels()`, "shows what clicking it will DO") was
+wrong for these 3 toggles -- they needed to read as a STATE READOUT
+instead ("Show Closed Deals" = currently showing, not "click to show").
+Swapped the ternary in `updatePortfolioMenuLabels()`: `false` (nothing
+hidden) -> "Show ... 👀", `true` (hidden) -> "Hide ... 🙈".
+
+### Verified
+
+`typeof deals` confirmed still `"object"` after reload (no repeat of
+the earlier TDZ regression). Menu opened fresh (all 3 settings at their
+`false` default) shows the exact 3 lines given, verbatim, plus the
+unchanged Order-By button text. Toggling `hideClosedDeals` and back
+confirms the swap: `true` -> "🔒  Hide Closed Deals  🙈". Purple banner:
+`getComputedStyle(...).translate` reads the live CSS variable value at
+both Desktop (`-90px 100px`) and Phone (`35px 55px`, confirmed switches
+correctly with `body.portfolio-layout-mobile`); live-changing the
+Desktop variable to `20px 300px` moved the rendered element by exactly
+the expected delta (`+200px` top, `+110px` left) via
+`getBoundingClientRect()`, confirming the knob is genuinely wired up,
+not just present in CSS. No console errors.
+
+## Frame-color copies + purple ticker fix
+
+**Frame colors, explicit follow-up**: "copy frame color of 'Edit Entry/
+Closed Stock Price' and apply it to 'Edit' (pencil) button" -- Edit
+button (`.deal-icon-btn.edit`, new class) now uses `--legend-dte-
+closed-color`. "copy frame color of 'Close Deal' and apply it to 'Edit
+Entry/Closed Stock Price'" -- the DTE-cell price button's frame
+(`.deal-dte-cell.closed` / `.deal-card-dte-badge.closed`, plus Desktop's
+more-specific `.icon-only` variant which was separately overriding the
+same property) now uses `--legend-dealClose-color`. All via existing
+Legend tokens (not new hex), both Desktop and Phone.
+
+**Purple ticker banner regression**: the position-knob round right
+before this one set `--EditTickerPurplePosition-CalculatorDesktop` to
+`-90px 100px` -- pushed the banner outside `.page-frame`'s visible
+area at real window widths, reading as "not showing at all." Reset
+both knobs to `0px 0px` (literal top-left corner, per the fix request)
+and added `z-index:5` for safety. Confirmed visually via screenshot --
+purple "NVDA" now renders correctly at the top-left corner.
