@@ -6485,10 +6485,43 @@
     return null;
   }
 
+  // ISO date strings ('YYYY-MM-DD') sort correctly with plain string
+  // comparison -- this only exists to centralize the "missing sorts
+  // last" rule so dealDateGroupSort (below) doesn't repeat it inline.
+  function compareDealDates(a, b) {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  // Explicit follow-up: "Order Deals By 'Status' (ARROW UP): most top
+  // will show latest 'OPEN' deal (Start Date), most bottom will show
+  // latest 'CLOSED' deal (Date Closed). If ARROW DOWN, reversed
+  // obviously." Status alone (0/1) can't express this -- it only
+  // groups Open before Closed, with no defined order WITHIN each
+  // group. This builds the full arrangement directly: Open deals
+  // newest-Start-Date-first (so the newest lands at the very top of
+  // the whole list), then Closed deals oldest-Close-Date-first (so the
+  // newest lands at the very bottom of the whole list, not the top of
+  // its own group). Reversing this ENTIRE sequence for ARROW DOWN (not
+  // just flipping the comparator's sign) is what makes Closed end up on
+  // top AND newest-close-date-first, Open end up on bottom AND oldest-
+  // start-date-first -- a true mirror image, matching "reversed" as
+  // literally as possible rather than just re-sorting each group the
+  // same way in a different position.
+  function sortDealsByStatusGroup(list, dir) {
+    const open = list.filter(d => !d.closed).sort((a, b) => compareDealDates(b.startDate, a.startDate));
+    const closed = list.filter(d => d.closed).sort((a, b) => compareDealDates(a.closeDate, b.closeDate));
+    const ascending = open.concat(closed);
+    return dir === 1 ? ascending : ascending.reverse();
+  }
+
   function sortDealsForDisplay(list) {
     const field = portfolioSettings.sortField;
     if (!field) return list.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
     const dir = portfolioSettings.sortDir === 'asc' ? 1 : -1;
+    if (field === 'status') return sortDealsByStatusGroup(list.slice(), dir);
     return list.slice().sort((a, b) => {
       const va = dealSortValue(a, field);
       const vb = dealSortValue(b, field);

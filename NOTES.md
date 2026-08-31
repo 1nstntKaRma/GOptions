@@ -8443,4 +8443,32 @@ before this one set `--EditTickerPurplePosition-CalculatorDesktop` to
 area at real window widths, reading as "not showing at all." Reset
 both knobs to `0px 0px` (literal top-left corner, per the fix request)
 and added `z-index:5` for safety. Confirmed visually via screenshot --
-purple "NVDA" now renders correctly at the top-left corner.
+purple "NVDA" now renders correctly at the top-left corner. Since then,
+also added matching `--EditTickerPurpleFontSize-CalculatorDesktop/-Phone`
+knobs right next to the position ones (explicit follow-up), wired into
+`.calc-editing-banner`'s `font-size`.
+
+## Order Deals By "Status": defined within-group sub-order
+
+Explicit follow-up: "'Status' (ARROW UP): most top will show latest
+'OPEN' deal (Start Date), most bottom will show latest 'CLOSED' deal
+(Date Closed). If ARROW DOWN, reversed obviously."
+
+Plain `status` (0/1) only ever grouped Open before Closed with no
+defined order WITHIN each group -- new `sortDealsByStatusGroup()`
+builds the full arrangement directly instead: Open deals sorted
+newest-Start-Date-first (newest lands at the very top of the whole
+list), then Closed deals sorted oldest-Close-Date-first (newest lands
+at the very BOTTOM, not the top of its own group). ARROW DOWN reverses
+the ENTIRE built sequence (`.reverse()`), not just the comparator's
+sign -- a true mirror image: Closed group moves to the top (newest-
+close-date-first), Open group moves to the bottom (oldest-start-date-
+first). This is now the app's DEFAULT sort (`status`/`asc`), so every
+new user sees this arrangement immediately.
+
+### Verified
+
+4 synthetic deals (2 open, 2 closed, deliberately different dates)
+confirm both orders exactly: ascending = `OPEN_NEW, OPEN_OLD,
+CLOSED_OLD, CLOSED_NEW`; descending = the literal reverse,
+`CLOSED_NEW, CLOSED_OLD, OPEN_OLD, OPEN_NEW`. No console errors.

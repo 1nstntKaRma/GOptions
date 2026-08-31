@@ -3453,10 +3453,25 @@
     return null;
   }
 
+  function compareDealDates(a, b) {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  function sortDealsByStatusGroup(list, dir) {
+    const open = list.filter(d => !d.closed).sort((a, b) => compareDealDates(b.startDate, a.startDate));
+    const closed = list.filter(d => d.closed).sort((a, b) => compareDealDates(a.closeDate, b.closeDate));
+    const ascending = open.concat(closed);
+    return dir === 1 ? ascending : ascending.reverse();
+  }
+
   function sortDealsForDisplay(list) {
     const field = portfolioSettings.sortField;
     if (!field) return list.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
     const dir = portfolioSettings.sortDir === 'asc' ? 1 : -1;
+    if (field === 'status') return sortDealsByStatusGroup(list.slice(), dir);
     return list.slice().sort((a, b) => {
       const va = dealSortValue(a, field);
       const vb = dealSortValue(b, field);
