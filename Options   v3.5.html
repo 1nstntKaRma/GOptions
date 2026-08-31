@@ -22,7 +22,7 @@
      documented to make that forced-dark heuristic back off entirely and
      render the page's own authored colors as-is. -->
 <meta name="color-scheme" content="dark" />
-<title>Options v3.5 - Golan</title>
+<title>Options v3.7 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
@@ -1657,52 +1657,6 @@
     margin-top: 42px;
   }
 
-  /* ---------- portfolio: one row per deal, not a card grid --------
-     Both platforms show the same columns now (TICKER / STRIKES / STATUS /
-     DTE / DATE / RATIO / MAX LOSS / MAX PROFIT / PT % / PT VALUE /
-     PROFIT-LOSS / PRICES / ACTIONS). Every row -- header included -- is
-     its OWN `display:grid` using this SAME shared class, so the browser
-     computes identical column tracks for all of them for free; no
-     per-row width sync pass needed the way Tkinter's separate-Frame-
-     per-row layout required. */
-  /* Rows use a fixed column template so header and rows always line up
-     (see .portfolio-row) -- that means the row list can't reflow to a
-     narrower screen the way a card grid could. Contained horizontal
-     scroll is ALWAYS on (not just under a narrow media query) so the
-     table can never force the whole page to overflow sideways -- that was
-     the root cause of the row list "bugged out" on phones even in a
-     browser's wide/desktop-site mode: the grid's fixed total width (~1200px)
-     exceeded the viewport at every breakpoint below it, and only the page
-     itself (not this container) had anywhere to put that overflow. Header
-     and rows both live inside this one scrolling box, so they always pan
-     together and stay aligned. */
-  /* Desktop position knob -- see "PORTFOLIO 'P/L SUMMARY' & 'TOTAL
-     DEALS' POSITION" in :root (--portfolio-deals-desktop-y). Table
-     header + every row live inside this one container, so they move as
-     one unit.
-     Explicit follow-up: "push upwards 'Options v3.5 By Golan', so it
-     has the same spacing from bottom page just like calculator mode."
-     Root cause, live-measured: this knob was `position:relative; top`
-     (a pure visual nudge, deliberately -- see NOTES.md on why every
-     OTHER position knob in this file uses the same technique instead of
-     `transform`). A relative shift moves the box on screen but doesn't
-     move the SPACE it reserves in flow, so the footer below it (a
-     plain sibling, positioned from flow) never followed the nudge --
-     with the closed-deals state's -20px shift, the container visually
-     moved UP 20px while the footer stayed put, adding 20px of dead air
-     between them on top of the 40px margin-bottom below, for a 60px
-     gap vs Calculator's 20px. Switched to `margin-top` (same values,
-     just a property that actually participates in flow) so the shift
-     drags the footer along with it -- confirmed live this alone doesn't
-     regress anything else, since nothing else was relying on this
-     specific box being `position:relative` for a stacking-context
-     reason (unlike badges/menus elsewhere in this file). margin-bottom
-     dropped 40px -> 0 -- adjacent block margins COLLAPSE (take the
-     larger, not the sum) rather than add, so this doesn't remove
-     spacing outright, it just stops OUTBIDDING the footer's own 20px
-     margin-top, which is exactly the amount Calculator's own last
-     element implicitly matches (having no trailing margin of its own
-     either). */
   .deal-grid { margin-top: var(--portfolio-deals-desktop-y); overflow-x: auto; -webkit-overflow-scrolling: touch; }
   /* .has-closed-deals toggled by renderPortfolio() -- see the
      --portfolio-dealsClosed-desktop-y comment in :root for why this
@@ -1839,34 +1793,7 @@
     margin-bottom: 14px;
   }
   .portfolio-row.deal-row.open { border-color: var(--blue); }
-
-  /* ---------- portfolio: Phone layout (dealCardHtml) ----------
-     Fully independent from .portfolio-row/.deal-grid above -- no shared
-     classes, no shared markup. Deliberately duplicated rather than
-     reusing/reflowing the wide grid via a media query: the wide grid's
-     13 fixed-px columns are a genuinely different information layout
-     (one row per deal, everything in a single horizontal strip) than
-     this 2-tier card (header row + two 4-cell metric grids), not just a
-     narrower version of the same thing. Keeping them separate means a
-     change to one can never accidentally affect the other -- see this
-     file's own history of "wide grid" bugs for why that separation is
-     worth the duplication here. */
-  /* Phone position knob -- see "PORTFOLIO 'P/L SUMMARY' & 'TOTAL DEALS'
-     POSITION" in :root (--portfolio-deals-phone-y). Every card lives
-     inside this one container, so they move as one unit.
-     Explicit follow-up: "push upwards 'Options v3.5 By Golan'... same
-     spacing from bottom page just like calculator mode" -- same
-     `position:relative;top` -> `margin-top` fix as `.deal-grid` above
-     (see its own comment for the full root-cause explanation: a
-     relative shift doesn't drag the footer along with it since the
-     footer reads flow position, not the shifted visual position).
-     margin-bottom 40px -> 0 for the same reason -- collapses with the
-     footer's own 20px margin-top instead of outbidding it. */
   .deal-cards-mobile { margin-top: var(--portfolio-deals-phone-y); }
-  /* .has-closed-deals toggled by renderPortfolio() -- see the
-     --portfolio-dealsClosed-desktop-y comment in :root for why this
-     needs its own offset separate from the no-closed-deals default
-     above. */
   .deal-cards-mobile.has-closed-deals { margin-top: var(--portfolio-dealsClosed-phone-y); }
 
   /* Explicit follow-up: "8 cell mesh layout, smaller gaps and spacing
@@ -4198,7 +4125,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v3.5 By Golan</div>
+    <div class="footer">Options v3.7 By Golan</div>
     </main>
   </div>
 </div>
