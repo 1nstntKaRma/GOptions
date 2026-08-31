@@ -853,6 +853,16 @@
     width: 100%;
     font-family: inherit;
   }
+  /* Portfolio-logo menu -- same .hamburger-menu/.hamburger-item look,
+     different anchoring. `position:fixed` (not the inherited `absolute`)
+     since its top/left are set from the logo's live getBoundingClientRect()
+     in JS (see togglePortfolioMenu()) rather than a CSS-declared offset
+     against a shared ancestor -- see the HTML comment above the logo
+     for why. `right`/`top` reset to `auto` so nothing left over from
+     `.hamburger-menu`'s own `top: calc(100% + 10px); right: 0;` fights
+     the inline styles JS sets on open. */
+  .portfolio-logo-corner { cursor: pointer; }
+  .portfolio-menu { position: fixed; top: auto; right: auto; left: auto; }
   .hamburger-item:hover { background: var(--row); }
   /* The Import item is a <label> wrapping a hidden native file input --
      same trick as the portfolio header's own Import button, just styled
@@ -1681,13 +1691,36 @@
   /* Desktop position knob -- see "PORTFOLIO 'P/L SUMMARY' & 'TOTAL
      DEALS' POSITION" in :root (--portfolio-deals-desktop-y). Table
      header + every row live inside this one container, so they move as
-     one unit. */
-  .deal-grid { margin-bottom: 40px; overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; top: var(--portfolio-deals-desktop-y); }
+     one unit.
+     Explicit follow-up: "push upwards 'Options v3.5 By Golan', so it
+     has the same spacing from bottom page just like calculator mode."
+     Root cause, live-measured: this knob was `position:relative; top`
+     (a pure visual nudge, deliberately -- see NOTES.md on why every
+     OTHER position knob in this file uses the same technique instead of
+     `transform`). A relative shift moves the box on screen but doesn't
+     move the SPACE it reserves in flow, so the footer below it (a
+     plain sibling, positioned from flow) never followed the nudge --
+     with the closed-deals state's -20px shift, the container visually
+     moved UP 20px while the footer stayed put, adding 20px of dead air
+     between them on top of the 40px margin-bottom below, for a 60px
+     gap vs Calculator's 20px. Switched to `margin-top` (same values,
+     just a property that actually participates in flow) so the shift
+     drags the footer along with it -- confirmed live this alone doesn't
+     regress anything else, since nothing else was relying on this
+     specific box being `position:relative` for a stacking-context
+     reason (unlike badges/menus elsewhere in this file). margin-bottom
+     dropped 40px -> 0 -- adjacent block margins COLLAPSE (take the
+     larger, not the sum) rather than add, so this doesn't remove
+     spacing outright, it just stops OUTBIDDING the footer's own 20px
+     margin-top, which is exactly the amount Calculator's own last
+     element implicitly matches (having no trailing margin of its own
+     either). */
+  .deal-grid { margin-top: var(--portfolio-deals-desktop-y); overflow-x: auto; -webkit-overflow-scrolling: touch; }
   /* .has-closed-deals toggled by renderPortfolio() -- see the
      --portfolio-dealsClosed-desktop-y comment in :root for why this
      needs its own offset separate from the no-closed-deals default
      above. */
-  .deal-grid.has-closed-deals { top: var(--portfolio-dealsClosed-desktop-y); }
+  .deal-grid.has-closed-deals { margin-top: var(--portfolio-dealsClosed-desktop-y); }
 
   .portfolio-row {
     display: grid;
@@ -1832,13 +1865,21 @@
      worth the duplication here. */
   /* Phone position knob -- see "PORTFOLIO 'P/L SUMMARY' & 'TOTAL DEALS'
      POSITION" in :root (--portfolio-deals-phone-y). Every card lives
-     inside this one container, so they move as one unit. */
-  .deal-cards-mobile { margin-bottom: 40px; position: relative; top: var(--portfolio-deals-phone-y); }
+     inside this one container, so they move as one unit.
+     Explicit follow-up: "push upwards 'Options v3.5 By Golan'... same
+     spacing from bottom page just like calculator mode" -- same
+     `position:relative;top` -> `margin-top` fix as `.deal-grid` above
+     (see its own comment for the full root-cause explanation: a
+     relative shift doesn't drag the footer along with it since the
+     footer reads flow position, not the shifted visual position).
+     margin-bottom 40px -> 0 for the same reason -- collapses with the
+     footer's own 20px margin-top instead of outbidding it. */
+  .deal-cards-mobile { margin-top: var(--portfolio-deals-phone-y); }
   /* .has-closed-deals toggled by renderPortfolio() -- see the
      --portfolio-dealsClosed-desktop-y comment in :root for why this
      needs its own offset separate from the no-closed-deals default
      above. */
-  .deal-cards-mobile.has-closed-deals { top: var(--portfolio-dealsClosed-phone-y); }
+  .deal-cards-mobile.has-closed-deals { margin-top: var(--portfolio-dealsClosed-phone-y); }
 
   /* Explicit follow-up: "8 cell mesh layout, smaller gaps and spacing
      form lateral sides... lower frames external and internal spacing
@@ -1904,7 +1945,18 @@
      scoped to .deal-card so the wide grid's own .deal-ticker (shared
      class, different context) is untouched. */
   .deal-card .deal-ticker { font-size: 26px; }
-  .deal-card .deal-sub { font-size: 13px; }
+  /* Explicit follow-up: "Position Strike vertically centered between
+     'TICKER' & 'Bull Put Spread', its too close to 'Bull Put Spread'."
+     Only matters once Strikes wraps below Ticker (see .deal-name's own
+     flex-wrap) -- live-measured a 6px gap above Strikes (.deal-name's
+     own `gap:6px`, acting as row-gap once wrapped) vs 0px below it
+     (no margin between .deal-name and .deal-sub at all). Matching that
+     same 6px here balances both sides. Also applies (harmlessly, as
+     extra breathing room) on the single-line case where Strikes sits
+     beside Ticker instead of below it -- CSS alone can't target "only
+     when wrapped" without a container query this file doesn't use
+     elsewhere. */
+  .deal-card .deal-sub { font-size: 13px; margin-top: 6px; }
   .deal-card .badge { font-size: 12px; padding: 3px 9px; }
 
   /* Explicit follow-up: "low res phone... line pushed downwards cause of
@@ -2887,6 +2939,37 @@
     vertical-align: middle;
   }
   .icon-edit-btn:hover { color: var(--blue); }
+
+  /* ---------- Order Deals By modal ---------- */
+  .order-deals-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
+  .order-deals-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--row);
+  }
+  .order-deals-label { font-size: 14px; color: var(--text); font-weight: 600; }
+  .order-deals-arrows { display: flex; gap: 6px; }
+  .order-arrow-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0;
+  }
+  /* The currently active sort field+direction -- see updateOrderModalUI().
+     Only ever one active arrow across the whole list (single active sort
+     key, confirmed with the user before building this). */
+  .order-arrow-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
 
   /* ---------- month/day date picker (no year field) ---------- */
   .date-pair { display: flex; align-items: center; gap: 6px; }
@@ -4031,7 +4114,31 @@
            mode is showing instead. -->
       <!-- Same plain-relative-path fix as the Calculator logo above --
            see its own comment for the full reasoning. -->
-      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" />
+      <!-- Explicit follow-up: "Pressing on the Portfolio logo will open
+           a menu exactly like the hamburger icon, but from the left
+           side." Reuses the hamburger menu's own .hamburger-menu-
+           backdrop/.hamburger-item classes verbatim (same dim-overlay/
+           row styling) -- .portfolio-menu overrides just the positioning
+           half. Deliberately NOT wrapped in a new position:relative
+           container the way .hamburger-wrap does it -- .portfolio-logo-
+           corner is position:absolute against .page-frame with its own
+           per-breakpoint top/left/scale values already, and nesting it
+           in a fresh wrapper would silently change its containing block.
+           Positioned instead via JS at open time (position:fixed, top/
+           left set from the logo's live getBoundingClientRect() in
+           togglePortfolioMenu()) -- correct regardless of the logo's
+           own position at any given breakpoint, zero risk to its
+           existing CSS. -->
+      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" onclick="togglePortfolioMenu(event)" title="Portfolio Menu" />
+      <div id="portfolioMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closePortfolioMenu()"></div>
+      <div id="portfolioMenu" class="hamburger-menu portfolio-menu" hidden>
+        <button type="button" class="hamburger-item" id="pmHideClosedItem" onclick="togglePortfolioSetting('hideClosedDeals')"></button>
+        <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
+        <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
+        <!-- Explicit follow-up: "new exact titles + emojis for each
+             button" -- &#128193; (folder) + &#129704; (bricks). -->
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;&#129704;  Order Deals By</button>
+      </div>
       <div class="portfolio-header">
         <div class="top-row-left">
           <div class="portfolio-title-block">
@@ -4441,6 +4548,62 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeUpdateDealConfirm()">Cancel</button>
       <button type="button" class="btn btn-primary" onclick="confirmUpdateDeal()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Explicit follow-up: "Order Deals By: (pressing this button will open
+     a small compact window allowing the user to choose how to order
+     deals.)... each one of these filters/order options will have
+     UP/DOWN arrows next to it at its right side." Opened from the
+     Portfolio-logo menu (see #portfolioMenu above). Single active sort
+     key -- clicking either arrow on a row makes THAT field the active
+     sort in that direction; the previously-active row's arrows lose
+     their highlight (see updateOrderModalUI()). -->
+<div id="orderDealsModal" class="modal-backdrop hidden">
+  <div class="modal-panel">
+    <h2>Order Deals By</h2>
+    <p class="modal-sub">Choose a field and direction to sort your Portfolio list.</p>
+    <div class="order-deals-list">
+      <div class="order-deals-row" data-field="startDate">
+        <span class="order-deals-label">Start Date</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('startDate','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('startDate','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="closeDate">
+        <span class="order-deals-label">Closed Date</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('closeDate','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('closeDate','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="status">
+        <span class="order-deals-label">Status</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('status','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('status','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="profit">
+        <span class="order-deals-label">Profit</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('profit','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('profit','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="ratio">
+        <span class="order-deals-label">Ratio</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('ratio','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('ratio','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="clearPortfolioSort()">Reset</button>
+      <button type="button" class="btn btn-primary" onclick="closeOrderModal()">Done</button>
     </div>
   </div>
 </div>
@@ -5440,11 +5603,164 @@
     if (evt.key === 'Escape') closeHamburgerMenu();
   }
 
+  /* ---------- Portfolio-logo menu -- see the HTML comment above
+     #portfolioMenu for why this is position:fixed + JS-placed instead
+     of the hamburger menu's own CSS-anchored position:absolute. ---------- */
+  function togglePortfolioMenu(evt) {
+    if (evt) evt.stopPropagation();
+    const menu = document.getElementById('portfolioMenu');
+    const backdrop = document.getElementById('portfolioMenuBackdrop');
+    if (!menu) return;
+    if (menu.hidden) {
+      updatePortfolioMenuLabels();
+      const logo = document.querySelector('.portfolio-logo-corner');
+      const rect = logo.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 10) + 'px';
+      menu.style.left = Math.max(8, rect.left) + 'px';
+      menu.hidden = false;
+      if (backdrop) backdrop.hidden = false;
+      document.addEventListener('click', onPortfolioMenuOutsideClick);
+      document.addEventListener('keydown', onPortfolioMenuEscape);
+    } else {
+      closePortfolioMenu();
+    }
+  }
+
+  function closePortfolioMenu() {
+    const menu = document.getElementById('portfolioMenu');
+    const backdrop = document.getElementById('portfolioMenuBackdrop');
+    if (menu) menu.hidden = true;
+    if (backdrop) backdrop.hidden = true;
+    document.removeEventListener('click', onPortfolioMenuOutsideClick);
+    document.removeEventListener('keydown', onPortfolioMenuEscape);
+  }
+
+  function onPortfolioMenuOutsideClick(evt) {
+    const menu = document.getElementById('portfolioMenu');
+    const logo = document.querySelector('.portfolio-logo-corner');
+    if (menu && !menu.contains(evt.target) && logo && !logo.contains(evt.target)) closePortfolioMenu();
+  }
+
+  function onPortfolioMenuEscape(evt) {
+    if (evt.key === 'Escape') closePortfolioMenu();
+  }
+
+  // Destination-icon convention, matching updateHamburgerMenuLabels()
+  // above -- each item shows what clicking it will DO, not the current
+  // state. Explicit follow-up: "all toggle buttons will have changing
+  // name accordingly."
+  // Explicit follow-up: "new exact titles + emojis for each button" --
+  // 🙈/👀 (destination state: what you'll SEE after clicking, matching
+  // the "shows what clicking it will DO" convention above) + a 2nd
+  // emoji identifying WHICH toggle (🔒 Closed, ⚡ Active, 🏷️ Entry Price).
+  function updatePortfolioMenuLabels() {
+    const hideClosedItem = document.getElementById('pmHideClosedItem');
+    const hideActiveItem = document.getElementById('pmHideActiveItem');
+    const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F440}\u{1F512}  Show Closed Deals' : '\u{1F648}\u{1F512}  Hide Closed Deals';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{1F440}\u{26A1}  Show Active Deals' : '\u{1F648}\u{26A1}  Hide Active Deals';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F440}\u{1F3F7}\u{FE0F}  Show Entry Price' : '\u{1F648}\u{1F3F7}\u{FE0F}  Hide Entry Price';
+  }
+
+  function togglePortfolioSetting(key) {
+    portfolioSettings[key] = !portfolioSettings[key];
+    savePortfolioSettings();
+    updatePortfolioMenuLabels();
+    renderPortfolio();
+  }
+
+  /* ---------- Order Deals By modal ---------- */
+  function openOrderModal() {
+    updateOrderModalUI();
+    document.getElementById('orderDealsModal').classList.remove('hidden');
+  }
+
+  function closeOrderModal() {
+    document.getElementById('orderDealsModal').classList.add('hidden');
+  }
+
+  function setPortfolioSort(field, dir) {
+    portfolioSettings.sortField = field;
+    portfolioSettings.sortDir = dir;
+    savePortfolioSettings();
+    updateOrderModalUI();
+    renderPortfolio();
+  }
+
+  function clearPortfolioSort() {
+    portfolioSettings.sortField = null;
+    portfolioSettings.sortDir = 'desc';
+    savePortfolioSettings();
+    updateOrderModalUI();
+    renderPortfolio();
+  }
+
+  function updateOrderModalUI() {
+    document.querySelectorAll('.order-deals-row').forEach(row => {
+      const field = row.dataset.field;
+      const isActive = portfolioSettings.sortField === field;
+      const ascBtn = row.querySelector('.order-arrow-btn.asc');
+      const descBtn = row.querySelector('.order-arrow-btn.desc');
+      ascBtn.classList.toggle('active', isActive && portfolioSettings.sortDir === 'asc');
+      descBtn.classList.toggle('active', isActive && portfolioSettings.sortDir === 'desc');
+    });
+  }
+
   initPortfolioLayout();
 
   /* ===================================================================
-   * PORTFOLIO / DEALS
+   * PORTFOLIO VIEW SETTINGS -- show/hide closed/active deals, show/hide
+   * the OPEN-deal Entry Price button, and the active sort field/
+   * direction. Explicit follow-up: "Pressing on the Portfolio logo will
+   * open a menu... Show/Hide Closed Deals... Show/Hide Active Deals...
+   * Show/Hide 'Entry Price'... Order Deals By... it should persist and
+   * be synced to the cloud!" This is VIEW state, not deal data --
+   * doesn't touch `deals`/`tombstones` or their tombstone-based merge
+   * logic (mergeDealSets), but rides along in the SAME Drive JSON file
+   * as a sibling field, with simple last-write-wins (compare
+   * `updatedAt`) since a preferences object has no per-field merge
+   * question the way concurrent deal edits do. localStorage is the fast
+   * local cache (available instantly on load, and the only copy that
+   * exists at all while signed out of Drive); see savePortfolioSettings/
+   * loadPortfolioSettings and the fetchRemoteState/pushToDrive/
+   * pullFromDrive follow-ups below for the sync half.
    * =================================================================== */
+  const PORTFOLIO_SETTINGS_KEY = 'optionsPortfolioSettings_v1';
+  let portfolioSettings = {
+    hideClosedDeals: false,
+    hideActiveDeals: false,
+    hideEntryPrice: false,
+    sortField: null,   // null = default (createdTs, newest first) | 'startDate' | 'closeDate' | 'status' | 'profit' | 'ratio'
+    sortDir: 'desc',   // 'asc' | 'desc'
+    updatedAt: 0
+  };
+
+  function loadPortfolioSettings() {
+    try {
+      const raw = localStorage.getItem(PORTFOLIO_SETTINGS_KEY);
+      if (raw) Object.assign(portfolioSettings, JSON.parse(raw));
+    } catch (err) { /* ignore -- defaults above already cover this */ }
+  }
+
+  // `push` defaults true -- the ONE caller that passes false is the Drive
+  // pull path itself (adopting a newer REMOTE settings object shouldn't
+  // immediately re-push it right back, that's just an echo).
+  function savePortfolioSettings(push) {
+    portfolioSettings.updatedAt = Date.now();
+    try { localStorage.setItem(PORTFOLIO_SETTINGS_KEY, JSON.stringify(portfolioSettings)); } catch (err) { /* ignore */ }
+    if (push !== false) pushToDriveDebounced();
+  }
+
+  // Must run AFTER `portfolioSettings` (above) is actually initialized --
+  // calling this any earlier (it used to sit up near initPortfolioLayout())
+  // hit a genuine "Cannot access 'portfolioSettings' before initialization"
+  // TDZ error, which being an uncaught top-level throw silently aborted
+  // the REST of this script's execution -- `deals` and everything declared
+  // after it never ran either, breaking the entire page. Moved here, the
+  // first point where it's actually safe.
+  loadPortfolioSettings();
+  updatePortfolioMenuLabels();
+
   let deals = [];
   // Deletions made while this client tracks them here as {id, deletedAt}
   // rather than just vanishing from `deals` -- so a sync merge can tell
@@ -5764,7 +6080,14 @@
   // or without a "$X.XX" after it. Only ever called for OPEN deals now
   // -- CLOSED deals' Entry/Closed price display moved into the DTE cell
   // itself, see dealDtePriceCellHtml() below.
+  // Explicit follow-up: "Show/Hide 'Entry Price' (toggle - will allow
+  // the user to show/hide 'Entry Price value' and its blue border &
+  // emoji if a deal is 'OPEN', will not interfere with full 'Entry/
+  // Closed Price' segment @ CLOSED deals)." Only this OPEN-deal button
+  // is gated -- dealDtePriceCellHtml() (the CLOSED-deal DTE-cell price
+  // display) has its own separate call sites and is untouched.
   function dealPriceDisplayHtml(deal) {
+    if (portfolioSettings.hideEntryPrice) return '';
     const hasEntry = !!deal.entryStockPrice;
     const cls = hasEntry ? 'deal-price-display blue' : 'deal-price-display blue missing';
     const txt = hasEntry ? `\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}` : '\u{1F3F7}\u{FE0F}';
@@ -6101,6 +6424,48 @@
     }
   }
 
+  // Explicit follow-up: "Order Deals By: Start Date / Closed Date /
+  // Status / Profit (Profit/Loss Value - NOT MAX VALUES) / RATIO...
+  // each will have UP/DOWN arrows... single active sort key." Reuses
+  // the EXACT same computations each deal's own row already shows for
+  // Profit/Ratio (finalStats/computeMetrics) so the order can never
+  // imply a different number than what's actually displayed. Missing
+  // dates (open deals have no closeDate) sort to the END regardless of
+  // direction -- reversing "no date" to the FRONT on a descending sort
+  // would read as "these are the most recent," which is backwards.
+  function dealSortValue(deal, field) {
+    if (field === 'startDate') return deal.startDate || null;
+    if (field === 'closeDate') return deal.closeDate || null;
+    if (field === 'status') return deal.closed ? 1 : 0;
+    if (field === 'ratio') return computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts).ratio;
+    if (field === 'profit') {
+      if (deal.closed) {
+        const f = finalStats(deal);
+        return f.finalSideLoss ? -Math.abs(f.finalAmount) : Math.abs(f.finalAmount);
+      }
+      const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
+      if (m.fifthMissing) return null;
+      return m.sideIsLoss ? -Math.abs(m.fifthValue) : Math.abs(m.fifthValue);
+    }
+    return null;
+  }
+
+  function sortDealsForDisplay(list) {
+    const field = portfolioSettings.sortField;
+    if (!field) return list.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    const dir = portfolioSettings.sortDir === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => {
+      const va = dealSortValue(a, field);
+      const vb = dealSortValue(b, field);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;  // missing values always last
+      if (vb == null) return -1;
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }
+
   // The genuinely independent width reference fitPortfolioSummaryLine()
   // needs: the REAL gap between the logo (left neighbor) and the Deal
   // button (right neighbor, the closer of .top-row-right's 2 children at
@@ -6195,8 +6560,27 @@
       empty.style.display = '';
       return;
     }
+    // Explicit follow-up: "Show/Hide Closed Deals... Show/Hide Active
+    // Deals" -- VIEW-only filtering (doesn't touch `deals` itself, or
+    // the 4 summary stat lines above, which intentionally still cover
+    // ALL closed deals regardless of this filter -- hiding a closed
+    // deal from the LIST is not the same as excluding it from your P/L
+    // totals). Filtering to nothing (both toggles on) shows the normal
+    // empty state below rather than a separate "no deals match" message
+    // -- simplest behavior, and a state the user did this to themselves.
+    const visible = deals.filter(d => {
+      if (d.closed && portfolioSettings.hideClosedDeals) return false;
+      if (!d.closed && portfolioSettings.hideActiveDeals) return false;
+      return true;
+    });
+    if (visible.length === 0) {
+      grid.innerHTML = '';
+      cards.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
     empty.style.display = 'none';
-    const sorted = deals.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    const sorted = sortDealsForDisplay(visible);
     if (gPortfolioLayout === 'mobile') {
       grid.style.display = 'none';
       cards.style.display = '';
@@ -7158,14 +7542,36 @@
 
   async function fetchRemoteState() {
     const file = await driveApi(() => driveFindFile());
-    if (!file) return { fileId: null, deals: [], tombstones: [], modifiedTime: null };
+    if (!file) return { fileId: null, deals: [], tombstones: [], portfolioSettings: null, modifiedTime: null };
     const remote = await driveApi(() => driveDownload(file.id));
     return {
       fileId: file.id,
       deals: (remote && Array.isArray(remote.deals)) ? remote.deals : [],
       tombstones: (remote && Array.isArray(remote.tombstones)) ? remote.tombstones : [],
+      // Explicit follow-up: portfolioSettings "should persist and be
+      // synced to the cloud" -- rides along as a sibling field in the
+      // SAME Drive JSON file, not through mergeDealSets (that's
+      // tombstone-based CRDT logic for deal DATA; a preferences object
+      // just needs last-write-wins, see adoptRemotePortfolioSettingsIfNewer).
+      portfolioSettings: (remote && remote.portfolioSettings && typeof remote.portfolioSettings === 'object') ? remote.portfolioSettings : null,
       modifiedTime: file.modifiedTime || null,
     };
+  }
+
+  // Last-write-wins by `updatedAt` -- adopts the remote copy only if it's
+  // actually newer than what's already local, then caches it (push:false,
+  // so this doesn't immediately re-push and echo the same value back).
+  // Returns whether anything changed, so callers know if a re-render is
+  // needed.
+  function adoptRemotePortfolioSettingsIfNewer(remoteSettings) {
+    if (!remoteSettings) return false;
+    if ((remoteSettings.updatedAt || 0) > (portfolioSettings.updatedAt || 0)) {
+      Object.assign(portfolioSettings, remoteSettings);
+      savePortfolioSettings(false);
+      updatePortfolioMenuLabels();
+      return true;
+    }
+    return false;
   }
 
   let gPushPending = false;
@@ -7213,7 +7619,8 @@
       const changed = !dealsEqual(merged.deals, deals);
       deals = merged.deals;
       tombstones = merged.tombstones;
-      if (changed) renderPortfolio();
+      const settingsChanged = adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+      if (changed || settingsChanged) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution(merged.conflicts);
       // If the merge pulled in local-only changes the cloud didn't have
@@ -7262,7 +7669,11 @@
       for (let attempt = 0; attempt < 5; attempt++) {
         remote = await fetchRemoteState();
         merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
-        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones };
+        // Pick up a newer REMOTE settings write (e.g. from another
+        // device) before deciding what to upload -- otherwise this push
+        // would silently clobber it with our own older local copy.
+        adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
         const recheck = await driveApi(() => driveFindFile());
         const recheckModified = recheck ? recheck.modifiedTime : null;
         if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {

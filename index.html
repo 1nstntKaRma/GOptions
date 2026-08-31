@@ -352,6 +352,9 @@
     width: 100%;
     font-family: inherit;
   }
+
+  .portfolio-logo-corner { cursor: pointer; }
+  .portfolio-menu { position: fixed; top: auto; right: auto; left: auto; }
   .hamburger-item:hover { background: var(--row); }
 
   .hamburger-item input[type="file"] { display: none; }
@@ -788,9 +791,9 @@
     margin-top: 42px;
   }
 
-  .deal-grid { margin-bottom: 40px; overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; top: var(--portfolio-deals-desktop-y); }
+  .deal-grid { margin-top: var(--portfolio-deals-desktop-y); overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  .deal-grid.has-closed-deals { top: var(--portfolio-dealsClosed-desktop-y); }
+  .deal-grid.has-closed-deals { margin-top: var(--portfolio-dealsClosed-desktop-y); }
 
   .portfolio-row {
     display: grid;
@@ -826,9 +829,9 @@
   }
   .portfolio-row.deal-row.open { border-color: var(--blue); }
 
-  .deal-cards-mobile { margin-bottom: 40px; position: relative; top: var(--portfolio-deals-phone-y); }
+  .deal-cards-mobile { margin-top: var(--portfolio-deals-phone-y); }
 
-  .deal-cards-mobile.has-closed-deals { top: var(--portfolio-dealsClosed-phone-y); }
+  .deal-cards-mobile.has-closed-deals { margin-top: var(--portfolio-dealsClosed-phone-y); }
 
   .deal-card {
     position: relative;
@@ -849,7 +852,8 @@
   .deal-card-close-date { font-size: 11px; color: var(--muted); margin-left: 8px; }
 
   .deal-card .deal-ticker { font-size: 26px; }
-  .deal-card .deal-sub { font-size: 13px; }
+
+  .deal-card .deal-sub { font-size: 13px; margin-top: 6px; }
   .deal-card .badge { font-size: 12px; padding: 3px 9px; }
 
   .deal-card-header {
@@ -1366,6 +1370,34 @@
   }
   .icon-edit-btn:hover { color: var(--blue); }
 
+  .order-deals-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
+  .order-deals-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--row);
+  }
+  .order-deals-label { font-size: 14px; color: var(--text); font-weight: 600; }
+  .order-deals-arrows { display: flex; gap: 6px; }
+  .order-arrow-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0;
+  }
+
+  .order-arrow-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
+
   .date-pair { display: flex; align-items: center; gap: 6px; }
   .date-pair select {
     width: 68px;
@@ -1813,7 +1845,15 @@
 
     <div id="portfolioView">
 
-      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" />
+      <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" onclick="togglePortfolioMenu(event)" title="Portfolio Menu" />
+      <div id="portfolioMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closePortfolioMenu()"></div>
+      <div id="portfolioMenu" class="hamburger-menu portfolio-menu" hidden>
+        <button type="button" class="hamburger-item" id="pmHideClosedItem" onclick="togglePortfolioSetting('hideClosedDeals')"></button>
+        <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
+        <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
+
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;&#129704;  Order Deals By</button>
+      </div>
       <div class="portfolio-header">
         <div class="top-row-left">
           <div class="portfolio-title-block">
@@ -2144,6 +2184,54 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeUpdateDealConfirm()">Cancel</button>
       <button type="button" class="btn btn-primary" onclick="confirmUpdateDeal()">Update</button>
+    </div>
+  </div>
+</div>
+
+<div id="orderDealsModal" class="modal-backdrop hidden">
+  <div class="modal-panel">
+    <h2>Order Deals By</h2>
+    <p class="modal-sub">Choose a field and direction to sort your Portfolio list.</p>
+    <div class="order-deals-list">
+      <div class="order-deals-row" data-field="startDate">
+        <span class="order-deals-label">Start Date</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('startDate','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('startDate','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="closeDate">
+        <span class="order-deals-label">Closed Date</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('closeDate','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('closeDate','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="status">
+        <span class="order-deals-label">Status</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('status','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('status','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="profit">
+        <span class="order-deals-label">Profit</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('profit','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('profit','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+      <div class="order-deals-row" data-field="ratio">
+        <span class="order-deals-label">Ratio</span>
+        <div class="order-deals-arrows">
+          <button type="button" class="order-arrow-btn asc" onclick="setPortfolioSort('ratio','asc')" title="Ascending">&#9650;</button>
+          <button type="button" class="order-arrow-btn desc" onclick="setPortfolioSort('ratio','desc')" title="Descending">&#9660;</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="clearPortfolioSort()">Reset</button>
+      <button type="button" class="btn btn-primary" onclick="closeOrderModal()">Done</button>
     </div>
   </div>
 </div>
@@ -2822,7 +2910,124 @@
     if (evt.key === 'Escape') closeHamburgerMenu();
   }
 
+  function togglePortfolioMenu(evt) {
+    if (evt) evt.stopPropagation();
+    const menu = document.getElementById('portfolioMenu');
+    const backdrop = document.getElementById('portfolioMenuBackdrop');
+    if (!menu) return;
+    if (menu.hidden) {
+      updatePortfolioMenuLabels();
+      const logo = document.querySelector('.portfolio-logo-corner');
+      const rect = logo.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 10) + 'px';
+      menu.style.left = Math.max(8, rect.left) + 'px';
+      menu.hidden = false;
+      if (backdrop) backdrop.hidden = false;
+      document.addEventListener('click', onPortfolioMenuOutsideClick);
+      document.addEventListener('keydown', onPortfolioMenuEscape);
+    } else {
+      closePortfolioMenu();
+    }
+  }
+
+  function closePortfolioMenu() {
+    const menu = document.getElementById('portfolioMenu');
+    const backdrop = document.getElementById('portfolioMenuBackdrop');
+    if (menu) menu.hidden = true;
+    if (backdrop) backdrop.hidden = true;
+    document.removeEventListener('click', onPortfolioMenuOutsideClick);
+    document.removeEventListener('keydown', onPortfolioMenuEscape);
+  }
+
+  function onPortfolioMenuOutsideClick(evt) {
+    const menu = document.getElementById('portfolioMenu');
+    const logo = document.querySelector('.portfolio-logo-corner');
+    if (menu && !menu.contains(evt.target) && logo && !logo.contains(evt.target)) closePortfolioMenu();
+  }
+
+  function onPortfolioMenuEscape(evt) {
+    if (evt.key === 'Escape') closePortfolioMenu();
+  }
+
+  function updatePortfolioMenuLabels() {
+    const hideClosedItem = document.getElementById('pmHideClosedItem');
+    const hideActiveItem = document.getElementById('pmHideActiveItem');
+    const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F440}\u{1F512}  Show Closed Deals' : '\u{1F648}\u{1F512}  Hide Closed Deals';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{1F440}\u{26A1}  Show Active Deals' : '\u{1F648}\u{26A1}  Hide Active Deals';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F440}\u{1F3F7}\u{FE0F}  Show Entry Price' : '\u{1F648}\u{1F3F7}\u{FE0F}  Hide Entry Price';
+  }
+
+  function togglePortfolioSetting(key) {
+    portfolioSettings[key] = !portfolioSettings[key];
+    savePortfolioSettings();
+    updatePortfolioMenuLabels();
+    renderPortfolio();
+  }
+
+  function openOrderModal() {
+    updateOrderModalUI();
+    document.getElementById('orderDealsModal').classList.remove('hidden');
+  }
+
+  function closeOrderModal() {
+    document.getElementById('orderDealsModal').classList.add('hidden');
+  }
+
+  function setPortfolioSort(field, dir) {
+    portfolioSettings.sortField = field;
+    portfolioSettings.sortDir = dir;
+    savePortfolioSettings();
+    updateOrderModalUI();
+    renderPortfolio();
+  }
+
+  function clearPortfolioSort() {
+    portfolioSettings.sortField = null;
+    portfolioSettings.sortDir = 'desc';
+    savePortfolioSettings();
+    updateOrderModalUI();
+    renderPortfolio();
+  }
+
+  function updateOrderModalUI() {
+    document.querySelectorAll('.order-deals-row').forEach(row => {
+      const field = row.dataset.field;
+      const isActive = portfolioSettings.sortField === field;
+      const ascBtn = row.querySelector('.order-arrow-btn.asc');
+      const descBtn = row.querySelector('.order-arrow-btn.desc');
+      ascBtn.classList.toggle('active', isActive && portfolioSettings.sortDir === 'asc');
+      descBtn.classList.toggle('active', isActive && portfolioSettings.sortDir === 'desc');
+    });
+  }
+
   initPortfolioLayout();
+
+  const PORTFOLIO_SETTINGS_KEY = 'optionsPortfolioSettings_v1';
+  let portfolioSettings = {
+    hideClosedDeals: false,
+    hideActiveDeals: false,
+    hideEntryPrice: false,
+    sortField: null,   
+    sortDir: 'desc',   
+    updatedAt: 0
+  };
+
+  function loadPortfolioSettings() {
+    try {
+      const raw = localStorage.getItem(PORTFOLIO_SETTINGS_KEY);
+      if (raw) Object.assign(portfolioSettings, JSON.parse(raw));
+    } catch (err) {  }
+  }
+
+  function savePortfolioSettings(push) {
+    portfolioSettings.updatedAt = Date.now();
+    try { localStorage.setItem(PORTFOLIO_SETTINGS_KEY, JSON.stringify(portfolioSettings)); } catch (err) {  }
+    if (push !== false) pushToDriveDebounced();
+  }
+
+  loadPortfolioSettings();
+  updatePortfolioMenuLabels();
 
   let deals = [];
 
@@ -3015,6 +3220,7 @@
                              'PT\n%', 'PT\nVALUE', 'PRICES', 'PROFIT\nLOSS', 'ACTIONS'];
 
   function dealPriceDisplayHtml(deal) {
+    if (portfolioSettings.hideEntryPrice) return '';
     const hasEntry = !!deal.entryStockPrice;
     const cls = hasEntry ? 'deal-price-display blue' : 'deal-price-display blue missing';
     const txt = hasEntry ? `\u{1F3F7}\u{FE0F} $${formatStockPrice(deal.entryStockPrice)}` : '\u{1F3F7}\u{FE0F}';
@@ -3217,6 +3423,39 @@
     }
   }
 
+  function dealSortValue(deal, field) {
+    if (field === 'startDate') return deal.startDate || null;
+    if (field === 'closeDate') return deal.closeDate || null;
+    if (field === 'status') return deal.closed ? 1 : 0;
+    if (field === 'ratio') return computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts).ratio;
+    if (field === 'profit') {
+      if (deal.closed) {
+        const f = finalStats(deal);
+        return f.finalSideLoss ? -Math.abs(f.finalAmount) : Math.abs(f.finalAmount);
+      }
+      const m = computeMetrics(deal.total, deal.limit, deal.ptPct, deal.contracts);
+      if (m.fifthMissing) return null;
+      return m.sideIsLoss ? -Math.abs(m.fifthValue) : Math.abs(m.fifthValue);
+    }
+    return null;
+  }
+
+  function sortDealsForDisplay(list) {
+    const field = portfolioSettings.sortField;
+    if (!field) return list.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    const dir = portfolioSettings.sortDir === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => {
+      const va = dealSortValue(a, field);
+      const vb = dealSortValue(b, field);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;  
+      if (vb == null) return -1;
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }
+
   function portfolioSummaryMaxWidth() {
     const logo = document.querySelector('.portfolio-logo-corner');
     const dealBtn = document.getElementById('topNewDealBtn');
@@ -3275,8 +3514,20 @@
       empty.style.display = '';
       return;
     }
+
+    const visible = deals.filter(d => {
+      if (d.closed && portfolioSettings.hideClosedDeals) return false;
+      if (!d.closed && portfolioSettings.hideActiveDeals) return false;
+      return true;
+    });
+    if (visible.length === 0) {
+      grid.innerHTML = '';
+      cards.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
     empty.style.display = 'none';
-    const sorted = deals.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
+    const sorted = sortDealsForDisplay(visible);
     if (gPortfolioLayout === 'mobile') {
       grid.style.display = 'none';
       cards.style.display = '';
@@ -3915,14 +4166,27 @@
 
   async function fetchRemoteState() {
     const file = await driveApi(() => driveFindFile());
-    if (!file) return { fileId: null, deals: [], tombstones: [], modifiedTime: null };
+    if (!file) return { fileId: null, deals: [], tombstones: [], portfolioSettings: null, modifiedTime: null };
     const remote = await driveApi(() => driveDownload(file.id));
     return {
       fileId: file.id,
       deals: (remote && Array.isArray(remote.deals)) ? remote.deals : [],
       tombstones: (remote && Array.isArray(remote.tombstones)) ? remote.tombstones : [],
+
+      portfolioSettings: (remote && remote.portfolioSettings && typeof remote.portfolioSettings === 'object') ? remote.portfolioSettings : null,
       modifiedTime: file.modifiedTime || null,
     };
+  }
+
+  function adoptRemotePortfolioSettingsIfNewer(remoteSettings) {
+    if (!remoteSettings) return false;
+    if ((remoteSettings.updatedAt || 0) > (portfolioSettings.updatedAt || 0)) {
+      Object.assign(portfolioSettings, remoteSettings);
+      savePortfolioSettings(false);
+      updatePortfolioMenuLabels();
+      return true;
+    }
+    return false;
   }
 
   let gPushPending = false;
@@ -3955,7 +4219,8 @@
       const changed = !dealsEqual(merged.deals, deals);
       deals = merged.deals;
       tombstones = merged.tombstones;
-      if (changed) renderPortfolio();
+      const settingsChanged = adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+      if (changed || settingsChanged) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution(merged.conflicts);
 
@@ -3987,7 +4252,9 @@
       for (let attempt = 0; attempt < 5; attempt++) {
         remote = await fetchRemoteState();
         merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
-        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones };
+
+        adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
         const recheck = await driveApi(() => driveFindFile());
         const recheckModified = recheck ? recheck.modifiedTime : null;
         if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {

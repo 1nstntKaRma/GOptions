@@ -8118,3 +8118,191 @@ no forced wrap), NVDA's row is unaffected, no regression. Desktop
 re-checked at 1280px -- untouched, since none of these selectors
 (`.deal-card*`) exist in `dealRowHtml`'s wide-grid markup. No console
 errors in either mode.
+
+## Phone: Strikes vertical centering + Portfolio footer spacing to match Calculator
+
+Explicit follow-up, 2 unrelated fixes in one round (a 3rd, larger request
+-- a Portfolio-logo slide-out menu with show/hide + sort controls -- was
+also raised this round and is being scoped/planned separately, not yet
+implemented):
+
+> "Position Strike vertically centered between 'TICKER' & 'Bull Put
+> Spread', its too close to 'Bull Put Spread'... Portfolio mode (phone &
+> desktop), push upwards 'Options v3.5 By Golan', so it has the same
+> spacing from bottom page just like calculator mode."
+
+**Strikes centering**: live-measured a `6px` gap above Strikes (once
+wrapped below Ticker, per last round's fix) vs `0px` below it before
+"Bull Put Spread". `.deal-card .deal-sub { margin-top: 6px; }` matches
+the `0px` side to the `6px` side. Applies in the non-wrapped case too
+(Strikes beside Ticker) as harmless extra breathing room -- CSS alone
+can't target "only when wrapped" without a container query this file
+doesn't use elsewhere.
+
+**Footer spacing, root cause**: Calculator's gap to the footer is a
+flat `20px` (the footer's own `margin-top`, clamped). Portfolio's was
+`90px` (Phone, closed-deals state) / `60px` (Desktop) -- 2 STACKING
+causes, both traced live rather than assumed:
+1. `.deal-grid`/`.deal-cards-mobile` had `margin-bottom: 40px` -- bigger
+   than the footer's own `20px` margin-top, and adjacent block margins
+   COLLAPSE (take the larger, not the sum), so this alone was already
+   outbidding the footer's margin even before the 2nd cause.
+2. The position knobs (`--portfolio-deals-phone-y` etc.) were applied
+   via `position:relative; top` -- deliberately, matching every other
+   position knob in this file (a pure visual nudge, chosen originally to
+   avoid a stacking-context bug documented elsewhere in NOTES.md). The
+   side effect specific to THIS container: a relative shift moves the
+   box on screen without moving the space it reserves in flow, so the
+   footer (a plain sibling, positioned from flow) never followed the
+   nudge. With the closed-deals state's negative shift (`-50px` Phone /
+   `-20px` Desktop), the container visually moved UP while the footer
+   stayed at its unshifted flow position, adding exactly that much
+   MORE dead air on top of cause #1.
+
+**Fix**: switched `.deal-grid`/`.deal-cards-mobile` (and their
+`.has-closed-deals` variants) from `position:relative; top: var(...)`
+to `margin-top: var(...)` -- margin participates in flow, so the same
+nudge now drags the footer along with it, eliminating cause #2 entirely.
+Confirmed via manual derivation + live testing that this does NOT change
+the container's position relative to whatever's ABOVE it (the summary
+stats) -- a relative shift and a margin shift move the box by the exact
+same visual delta from its "as if the shift were 0" baseline; the only
+difference is whether following siblings inherit that movement, which
+is exactly the bug being fixed. `margin-bottom` dropped `40px -> 0` to
+kill cause #1 -- collapses with the footer's own `20px` margin-top
+instead of outbidding it, matching Calculator's implicit "no trailing
+margin of its own" baseline.
+
+### Verified
+
+Both fixes measured via `getBoundingClientRect()`, not visual estimate.
+Strikes: gap above (`6px`) and below (`6px`) now identical, confirmed at
+a genuine 320px mobile-UA viewport with the exact reported deal (ticker
+"AAAA", strikes "125 / 130", closed). Footer: Calculator's `#calculatorView`
+-to-footer gap and Portfolio's `#portfolioView`-to-footer gap both
+measure exactly `20px` at 1280px Desktop (closed-deals state, was `60px`)
+and at 375px Phone (closed-deals state, was `90px`, AND open-only state,
+confirming the fix holds for both `.has-closed-deals` branches, not just
+the one tested first). Screenshot at 375px confirms the deal list's own
+position relative to the summary stats above it is visually unchanged
+from before this fix -- only the footer gap moved. No console errors in
+either mode.
+
+## Portfolio-logo menu: show/hide filters, Entry Price toggle, sort engine, Drive sync
+
+Explicit follow-up (planned with the user first -- 2 clarifying
+questions asked and answered before writing any code): "Pressing on the
+Portfolio logo will open a menu exactly like the hamburger icon, but
+from the left side... Show/Hide Closed Deals... Show/Hide Active
+Deals... Show/Hide 'Entry Price'... Order Deals By: Start Date /
+Closed Date / Status / Profit (Profit/Loss Value - NOT MAX VALUES) /
+RATIO... each will have UP/DOWN arrows... all toggle buttons will have
+changing name accordingly." Confirmed: settings persist AND sync to
+the cloud; single active sort key (not multi-level).
+
+**Menu structure**: reuses `.hamburger-menu-backdrop`/`.hamburger-item`
+verbatim (same dim overlay, same row styling) -- only `.portfolio-menu`
+differs, and even that's minimal. Deliberately NOT wrapped in a new
+`position:relative` container the way `.hamburger-wrap` does it --
+`.portfolio-logo-corner` is `position:absolute` against `.page-frame`
+with its own per-breakpoint `top`/`left`/`scale` values already (Desktop:
+`top:5px;left:-97px`; Phone: `top:-5px;left:10px`), and nesting it in a
+fresh wrapper would silently change its containing block. Instead,
+`togglePortfolioMenu()` reads the logo's live `getBoundingClientRect()`
+at OPEN time and sets `#portfolioMenu`'s `top`/`left` directly (CSS
+override to `position:fixed`) -- correct at any breakpoint, zero risk
+to the logo's existing positioning.
+
+**Show/Hide Closed/Active Deals**: `renderPortfolio()` filters `deals`
+into a `visible` array before sorting/rendering -- doesn't touch the 4
+summary stat lines above (P/L, Total Deals, W-L, Win Ratio), which
+intentionally still cover ALL closed deals regardless of this filter
+(hiding a deal from the LIST isn't the same as excluding it from your
+P/L totals). Filtering to zero visible deals shows the normal empty
+state, not a separate message -- simplest behavior for a state the user
+did to themselves.
+
+**Show/Hide Entry Price**: `dealPriceDisplayHtml()` (the OPEN-deal 🏷️
+button) returns `''` when `portfolioSettings.hideEntryPrice` is true.
+`dealDtePriceCellHtml()` (the CLOSED-deal DTE-cell price display) has
+its own separate call sites, untouched -- confirmed live it doesn't
+disappear when this toggle is on.
+
+**Order Deals By**: new `dealSortValue(deal, field)` reuses the EXACT
+same computations each row already displays -- `finalStats()`/
+`computeMetrics()` for Profit/Ratio -- so the order can never imply a
+different number than what's shown. Missing values (e.g. an open
+deal's `closeDate`) sort to the END regardless of direction. Single
+active sort key, confirmed with the user -- clicking either arrow on a
+row makes THAT field the active sort in that direction; `.order-arrow-
+btn.active` (blue) shows which one, `updateOrderModalUI()` keeps it in
+sync. Added a "Reset" button (not explicitly asked, but a single-active-
+key model needs an easy way back to the default createdTs sort) --
+`clearPortfolioSort()`.
+
+**Persistence + Drive sync**: `portfolioSettings` is VIEW state, not
+deal data -- doesn't go through `mergeDealSets`'s tombstone-based CRDT
+logic (that's for concurrent DEAL edits); a preferences object just
+needs last-write-wins by `updatedAt`, so it rides along as a sibling
+field in the SAME Drive JSON payload instead (`fetchRemoteState`
+reads it back, `pushToDrive`/`pullFromDrive` each call the new
+`adoptRemotePortfolioSettingsIfNewer()` helper -- adopts the remote
+copy only if actually newer, caches it locally via `savePortfolioSettings
+(false)` so adopting doesn't immediately echo it back as a "new" push).
+localStorage (`optionsPortfolioSettings_v1`) is the fast local cache --
+available instantly on load, and the only copy that exists at all while
+signed out of Drive.
+
+**Bug found and fixed while building this**: the very first version
+called `loadPortfolioSettings(); updatePortfolioMenuLabels();`
+immediately after `initPortfolioLayout()`, which sits BEFORE `let
+portfolioSettings = {...}` is declared later in the same script.
+`updatePortfolioMenuLabels()` reads `portfolioSettings` -- calling it
+that early threw `Cannot access 'portfolioSettings' before
+initialization` (a genuine TDZ violation), and since that's an
+uncaught, synchronous, TOP-LEVEL throw, it silently aborted the REST of
+the script's execution -- `let deals = []` (declared further down)
+never ran, `editingDealId` never ran, nothing after the crash point
+ever initialized. The page still rendered (all the HTML/CSS was
+already in place) and every FUNCTION still existed (declarations are
+hoisted, unaffected by where execution stops), which is what made this
+so easy to miss at a glance -- only calling a function that touched
+`deals` surfaced it, as a `ReferenceError: deals is not defined` from
+OUTSIDE the script (ordinary usage would have hit it immediately, e.g.
+opening the Save Deal modal). Fixed by moving the `loadPortfolioSettings
+()`/`updatePortfolioMenuLabels()` calls to right after `portfolioSettings`
+itself is declared and populated, the first point where reading it is
+actually safe.
+
+### Verified
+
+Menu opens correctly at both Desktop (1280px) and Phone (375px,
+mobile UA) widths, positioned from the logo via live `getBoundingClientRect()`,
+screenshot-confirmed opening from the LEFT side with the dim backdrop.
+Toggling `hideClosedDeals` drops the rendered row count from 3 to 1 and
+flips the label to "Show Closed Deals"; reverting restores both.
+Toggling `hideEntryPrice` removes the one `.deal-price-display` element
+(OPEN deal) while leaving both closed deals' `.deal-dte-price-btn`
+elements untouched (count `2`, unaffected). Sorting by `startDate` asc
+reorders 3 test deals (Jan/May/Aug start dates) into the exact expected
+sequence; `dealSortValue()` spot-checked directly against all 3 deals
+for `ratio`/`profit`/`status` -- values match what each field's own
+column already shows. Reset (`clearPortfolioSort()`) returns to the
+default `createdTs`-descending order. `.order-arrow-btn.active`
+highlight confirmed via `classList.contains('active')` after each sort
+change. No console errors through any of this.
+
+**Not fully verifiable in this session's browser tool**: this file
+loads as a `data:` URL snapshot in the tool's preview pane (a documented
+limitation for files outside its own project folder), which blocks
+`localStorage` entirely (`SecurityError: Storage is disabled inside
+'data:' URLs`) -- confirmed my `try/catch` wrapping around every
+localStorage call degrades gracefully here (no thrown error reached the
+console, `portfolioSettings` still updated correctly in memory), but
+actual cross-reload persistence and the Drive-sync round-trip
+(`adoptRemotePortfolioSettingsIfNewer`, the extended `fetchRemoteState`/
+`pushToDrive` payloads) couldn't be exercised end-to-end without a real
+browser + real Google sign-in. Worth a real-browser check: toggle a
+setting, reload, confirm it's still applied; and if signed into Drive
+sync, confirm a setting change made on one device shows up on another
+after a sync cycle.
