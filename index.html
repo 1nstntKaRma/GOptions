@@ -3462,11 +3462,10 @@
 
   function sortDealsByStatusGroup(list, dir) {
     const open = list.filter(d => !d.closed).sort((a, b) => compareDealDates(b.startDate, a.startDate));
-    const closed = list.filter(d => d.closed).sort((a, b) => compareDealDates(a.closeDate, b.closeDate));
+    const closed = list.filter(d => d.closed).sort((a, b) => compareDealDates(b.closeDate, a.closeDate));
     const ascending = open.concat(closed);
     return dir === 1 ? ascending : ascending.reverse();
   }
-
   function sortDealsForDisplay(list) {
     const field = portfolioSettings.sortField;
     if (!field) return list.slice().sort((a, b) => (b.createdTs || 0) - (a.createdTs || 0));
