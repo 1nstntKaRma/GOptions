@@ -1301,8 +1301,22 @@
      cramped, and only for whichever specific tile's own value actually
      reached 4+ digits. Hiding the icon element itself removes its
      colored rounded frame along with it, since the frame IS that
-     element's own background/border, not a separate wrapper. */
+     element's own background/border, not a separate wrapper. Scoped in
+     the script to Max Loss/Max Profit specifically -- Ratio is
+     deliberately excluded (see .calc-ratio-extra-shrink just below). */
   body.calc-metrics-cramped .calc-metric-hide-icon .icon { display: none; }
+  /* Explicit follow-up: "RATIO value can only display now a percentage
+     'XX.X'... if percentage value is 'XX.XX' -> '%' symbol + blue frame
+     disappears, this is not intended, lower specifically the 'RATIO'
+     value font in case of low res phones so they can fit together even
+     if percentage value is 'XX.XX'." Ratio's icon must never disappear
+     (unlike Max Loss/Max Profit above) -- instead its value gets a
+     further shrink on top of the standard 0.8x cramped size, toggled by
+     checkCalcMetricsCrampedState() only when Ratio's content still
+     doesn't fit its own cell even after that standard shrink (live-
+     remeasured the same way the outer cramped check works, not just
+     assumed from "XX.XX has one more digit"). */
+  body.calc-metrics-cramped .calc-ratio-extra-shrink .metric-value { font-size: calc(38px * 0.65); }
 
   .blue { color: var(--blue); }
   .red { color: var(--red); }
@@ -5596,7 +5610,7 @@
     document.body.classList.remove('calc-metrics-cramped');
     const targets = document.querySelectorAll('.calc-metric-cramped-target');
     if (!targets.length) return;
-    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon'));
+    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon', 'calc-ratio-extra-shrink'));
     let cramped = false;
     targets.forEach(metric => {
       const content = metric.querySelector('.metric-content');
@@ -5613,18 +5627,57 @@
     // digit numbers instead of 3 remove the %, down arrow, up arrow
     // symbols and their frames to get even more space when necessary."
     // Only once already cramped (the shrink above wasn't enough on its
-    // own) AND only for whichever tile's OWN value actually grew to 4+
-    // digits -- e.g. Max Loss hitting "$1,328" loses its icon while a
-    // 3-digit Max Profit neighbor keeps its own. Digit count via
-    // stripping everything but 0-9 (works for "$1,328" -> "1328" -> 4,
-    // and for Ratio's "50.6" -> "506" -> 3, without caring about the
-    // punctuation each metric formats with).
+    // own). Digit count via stripping everything but 0-9 (works for
+    // "$1,328" -> "1328" -> 4). Ratio is DELIBERATELY excluded from this
+    // -- explicit follow-up: "if percentage value is 'XX.XX' -> '%'
+    // symbol + blue frame disappears, this is not intended." Ratio's
+    // "50.62" also strips to 4 digits ("5062"), but Ratio's own icon
+    // should never disappear -- only Max Loss/Max Profit's dollar
+    // amounts were ever meant to lose theirs. Scoped by id, not by
+    // iterating all 3 targets.
+    // 2nd explicit follow-up (screenshot showed $1,328/icon-hidden next
+    // to $672/icon-still-there): "if up/down icons+frames from Max
+    // Loss/Profit is removed, remove the other one as well, these two
+    // should be bounded and act together." Originally toggled each
+    // tile independently by its OWN digit count -- now EITHER one
+    // reaching 4+ digits hides BOTH, so they can never show one icon
+    // and hide the other.
     if (cramped) {
-      targets.forEach(metric => {
-        const value = metric.querySelector('.metric-value');
-        const digitCount = value ? value.textContent.replace(/[^0-9]/g, '').length : 0;
-        metric.classList.toggle('calc-metric-hide-icon', digitCount >= 4);
+      const maxLossValue = document.getElementById('maxLoss');
+      const maxProfitValue = document.getElementById('maxProfit');
+      const maxLossDigits = maxLossValue ? maxLossValue.textContent.replace(/[^0-9]/g, '').length : 0;
+      const maxProfitDigits = maxProfitValue ? maxProfitValue.textContent.replace(/[^0-9]/g, '').length : 0;
+      const hideBoth = maxLossDigits >= 4 || maxProfitDigits >= 4;
+      [maxLossValue, maxProfitValue].forEach(value => {
+        const metric = value ? value.closest('.metric') : null;
+        if (metric) metric.classList.toggle('calc-metric-hide-icon', hideBoth);
       });
+    }
+    // Explicit follow-up: "lower specifically the 'RATIO' value font in
+    // case of low res phones so they can fit together even if
+    // percentage value is 'XX.XX'." Ratio keeps its icon regardless (see
+    // above), so instead of hiding anything, it gets a FURTHER font
+    // shrink on top of the standard cramped shrink, but only when the
+    // standard shrink genuinely isn't enough -- live-remeasured the
+    // exact same way the outer overlap check works (content vs the
+    // cell's own boundary, icon vs the cell's own boundary), not
+    // triggered by counting decimal places, so it reacts to whatever
+    // actually doesn't fit rather than assuming "XX.XX" is always the
+    // cause.
+    if (cramped) {
+      const ratioValue = document.getElementById('ratio');
+      const ratioMetric = ratioValue ? ratioValue.closest('.metric') : null;
+      if (ratioMetric) {
+        const content = ratioMetric.querySelector('.metric-content');
+        const icon = ratioMetric.querySelector('.icon');
+        let stillOverflowing = content && content.scrollWidth > ratioMetric.clientWidth;
+        if (!stillOverflowing && icon) {
+          const iconRect = icon.getBoundingClientRect();
+          const metricRect = ratioMetric.getBoundingClientRect();
+          stillOverflowing = iconRect.right > metricRect.right || iconRect.left < metricRect.left;
+        }
+        ratioMetric.classList.toggle('calc-ratio-extra-shrink', stillOverflowing);
+      }
     }
     CALC_METRIC_TITLE_IDS.forEach(id => {
       const el = document.getElementById(id);

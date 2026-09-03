@@ -8817,3 +8817,59 @@ hide-icon` (icon `display:none`), Max Profit's did not (icon still
 `#topSaveBtnMobile` computed width/padding confirmed 126px/8px.
 Screenshot shows both changes together with the Limit $ fix above --
 Max Loss reads clean as just "$1,328" with no icon crowding it.
+
+## Ratio's icon must never disappear -- shrink its font further instead
+
+Regression from the 4-digit hide-icon feature just above: it iterated
+ALL 3 `.calc-metric-cramped-target` tiles by digit count, so Ratio's
+own value going from "50.6" (one decimal) to "50.62" (two decimals)
+also stripped to 4+ digits ("5062") and incorrectly hid Ratio's %
+icon+frame too. Explicit follow-up: "if percentage value is 'XX.XX' ->
+'%' symbol + blue frame disappears, this is not intended, lower
+specifically the 'RATIO' value font in case of low res phones so they
+can fit together even if percentage value is 'XX.XX'."
+
+**Fix**: the digit-count hide-icon check is now scoped by id to
+`maxLoss`/`maxProfit` only, never iterating Ratio at all -- its icon
+can no longer be hidden by this mechanism regardless of digit count.
+Separately, Ratio gets a NEW `.calc-ratio-extra-shrink` class, toggled
+by re-measuring (same technique as the outer overlap check: content
+vs. its own cell, icon vs. its own cell) whether Ratio's content still
+doesn't fit even after the standard 0.8x cramped shrink -- if so, its
+value drops to `calc(38px * 0.65)` instead of losing its icon. Reacts
+to whatever actually overflows rather than assuming "two decimals" is
+always the trigger.
+
+### Verified
+
+320px, Total 1000/Contracts 2/Limit 3.36/PT% 80, Ratio value forced to
+"50.62": `.calc-ratio-extra-shrink` correctly applied, computed
+font-size 24.7px (`38*0.65`), icon `display:flex` (never hidden),
+re-measured content no longer overflowing its cell and icon back
+within its own cell's bounds. Max Loss's own hide-icon behavior
+(`$1,328` -> icon hidden) unaffected by the same check, confirming the
+id-scoping didn't break the earlier fix.
+
+## Max Loss/Max Profit icons: bound together, not independently toggled
+
+Screenshot showed the exact asymmetry the digit-count hide-icon
+feature could produce: Max Loss at `$1,328` (4 digits) had its icon
+hidden while Max Profit at `$672` (3 digits) still showed its arrow --
+each tile was toggling `.calc-metric-hide-icon` independently off its
+OWN digit count. Explicit follow-up: "if up/down icons+frames from Max
+Loss/Profit is removed, remove the other one as well, these two should
+be bounded and act together to make it a bit more unified and pleasing
+for the eye."
+
+**Fix**: reads both values' digit counts first, then hides BOTH icons
+if EITHER one is 4+ digits (`hideBoth = maxLossDigits >= 4 ||
+maxProfitDigits >= 4`), applying the same resulting boolean to both
+tiles instead of computing and toggling each independently.
+
+### Verified
+
+$1,328 / $672 (the original screenshot's own numbers): both icons now
+`display:none` together. Backed off Total $ so Max Loss reads $328 (3
+digits, matching Max Profit's own 3): both icons correctly back to
+`display:flex` together -- neither one shows while the other hides,
+in either direction.

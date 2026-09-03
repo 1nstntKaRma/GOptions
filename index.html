@@ -571,6 +571,8 @@
 
   body.calc-metrics-cramped .calc-metric-hide-icon .icon { display: none; }
 
+  body.calc-metrics-cramped .calc-ratio-extra-shrink .metric-value { font-size: calc(38px * 0.65); }
+
   .blue { color: var(--blue); }
   .red { color: var(--red); }
   .green { color: var(--green); }
@@ -2809,7 +2811,7 @@
     document.body.classList.remove('calc-metrics-cramped');
     const targets = document.querySelectorAll('.calc-metric-cramped-target');
     if (!targets.length) return;
-    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon'));
+    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon', 'calc-ratio-extra-shrink'));
     let cramped = false;
     targets.forEach(metric => {
       const content = metric.querySelector('.metric-content');
@@ -2824,11 +2826,31 @@
     document.body.classList.toggle('calc-metrics-cramped', cramped);
 
     if (cramped) {
-      targets.forEach(metric => {
-        const value = metric.querySelector('.metric-value');
-        const digitCount = value ? value.textContent.replace(/[^0-9]/g, '').length : 0;
-        metric.classList.toggle('calc-metric-hide-icon', digitCount >= 4);
+      const maxLossValue = document.getElementById('maxLoss');
+      const maxProfitValue = document.getElementById('maxProfit');
+      const maxLossDigits = maxLossValue ? maxLossValue.textContent.replace(/[^0-9]/g, '').length : 0;
+      const maxProfitDigits = maxProfitValue ? maxProfitValue.textContent.replace(/[^0-9]/g, '').length : 0;
+      const hideBoth = maxLossDigits >= 4 || maxProfitDigits >= 4;
+      [maxLossValue, maxProfitValue].forEach(value => {
+        const metric = value ? value.closest('.metric') : null;
+        if (metric) metric.classList.toggle('calc-metric-hide-icon', hideBoth);
       });
+    }
+
+    if (cramped) {
+      const ratioValue = document.getElementById('ratio');
+      const ratioMetric = ratioValue ? ratioValue.closest('.metric') : null;
+      if (ratioMetric) {
+        const content = ratioMetric.querySelector('.metric-content');
+        const icon = ratioMetric.querySelector('.icon');
+        let stillOverflowing = content && content.scrollWidth > ratioMetric.clientWidth;
+        if (!stillOverflowing && icon) {
+          const iconRect = icon.getBoundingClientRect();
+          const metricRect = ratioMetric.getBoundingClientRect();
+          stillOverflowing = iconRect.right > metricRect.right || iconRect.left < metricRect.left;
+        }
+        ratioMetric.classList.toggle('calc-ratio-extra-shrink', stillOverflowing);
+      }
     }
     CALC_METRIC_TITLE_IDS.forEach(id => {
       const el = document.getElementById(id);
