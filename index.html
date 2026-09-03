@@ -64,7 +64,9 @@
 
     --calc-cramped-logo-nudge-x: -10px;
     --calc-cramped-contracts-nudge-x: -10px;
-    --calc-cramped-deal-btn-padding-x: 4px;
+    --calc-cramped-deal-btn-padding-x: 1px;
+
+    --calc-cramped-contracts-width: 100px;
 
     --calc-vspacing-top-row-gap-min: 22px;   
     --calc-vspacing-metrics-gap-min: 16px;   
@@ -546,17 +548,20 @@
   body.calc-top-cramped .top-deal-btn { padding: 0 var(--calc-cramped-deal-btn-padding-x); }
   body.calc-top-cramped.portfolio-layout-mobile .calc-logo-corner { left: calc(35px + var(--calc-cramped-logo-nudge-x)); }
   body.calc-top-cramped .contracts-mobile-slot { position: relative; left: var(--calc-cramped-contracts-nudge-x); }
+  body.calc-top-cramped .contracts-mobile-slot #contracts { width: var(--calc-cramped-contracts-width); }
 
+  body.calc-limit-cramped #limit { padding-top: 6px; padding-bottom: 0; }
   body.calc-limit-cramped .limit-sign-prefix {
     top: auto;
-    bottom: 3px;
+    bottom: 0;
+    line-height: 1;
 
     transform: translateX(-50%);
-    font-size: 12px;
+    font-size: 10px;
   }
 
   body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
-  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.9); }
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.8); }
   body.calc-metrics-cramped .calc-metric-cramped-target .icon {
     width: calc(33px * 0.8);
     height: calc(33px * 0.8);
@@ -1831,7 +1836,7 @@
           </div>
         </div>
         <div class="metric">
-          <div class="metric-title">PROFIT TAKER</div>
+          <div class="metric-title" id="metricTitleProfitTaker">PROFIT TAKER</div>
           <div class="metric-content">
             <div id="profitTaker" class="metric-value">-1.02</div>
             <div id="metricIconProfitTaker" class="icon blue">💰</div>
@@ -2684,24 +2689,49 @@
     checkCalcCrampedLayout();
   }
 
-  function rectsOverlap(a, b) {
+  function rectsOverlap(a, b, buffer) {
     if (!a || !b) return false;
     const r1 = a.getBoundingClientRect();
     const r2 = b.getBoundingClientRect();
     if (r1.width === 0 || r1.height === 0 || r2.width === 0 || r2.height === 0) return false;
-    return !(r1.right <= r2.left || r1.left >= r2.right || r1.bottom <= r2.top || r1.top >= r2.bottom);
+    const m = buffer || 0;
+    return !(r1.right + m <= r2.left || r1.left >= r2.right + m || r1.bottom + m <= r2.top || r1.top >= r2.bottom + m);
   }
 
+  const CALC_TOP_CRAMPED_BUFFER = 3;
+  const CALC_TOP_CRAMPED_MIN_CONTRACTS_WIDTH = 70; 
   function checkCalcTopCrampedState() {
     document.body.classList.remove('calc-top-cramped'); 
     const logo = document.querySelector('.calc-logo-corner');
     const contracts = document.getElementById('contractsMobileSlot');
+    const contractsInput = document.getElementById('contracts');
     const loginBtn = document.getElementById('googleSyncBtn');
     const dealBtn = document.getElementById('topSaveBtnMobile');
-    if (!logo || !contracts || !loginBtn) return;
-    const cramped = rectsOverlap(logo, contracts) || rectsOverlap(loginBtn, contracts) ||
-      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts));
+    if (contracts) contracts.style.left = ''; 
+    if (contractsInput) contractsInput.style.width = '';
+    if (!logo || !contracts || !contractsInput || !loginBtn) return;
+    const cramped = rectsOverlap(logo, contracts, CALC_TOP_CRAMPED_BUFFER) || rectsOverlap(loginBtn, contracts, CALC_TOP_CRAMPED_BUFFER) ||
+      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts, CALC_TOP_CRAMPED_BUFFER));
     document.body.classList.toggle('calc-top-cramped', cramped);
+    if (!cramped) return;
+
+    const logoRect = logo.getBoundingClientRect();
+    const loginRect = loginBtn.getBoundingClientRect();
+    const rightBlockerLefts = [loginRect.left];
+    if (dealBtn && dealBtn.offsetParent) rightBlockerLefts.push(dealBtn.getBoundingClientRect().left);
+    const rightBoundary = Math.min.apply(null, rightBlockerLefts) - CALC_TOP_CRAMPED_BUFFER;
+    const leftBoundary = logoRect.right + CALC_TOP_CRAMPED_BUFFER;
+    const availableWidth = rightBoundary - leftBoundary;
+    let contractsRect = contracts.getBoundingClientRect();
+    if (availableWidth > 0 && contractsRect.width > availableWidth) {
+      contractsInput.style.width = Math.max(availableWidth, CALC_TOP_CRAMPED_MIN_CONTRACTS_WIDTH) + 'px';
+      contractsRect = contracts.getBoundingClientRect(); 
+    }
+    const shortfall = contractsRect.right - rightBoundary;
+    if (shortfall > 0) {
+      const cssLeft = parseFloat(getComputedStyle(contracts).left) || 0;
+      contracts.style.left = (cssLeft - shortfall) + 'px';
+    }
   }
 
   function measureTextWidth(text, font) {
@@ -2716,7 +2746,7 @@
     const prefix = document.querySelector('#calcInputsMobileSlot .limit-sign-prefix');
     const value = document.getElementById('limit');
 
-    if (prefix) prefix.style.left = '';
+    if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
     if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
     const valRect = value.getBoundingClientRect();
     const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
@@ -2724,7 +2754,9 @@
     const textLeft = boxCenter - textWidth / 2;
     const textRight = boxCenter + textWidth / 2;
     const prefixRect = prefix.getBoundingClientRect();
-    const overlap = !(prefixRect.right <= textLeft || prefixRect.left >= textRight);
+
+    const LIMIT_CRAMPED_BUFFER = 6;
+    const overlap = !(prefixRect.right + LIMIT_CRAMPED_BUFFER <= textLeft || prefixRect.left >= textRight + LIMIT_CRAMPED_BUFFER);
     document.body.classList.toggle('calc-limit-cramped', overlap);
 
     const wrap = value.closest('.total-stepper-wrap');
@@ -2737,12 +2769,29 @@
     } else {
       prefix.style.left = '';
     }
+
+    if (overlap && wrap) {
+      const valFontSize = parseFloat(getComputedStyle(value).fontSize) || 0;
+      const valTextBottom = valRect.top + valRect.height / 2 + valFontSize / 2;
+      const boxBottom = valRect.bottom;
+      const gapCenter = (valTextBottom + boxBottom) / 2;
+      const wrapRect = wrap.getBoundingClientRect();
+      const prefixHeight = prefix.getBoundingClientRect().height;
+      prefix.style.top = (gapCenter - prefixHeight / 2 - wrapRect.top) + 'px';
+      prefix.style.bottom = 'auto';
+    } else {
+      prefix.style.top = '';
+      prefix.style.bottom = '';
+    }
   }
 
-  const CALC_METRIC_TITLES = [
-    { id: 'metricTitleRatio', normal: 'RATIO', cramped: 'Ratio' },
-    { id: 'metricTitleMaxLoss', normal: 'MAX LOSS', cramped: 'Max Loss' },
-    { id: 'metricTitleMaxProfit', normal: 'MAX PROFIT', cramped: 'Max Profit' }
+  function toTitleCase(str) {
+    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  const CALC_METRIC_TITLE_IDS = [
+    'metricTitleRatio', 'metricTitleMaxLoss', 'metricTitleMaxProfit',
+    'metricTitleProfitTaker', 'dynamicStopTitle'
   ];
 
   function checkCalcMetricsCrampedState() {
@@ -2761,9 +2810,11 @@
       }
     });
     document.body.classList.toggle('calc-metrics-cramped', cramped);
-    CALC_METRIC_TITLES.forEach(t => {
-      const el = document.getElementById(t.id);
-      if (el) el.textContent = cramped ? t.cramped : t.normal;
+    CALC_METRIC_TITLE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el || !el.textContent) return;
+      const upper = el.textContent.toUpperCase();
+      el.textContent = cramped ? toTitleCase(upper) : upper;
     });
   }
 

@@ -8631,3 +8631,115 @@ round-trip re-tested to catch the state-leak bug specifically: 280px
 back to `''`) -> 280px again (correctly re-cramped, `left` recomputed
 fresh) -- all three steps confirmed via live `getBoundingClientRect()`/
 inline-style checks, not assumed. No console errors.
+
+## Cramped-layout round 2: buffer, dynamic Contracts fit, deeper shrink, 5th/6th title sync
+
+Explicit follow-up ("get a glasses"): Login/Deal button still touched
+Contracts, Deal button needed less width, the metric-value shrink
+"hasn't changed at all," and Limit $'s "-" was "still behind 3.33 =
+NOT FIXED." Root causes, live-measured, were different for each:
+
+1. **Exact-boundary overlap was too lenient.** `rectsOverlap()` treated
+   "not literally overlapping by 1px" as fine even when visually
+   touching. Added a `buffer` param (6px Limit $) requiring actual
+   clearance, not just non-overlap. The top-row buffer needed a 2nd
+   pass: an initial 8px was live-caught (during this round's OWN
+   verification, not reported by the user) falsely flagging this file's
+   own documented working reference (400px, with its historically
+   accepted 4px Contracts/Login gap -- see `.calc-deal-btn-row-mobile`'s
+   comment) as cramped, which would have violated "THIS WILL NOT ALTER
+   the already superb calculator display on phones that can display it
+   well." Settled on 3px -- under that 4px tolerance, still stricter
+   than exact-boundary.
+2. **The Contracts/Login/Deal fix was a fixed nudge + fixed width knob
+   -- not actually universal.** Live-tested 320px vs 280px: the SAME
+   fixed shift that cleared Login/Deal at 320px pushed Contracts
+   straight into the Logo at 280px, since the real gap between Logo and
+   Login/Deal shrinks continuously as the device narrows -- a single
+   hardcoded number can't fit every width. Rewrote
+   `checkCalcTopCrampedState()` to compute the ACTUAL available gap
+   between Logo (left, buffered) and whichever of Login/the Deal button
+   sits closer (right, buffered) live, shrink `#contracts`'s width to
+   fit that gap if the CSS knob's width still doesn't (down to a 70px
+   floor -- "never shrinks Contracts past a still-usable size," so at
+   unrealistically narrow widths beyond the floor it accepts slight
+   logo overlap by design rather than becoming unreadable), then shifts
+   left by exactly the remaining shortfall. The Deal button check
+   needed its own shortfall term too -- it's a separate DOM row
+   deliberately pulled up via `margin-top:-60px` (by design, see
+   `.calc-deal-btn-row-mobile`'s own comment) to sit beside Contracts,
+   so clearing Login alone didn't guarantee clearing it.
+3. **The value-shrink CSS was actually correct (34.2px = 38*0.9,
+   confirmed via `getComputedStyle` on the previous round) -- the user
+   wanted it shrunk FURTHER regardless.** Changed `0.9` to `0.8`
+   (another 10 points off the original 38px).
+4. **Limit $'s "-" was moved to `bottom:3px` but that still wasn't
+   clear of the vertically-CENTERED value in the same fixed-height box**
+   -- the value's own text occupies roughly the middle 2/3 of the box,
+   leaving too little clearance at the very bottom for a 12px prefix.
+   `#limit` itself now gets `padding-top:6px` under the cramped class
+   (box height unchanged, just nudges the centered text flow upward to
+   free real space at the bottom), and the prefix shrank further
+   (10px, `line-height:1`, `bottom:0`) to fit inside what that frees up.
+5. **Deal button "a bit less wider"**: `--calc-cramped-deal-btn-
+   padding-x` 4px -> 1px.
+6. **"change 'PROFIT TAKER' & 'PROFIT' to 'Profit Taker' & 'Profit'
+   ... so it doesnt look wierded out."** These 2 were deliberately never
+   part of the SIZING fix (still not `.calc-metric-cramped-target`) --
+   only their title CASE now follows the other 3 for visual consistency.
+   Replaced the old `CALC_METRIC_TITLES` normal/cramped lookup table
+   with a generic `toTitleCase()` + a plain list of 5 ids
+   (`CALC_METRIC_TITLE_IDS`) that always reads `.toUpperCase()` of the
+   CURRENT text first -- this is what makes it safe for
+   `#dynamicStopTitle` too, whose text isn't fixed (`calculate()` sets
+   it to "PROFIT" or "LOSS" per state): `.toUpperCase()` recovers the
+   correct canonical form whether or not a previous cramped pass had
+   already Title-Cased it, so no per-id hardcoded pair was needed.
+
+### Verified
+
+320px (this thread's actual reported width): all three
+`rectsOverlap(el, contracts, 0)` checks (logo, Login, Deal button)
+false after the fix -- live-confirmed via the console, not assumed;
+`#contracts` computed width 100px, Deal button computed padding 1px,
+`#ratio`'s computed font-size 30.4px (`38*0.8`), all 5 titles read
+"Ratio"/"Max Loss"/"Max Profit"/"Profit Taker"/"Profit" (the last one
+correctly Title-Cased from its live dynamic "PROFIT" state).
+Screenshot at 320px confirms no visual touching anywhere in the top
+row, metrics grid, or Limit $ field. 400px (this file's own documented
+working reference): after the buffer correction, `calc-top-cramped`
+correctly stays OFF -- re-confirmed the 8px-buffer regression above is
+actually fixed, not just theorized. 280px (stress test beyond any real
+device this thread has been about): Contracts correctly hits its 70px
+floor and Login/Deal clearance holds, but Logo clearance doesn't --
+confirmed as the documented, intentional floor tradeoff (a real gap of
+61px there vs a 70px floor + buffers), not a regression.
+
+## Limit $ prefix: center vertically below the value too, not just horizontally
+
+Explicit follow-up: "raise the minus a bit higher so its centered
+horzontall but also verticall below the value." The previous round's
+`bottom:0` fix cleared the overlap but jammed the prefix flush against
+the input box's own bottom edge -- clear of the value, but not
+centered in the space below it, matching the same "not just
+horizontally, vertically too" gap the stepper-aware horizontal fix
+already closed for the left/right axis.
+
+**Fix**: `checkCalcLimitCrampedState()` now also live-measures where
+the value's own text visually ends (box's vertical center + half its
+own font-size -- the same approximation of a centered single-line
+input's glyph bottom used when this cramped state was first
+diagnosed) and centers the prefix's own box in whatever's left between
+that and the input's bottom edge, setting `top` inline (overriding the
+CSS class's `bottom:0` fallback) the same way `left` already gets set
+inline for horizontal centering. Cleared back to `''` alongside `left`
+when not cramped, in the same place, to avoid repeating the earlier
+state-leak bug class.
+
+### Verified
+
+320px: prefix's own measured vertical center sits exactly 20.8px from
+BOTH the value's approximated text-bottom and the box's own bottom
+edge -- genuinely centered in the gap, not assumed. Screenshot
+confirms the "-" now visually floats centered under "3.33" instead of
+hugging the box's bottom edge.

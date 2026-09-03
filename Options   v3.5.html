@@ -115,7 +115,14 @@
        file. Retune freely -- nothing else needs to change to match. */
     --calc-cramped-logo-nudge-x: -10px;
     --calc-cramped-contracts-nudge-x: -10px;
-    --calc-cramped-deal-btn-padding-x: 4px;
+    --calc-cramped-deal-btn-padding-x: 1px;
+    /* Explicit follow-up: "login icon still touches contracts... make
+       contracts field size slightly less wide." Contracts' own width
+       shrinks by this under cramped, ON TOP of the nudge above -- the
+       script also computes an exact ADDITIONAL shift on top of both
+       whenever that still isn't enough to clear Login (which never
+       moves), so this knob only has to get it close, not perfect. */
+    --calc-cramped-contracts-width: 100px;
     /* ============================================================ */
     /* ============================================================
        DESKTOP CALCULATOR VERTICAL SPACING -- EDIT HERE
@@ -1227,33 +1234,50 @@
   body.calc-top-cramped .top-deal-btn { padding: 0 var(--calc-cramped-deal-btn-padding-x); }
   body.calc-top-cramped.portfolio-layout-mobile .calc-logo-corner { left: calc(35px + var(--calc-cramped-logo-nudge-x)); }
   body.calc-top-cramped .contracts-mobile-slot { position: relative; left: var(--calc-cramped-contracts-nudge-x); }
+  body.calc-top-cramped .contracts-mobile-slot #contracts { width: var(--calc-cramped-contracts-width); }
 
   /* 2) Limit $'s "-" prefix (.limit-sign-prefix) sitting behind the
      digits -- moved from dead-center-overlapping (top:50%) to a small
      label under the value instead, still inside the SAME input box
      (no height change to the box itself, just where the prefix sits
-     within it). */
+     within it). Explicit follow-up: "'-' is still behind 3.33 = NOT
+     FIXED!" -- bottom:3px alone wasn't enough clearance from the
+     vertically-CENTERED value sitting above it in the same fixed-height
+     box, so #limit's own text also gets nudged up (padding-top, box
+     height itself untouched) to open real dedicated space at the
+     bottom, and the prefix shrinks further with line-height:1 (no
+     invisible line-box padding) to fit inside it. */
+  body.calc-limit-cramped #limit { padding-top: 6px; padding-bottom: 0; }
   body.calc-limit-cramped .limit-sign-prefix {
     top: auto;
-    bottom: 3px;
-    /* left is NOT set here -- checkCalcLimitCrampedState() (script)
-       sets it inline, centered in the space actually left of the
-       stepper buttons, not flat 50% of the whole box. An inline style
-       always wins over this class rule regardless, so a `left` here
-       would just be dead weight. */
+    bottom: 0;
+    line-height: 1;
+    /* left/top/bottom are NOT meaningfully set here beyond this
+       fallback -- checkCalcLimitCrampedState() (script) sets both
+       inline once cramped, centered in the space actually left of the
+       stepper buttons (left) and centered in the space actually below
+       the value's own text (top, overriding this bottom:0 -- explicit
+       follow-up: "raise the minus a bit higher so its centered
+       horizontally but also vertically below the value," not jammed
+       against the box's bottom edge). An inline style always wins over
+       this class rule regardless, so these are just the pre-JS/no-JS
+       fallback, not the real positioning. */
     transform: translateX(-50%);
-    font-size: 12px;
+    font-size: 10px;
   }
 
-  /* 3) Ratio/Max Loss/Max Profit overlap -- scoped to
+  /* 3) Ratio/Max Loss/Max Profit overlap -- SIZE shrink stays scoped to
      .calc-metric-cramped-target (see the HTML comment above those 3
-     .metric divs) so Profit Taker/Profit, never reported as broken,
-     stay exactly as-is even while this is active. calc() off the
-     existing values/variable (not new hardcoded numbers) so retuning
-     the base size elsewhere automatically keeps the -1px/-10%/-20%
-     relationship correct. */
+     .metric divs) so Profit Taker/Profit, never reported as broken on
+     sizing, stay exactly as-is even while this is active (their TITLES
+     alone follow along Title Case -- see checkCalcMetricsCrampedState()
+     in the script). calc() off the existing values/variable (not new
+     hardcoded numbers) so retuning the base size elsewhere automatically
+     keeps the -1px/-20%/-20% relationship correct. Explicit follow-up:
+     "add another 10% font value shrink" -- 0.9 (10% off) wasn't enough,
+     now 0.8 (20% off the original 38px). */
   body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
-  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.9); }
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.8); }
   body.calc-metrics-cramped .calc-metric-cramped-target .icon {
     width: calc(33px * 0.8);
     height: calc(33px * 0.8);
@@ -4062,8 +4086,13 @@
              (and 1px smaller font size.) regarding the actual values,
              make them 10% smaller... every symbol and its respect
              frame by 20% smaller." .calc-metric-cramped-target marks
-             exactly these 3 -- PROFIT TAKER/PROFIT (below) weren't part
-             of this ask, so they stay untouched even when this fires. -->
+             exactly these 3 for SIZING -- PROFIT TAKER/PROFIT (below)
+             weren't part of that ask, so their size stays untouched.
+             Their TITLE TEXT, however, now also swaps to Title Case in
+             sync with these 3 (see checkCalcMetricsCrampedState() in the
+             script) -- "change 'PROFIT TAKER' & 'PROFIT' to 'Profit
+             Taker' & 'Profit' when the other titles change... so it
+             doesnt look wierded out." -->
         <div class="metric calc-metric-cramped-target">
           <div class="metric-title" id="metricTitleRatio">RATIO</div>
           <div class="metric-content">
@@ -4086,7 +4115,7 @@
           </div>
         </div>
         <div class="metric">
-          <div class="metric-title">PROFIT TAKER</div>
+          <div class="metric-title" id="metricTitleProfitTaker">PROFIT TAKER</div>
           <div class="metric-content">
             <div id="profitTaker" class="metric-value">-1.02</div>
             <div id="metricIconProfitTaker" class="icon blue">💰</div>
@@ -5318,27 +5347,81 @@
    * checks/classes (not one combined "cramped" flag) since the 3
    * problem areas can occur independently of each other.
    * =================================================================== */
-  function rectsOverlap(a, b) {
+  // `buffer` (px) requires actual CLEARANCE, not just non-touching --
+  // explicit follow-up: "get a glasses. login icon still touches
+  // contracts..." exact-boundary comparison (buffer omitted/0) let
+  // "technically not overlapping, but visually touching" read as fine.
+  function rectsOverlap(a, b, buffer) {
     if (!a || !b) return false;
     const r1 = a.getBoundingClientRect();
     const r2 = b.getBoundingClientRect();
     if (r1.width === 0 || r1.height === 0 || r2.width === 0 || r2.height === 0) return false;
-    return !(r1.right <= r2.left || r1.left >= r2.right || r1.bottom <= r2.top || r1.top >= r2.bottom);
+    const m = buffer || 0;
+    return !(r1.right + m <= r2.left || r1.left >= r2.right + m || r1.bottom + m <= r2.top || r1.top >= r2.bottom + m);
   }
 
   // Logo / Login button / Contracts / Deal button colliding. "LOGIN
   // BUTTON WILL NEVER MOVE" -- its own CSS is untouched in every case
   // below; everything else nudges/shrinks AROUND it instead.
+  // 3px, not 8 -- this file's OWN documented working reference (400px)
+  // has an accepted, intentional 4px gap between Contracts and Login/
+  // Deal (see .calc-deal-btn-row-mobile's own comment: "a 4px gap --
+  // confirmed live"). An 8px buffer flagged that already-fine layout as
+  // cramped too, which would have violated "THIS WILL NOT ALTER the
+  // already superb calculator display on phones that can display it
+  // well" -- live-caught via this round's own verification, not
+  // reported by the user. 3px stays under that historical 4px tolerance
+  // while still requiring real clearance beyond exact-boundary touching.
+  const CALC_TOP_CRAMPED_BUFFER = 3;
+  const CALC_TOP_CRAMPED_MIN_CONTRACTS_WIDTH = 70; // px floor -- never shrinks Contracts past a still-usable size
   function checkCalcTopCrampedState() {
     document.body.classList.remove('calc-top-cramped'); // measure the TRUE natural layout, not an already-compensated one
     const logo = document.querySelector('.calc-logo-corner');
     const contracts = document.getElementById('contractsMobileSlot');
+    const contractsInput = document.getElementById('contracts');
     const loginBtn = document.getElementById('googleSyncBtn');
     const dealBtn = document.getElementById('topSaveBtnMobile');
-    if (!logo || !contracts || !loginBtn) return;
-    const cramped = rectsOverlap(logo, contracts) || rectsOverlap(loginBtn, contracts) ||
-      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts));
+    if (contracts) contracts.style.left = ''; // clear a previous call's dynamic shift/shrink (see below) before re-measuring
+    if (contractsInput) contractsInput.style.width = '';
+    if (!logo || !contracts || !contractsInput || !loginBtn) return;
+    const cramped = rectsOverlap(logo, contracts, CALC_TOP_CRAMPED_BUFFER) || rectsOverlap(loginBtn, contracts, CALC_TOP_CRAMPED_BUFFER) ||
+      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts, CALC_TOP_CRAMPED_BUFFER));
     document.body.classList.toggle('calc-top-cramped', cramped);
+    if (!cramped) return;
+    // Explicit follow-up: "login icon still touches contracts... Deal
+    // button still touches contracts... make contracts field size
+    // slightly less wide." A FIXED width knob + fixed nudge can't be
+    // "universal for multiple phone screen resolutions" (the user's own
+    // original requirement) -- live-tested at 320px vs 280px and the
+    // SAME fixed shift that cleared Login/Deal at 320px pushed Contracts
+    // straight into the Logo at 280px, since the actual gap between Logo
+    // and Login/Deal shrinks continuously as the device narrows. This
+    // computes the REAL available gap between Logo (left, buffered) and
+    // whichever of Login/the Deal button (deliberately overlapping this
+    // row vertically via its own negative margin-top by design -- see
+    // .calc-deal-btn-row-mobile's comment, so only a horizontal gap
+    // keeps them apart) sits closer (right, buffered) -- shrinking
+    // Contracts' own width to fit THAT gap if the CSS knob's width still
+    // doesn't (down to a usable floor), then shifting to land fully
+    // inside it. Guarantees clearance from every neighbor at once, on
+    // any width, instead of hoping fixed knobs were tuned for one device.
+    const logoRect = logo.getBoundingClientRect();
+    const loginRect = loginBtn.getBoundingClientRect();
+    const rightBlockerLefts = [loginRect.left];
+    if (dealBtn && dealBtn.offsetParent) rightBlockerLefts.push(dealBtn.getBoundingClientRect().left);
+    const rightBoundary = Math.min.apply(null, rightBlockerLefts) - CALC_TOP_CRAMPED_BUFFER;
+    const leftBoundary = logoRect.right + CALC_TOP_CRAMPED_BUFFER;
+    const availableWidth = rightBoundary - leftBoundary;
+    let contractsRect = contracts.getBoundingClientRect();
+    if (availableWidth > 0 && contractsRect.width > availableWidth) {
+      contractsInput.style.width = Math.max(availableWidth, CALC_TOP_CRAMPED_MIN_CONTRACTS_WIDTH) + 'px';
+      contractsRect = contracts.getBoundingClientRect(); // re-measure after the shrink
+    }
+    const shortfall = contractsRect.right - rightBoundary;
+    if (shortfall > 0) {
+      const cssLeft = parseFloat(getComputedStyle(contracts).left) || 0;
+      contracts.style.left = (cssLeft - shortfall) + 'px';
+    }
   }
 
   // Canvas-measured text width -- same technique this file already uses
@@ -5373,7 +5456,7 @@
     // matches neither the true default nor true cramped position. Found
     // live: caused a false positive at a comfortable 400px right after
     // a narrower-width run had legitimately gone cramped.
-    if (prefix) prefix.style.left = '';
+    if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
     if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
     const valRect = value.getBoundingClientRect();
     const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
@@ -5381,7 +5464,11 @@
     const textLeft = boxCenter - textWidth / 2;
     const textRight = boxCenter + textWidth / 2;
     const prefixRect = prefix.getBoundingClientRect();
-    const overlap = !(prefixRect.right <= textLeft || prefixRect.left >= textRight);
+    // Buffer, not exact-boundary -- same "still touches" lesson as the
+    // top-row check above; requires real clearance, not just no literal
+    // pixel overlap.
+    const LIMIT_CRAMPED_BUFFER = 6;
+    const overlap = !(prefixRect.right + LIMIT_CRAMPED_BUFFER <= textLeft || prefixRect.left >= textRight + LIMIT_CRAMPED_BUFFER);
     document.body.classList.toggle('calc-limit-cramped', overlap);
     // Explicit follow-up: "if '-' moves below the value it must be
     // centered within the space left in the field (since steppers takes
@@ -5406,17 +5493,56 @@
     } else {
       prefix.style.left = '';
     }
+    // Explicit follow-up: "raise the minus a bit higher so its centered
+    // horizontally but also vertically below the value." Bottom:0 (CSS
+    // default) jammed the prefix flush against the box's own bottom
+    // edge instead of centered in the actual free space below the
+    // value's text -- live-measures where the value's own glyphs
+    // visually end (box's vertical center + half its own font-size,
+    // matching how a single-line input actually centers text) and
+    // centers the prefix's box in whatever's left between that and the
+    // input's bottom edge, same "measure, don't guess" approach as the
+    // horizontal centering just above.
+    if (overlap && wrap) {
+      const valFontSize = parseFloat(getComputedStyle(value).fontSize) || 0;
+      const valTextBottom = valRect.top + valRect.height / 2 + valFontSize / 2;
+      const boxBottom = valRect.bottom;
+      const gapCenter = (valTextBottom + boxBottom) / 2;
+      const wrapRect = wrap.getBoundingClientRect();
+      const prefixHeight = prefix.getBoundingClientRect().height;
+      prefix.style.top = (gapCenter - prefixHeight / 2 - wrapRect.top) + 'px';
+      prefix.style.bottom = 'auto';
+    } else {
+      prefix.style.top = '';
+      prefix.style.bottom = '';
+    }
   }
 
   // Ratio/Max Loss/Max Profit values+icons overlapping each other or
-  // their own tile border. Also swaps the 3 titles between their normal
-  // ALL CAPS text and the cramped-only Title Case wording -- a pure CSS
-  // text-transform can't produce "Max Loss" (capitalizing EACH word)
-  // from literal "MAX LOSS" source text, only JS can.
-  const CALC_METRIC_TITLES = [
-    { id: 'metricTitleRatio', normal: 'RATIO', cramped: 'Ratio' },
-    { id: 'metricTitleMaxLoss', normal: 'MAX LOSS', cramped: 'Max Loss' },
-    { id: 'metricTitleMaxProfit', normal: 'MAX PROFIT', cramped: 'Max Profit' }
+  // their own tile border. Also swaps ALL 5 metric titles (not just
+  // these 3) between their normal ALL CAPS text and the cramped-only
+  // Title Case wording -- a pure CSS text-transform can't produce
+  // "Max Loss" (capitalizing EACH word) from literal "MAX LOSS" source
+  // text, only JS can. Explicit follow-up: "change 'PROFIT TAKER' &
+  // 'PROFIT' to 'Profit Taker' & 'Profit' when the other titles change
+  // ... so it doesnt look wierded out" -- Profit Taker/Profit never got
+  // the SIZE shrink (still not .calc-metric-cramped-target), only the
+  // text case, purely so all 5 titles read consistently together.
+  function toTitleCase(str) {
+    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+  // #dynamicStopTitle's text isn't fixed -- calculate() sets it to
+  // "PROFIT" or "LOSS" per state, every time, BEFORE this runs (see
+  // calculate()'s own call order). Working generically off
+  // el.textContent.toUpperCase() (not a hardcoded normal/cramped pair
+  // per id) recovers the correct canonical ALL CAPS form every time,
+  // whether or not a PREVIOUS cramped pass already Title-Cased it --
+  // .toUpperCase() is idempotent regardless of current case, so this is
+  // safe to call on every check (including resize-triggered re-checks
+  // that run without calculate() having just refreshed the text).
+  const CALC_METRIC_TITLE_IDS = [
+    'metricTitleRatio', 'metricTitleMaxLoss', 'metricTitleMaxProfit',
+    'metricTitleProfitTaker', 'dynamicStopTitle'
   ];
   // Live-measured the actual failure mode via a real overlap: adjacent
   // grid cells always exactly TOUCH by design (one ends where the next
@@ -5443,9 +5569,11 @@
       }
     });
     document.body.classList.toggle('calc-metrics-cramped', cramped);
-    CALC_METRIC_TITLES.forEach(t => {
-      const el = document.getElementById(t.id);
-      if (el) el.textContent = cramped ? t.cramped : t.normal;
+    CALC_METRIC_TITLE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el || !el.textContent) return;
+      const upper = el.textContent.toUpperCase();
+      el.textContent = cramped ? toTitleCase(upper) : upper;
     });
   }
 
