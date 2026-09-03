@@ -609,7 +609,17 @@
      vertically, since horizontally they never touch (Contracts ends at
      x=260, this row's widened button starts at x=264, a 4px gap --
      confirmed live, not just assumed from the numbers alone). */
-  body.portfolio-layout-mobile #topSaveBtnMobile { width: 134px; }
+  body.portfolio-layout-mobile #topSaveBtnMobile { width: 126px; padding: 0 8px; }
+  /* Explicit follow-up: "shrink Deal button a tiny bit more, less
+     wider since its almost touching contracts, just a bit." 134px -> 126px
+     (padding also 12px -> 8px, ID beats the shared `.top-deal-btn` class
+     rule) -- slightly breaks the exact left-edge alignment with the
+     Google Account icon described above (this button is right-anchored,
+     so narrowing it moves its LEFT edge right, away from Contracts,
+     which is the actual goal here), but that alignment was never the
+     complaint; the Contracts gap was. Scoped to the ID, not the shared
+     class, so Portfolio's own New-Deal button and Desktop's narrow-
+     window Deal button (neither reported as cramped) stay untouched. */
   body.portfolio-layout-mobile .calc-deal-btn-row-mobile { margin-top: -60px; }
   /* #calcInputsMobileSlot holds the relocated #calcInputs section only
      while the Phone header is showing -- its own bottom margin replaces
@@ -1283,6 +1293,16 @@
     height: calc(33px * 0.8);
     font-size: calc(var(--legend-metric-icon-size) * 0.8);
   }
+  /* Explicit follow-up: "when 'max loss/max profit' values change to 4
+     digit numbers instead of 3 remove the %, down arrow, up arrow
+     symbols and their frames to get even more space when necessary."
+     .calc-metric-hide-icon is toggled per-tile by
+     checkCalcMetricsCrampedState() (script) -- only while already
+     cramped, and only for whichever specific tile's own value actually
+     reached 4+ digits. Hiding the icon element itself removes its
+     colored rounded frame along with it, since the frame IS that
+     element's own background/border, not a separate wrapper. */
+  body.calc-metrics-cramped .calc-metric-hide-icon .icon { display: none; }
 
   .blue { color: var(--blue); }
   .red { color: var(--red); }
@@ -5459,8 +5479,27 @@
     if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
     if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
     const valRect = value.getBoundingClientRect();
-    const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
-    const boxCenter = valRect.left + valRect.width / 2;
+    const valStyle = getComputedStyle(value);
+    const textWidth = measureTextWidth(value.value, valStyle.font);
+    // NOT the whole border-box's geometric center -- `#limit` has
+    // wildly asymmetric padding (10px left, ~40-55px right depending on
+    // breakpoint, to clear the +/- stepper buttons overlaid on its right
+    // side), so text-align:center actually centers within that lopsided
+    // CONTENT box, well left of the border-box's own midpoint. Live-
+    // reproduced the bug this caused: at 412px this math put the "true"
+    // center 18px right of reality, reporting a comfortable 16px gap
+    // for a case that was ACTUALLY overlapping by ~2px on screen
+    // ("-3.36" with the dash cutting into the "3") -- confirmed by
+    // recomputing with the padding accounted for and matching the
+    // screenshot. content box = border box minus border+padding on
+    // each side.
+    const padLeft = parseFloat(valStyle.paddingLeft) || 0;
+    const padRight = parseFloat(valStyle.paddingRight) || 0;
+    const borderLeft = parseFloat(valStyle.borderLeftWidth) || 0;
+    const borderRight = parseFloat(valStyle.borderRightWidth) || 0;
+    const contentLeft = valRect.left + borderLeft + padLeft;
+    const contentRight = valRect.right - borderRight - padRight;
+    const boxCenter = (contentLeft + contentRight) / 2;
     const textLeft = boxCenter - textWidth / 2;
     const textRight = boxCenter + textWidth / 2;
     const prefixRect = prefix.getBoundingClientRect();
@@ -5557,6 +5596,7 @@
     document.body.classList.remove('calc-metrics-cramped');
     const targets = document.querySelectorAll('.calc-metric-cramped-target');
     if (!targets.length) return;
+    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon'));
     let cramped = false;
     targets.forEach(metric => {
       const content = metric.querySelector('.metric-content');
@@ -5569,6 +5609,23 @@
       }
     });
     document.body.classList.toggle('calc-metrics-cramped', cramped);
+    // Explicit follow-up: "when 'max loss/max profit' values change to 4
+    // digit numbers instead of 3 remove the %, down arrow, up arrow
+    // symbols and their frames to get even more space when necessary."
+    // Only once already cramped (the shrink above wasn't enough on its
+    // own) AND only for whichever tile's OWN value actually grew to 4+
+    // digits -- e.g. Max Loss hitting "$1,328" loses its icon while a
+    // 3-digit Max Profit neighbor keeps its own. Digit count via
+    // stripping everything but 0-9 (works for "$1,328" -> "1328" -> 4,
+    // and for Ratio's "50.6" -> "506" -> 3, without caring about the
+    // punctuation each metric formats with).
+    if (cramped) {
+      targets.forEach(metric => {
+        const value = metric.querySelector('.metric-value');
+        const digitCount = value ? value.textContent.replace(/[^0-9]/g, '').length : 0;
+        metric.classList.toggle('calc-metric-hide-icon', digitCount >= 4);
+      });
+    }
     CALC_METRIC_TITLE_IDS.forEach(id => {
       const el = document.getElementById(id);
       if (!el || !el.textContent) return;

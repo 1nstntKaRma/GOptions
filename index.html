@@ -236,7 +236,8 @@
   .calc-deal-btn-row-mobile { display: none; justify-content: flex-end; }
   body.portfolio-layout-mobile .calc-deal-btn-row-mobile { display: flex; }
 
-  body.portfolio-layout-mobile #topSaveBtnMobile { width: 134px; }
+  body.portfolio-layout-mobile #topSaveBtnMobile { width: 126px; padding: 0 8px; }
+
   body.portfolio-layout-mobile .calc-deal-btn-row-mobile { margin-top: -60px; }
 
   .calc-inputs-mobile-slot { display: none; margin-bottom: 22px; }
@@ -567,6 +568,8 @@
     height: calc(33px * 0.8);
     font-size: calc(var(--legend-metric-icon-size) * 0.8);
   }
+
+  body.calc-metrics-cramped .calc-metric-hide-icon .icon { display: none; }
 
   .blue { color: var(--blue); }
   .red { color: var(--red); }
@@ -2749,8 +2752,16 @@
     if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
     if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
     const valRect = value.getBoundingClientRect();
-    const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
-    const boxCenter = valRect.left + valRect.width / 2;
+    const valStyle = getComputedStyle(value);
+    const textWidth = measureTextWidth(value.value, valStyle.font);
+
+    const padLeft = parseFloat(valStyle.paddingLeft) || 0;
+    const padRight = parseFloat(valStyle.paddingRight) || 0;
+    const borderLeft = parseFloat(valStyle.borderLeftWidth) || 0;
+    const borderRight = parseFloat(valStyle.borderRightWidth) || 0;
+    const contentLeft = valRect.left + borderLeft + padLeft;
+    const contentRight = valRect.right - borderRight - padRight;
+    const boxCenter = (contentLeft + contentRight) / 2;
     const textLeft = boxCenter - textWidth / 2;
     const textRight = boxCenter + textWidth / 2;
     const prefixRect = prefix.getBoundingClientRect();
@@ -2798,6 +2809,7 @@
     document.body.classList.remove('calc-metrics-cramped');
     const targets = document.querySelectorAll('.calc-metric-cramped-target');
     if (!targets.length) return;
+    targets.forEach(metric => metric.classList.remove('calc-metric-hide-icon'));
     let cramped = false;
     targets.forEach(metric => {
       const content = metric.querySelector('.metric-content');
@@ -2810,6 +2822,14 @@
       }
     });
     document.body.classList.toggle('calc-metrics-cramped', cramped);
+
+    if (cramped) {
+      targets.forEach(metric => {
+        const value = metric.querySelector('.metric-value');
+        const digitCount = value ? value.textContent.replace(/[^0-9]/g, '').length : 0;
+        metric.classList.toggle('calc-metric-hide-icon', digitCount >= 4);
+      });
+    }
     CALC_METRIC_TITLE_IDS.forEach(id => {
       const el = document.getElementById(id);
       if (!el || !el.textContent) return;

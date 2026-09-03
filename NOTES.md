@@ -8743,3 +8743,77 @@ BOTH the value's approximated text-bottom and the box's own bottom
 edge -- genuinely centered in the gap, not assumed. Screenshot
 confirms the "-" now visually floats centered under "3.33" instead of
 hugging the box's bottom edge.
+
+## Limit $ prefix: the REAL root cause -- asymmetric padding, not a stale deployment
+
+User posted a real-device screenshot at a WIDER width than anything
+tested so far (contracts=2, limit "3.36") still showing the exact
+original bug shape -- "-" cutting through the leading "3" -- despite
+this round's earlier fix having been live-verified working at 280-
+400px. Every width from 320-412px was re-tested locally with the SAME
+value/contracts and could NOT reproduce it at first (`checkCalcLimit-
+CrampedState()` reported a comfortable 16.4px gap at 412px), which
+pointed toward a deployment/cache gap between this file and whatever
+the user's screenshot came from -- until digging into `#limit`'s own
+computed style surfaced the REAL bug: `padding-left:10px` vs
+`padding-right:~46px` (the stepper buttons overlay the right side).
+`text-align:center` centers text within that lopsided CONTENT box, not
+the element's geometric border-box center -- but the overlap check's
+`boxCenter` was computed as `valRect.left + valRect.width/2`, the
+naive full-box center, ignoring the padding entirely. At 412px this
+put the assumed center 18px right of the TRUE visually-centered
+position, understating the real overlap by the same 18px (a
+comfortable-looking 16.4px gap that was actually a ~1.6px overlap).
+This bug existed since the very first "measure real text, not whole
+box" fix, earlier in this same thread -- it just happened not to
+manifest at the narrower widths tested at the time, since the
+stepper's own width (and therefore the padding-right/asymmetry) varies
+by breakpoint too.
+
+**Fix**: `boxCenter` now derived from the actual CONTENT box (border-
+box rect minus each side's own border + padding, read live via
+`getComputedStyle`), not the bordered box's geometric midpoint.
+
+### Verified
+
+Reproduced the user's exact screenshot scenario locally (total 1000,
+contracts 2, limit 3.36, PT% 80, at 412px) -- BEFORE the fix,
+`calc-limit-cramped` incorrectly stayed off, matching the reported bug
+exactly (dash overlapping the "3"). AFTER the fix, same inputs: correctly
+turns on, prefix repositions below the value, screenshot confirms
+"3.36" clean with "-" centered underneath. Re-verified 320px and 400px
+(previously-working cases) still correct after the change, no
+regression from the padding-aware recalculation.
+
+## Deal button: shrink further + hide icon/frame for 4-digit metric values
+
+Two more explicit follow-ups from the same screenshot round:
+
+1. "shrink Deal button a tiny bit more, less wider since its almost
+   touching contracts, just a bit." Live-measured: at 412px `calc-top-
+   cramped` correctly does NOT fire (a genuine 10px gap, not actually
+   overlapping), so this is a "make the comfortable case a bit more
+   comfortable" ask, not a bug -- reduced `#topSaveBtnMobile` specifically
+   (ID-scoped, not the shared `.top-deal-btn` class, so Portfolio's own
+   New-Deal button and Desktop's narrow-window Deal button stay
+   untouched) from 134px/12px padding to 126px/8px padding.
+2. "when 'max loss/max profit' values change to 4 digit numbers instead
+   of 3 remove the %, down arrow, up arrow symbols and their frames to
+   get even more space when necessary." Added a per-tile digit count
+   check (strip non-digits, count length) inside `checkCalcMetricsCramped-
+   State()`, only evaluated once already cramped -- a `.calc-metric-
+   hide-icon` class toggles per-tile (not globally) so a 4-digit Max Loss
+   loses its icon while a 3-digit Max Profit neighbor keeps its own.
+   Hiding the icon element itself (`display:none`) removes its colored
+   frame along with it, since the frame is that element's own styling,
+   not a separate wrapper.
+
+### Verified
+
+Reproduced $1,328 Max Loss / $672 Max Profit (the screenshot's own
+numbers) at 412px: Max Loss's tile correctly gained `.calc-metric-
+hide-icon` (icon `display:none`), Max Profit's did not (icon still
+`display:flex`) -- confirmed via computed style, not assumed.
+`#topSaveBtnMobile` computed width/padding confirmed 126px/8px.
+Screenshot shows both changes together with the Limit $ fix above --
+Max Loss reads clean as just "$1,328" with no icon crowding it.
