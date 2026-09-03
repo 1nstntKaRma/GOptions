@@ -516,6 +516,8 @@
     letter-spacing: 1px;
   }
 
+  body.portfolio-layout-mobile .metric-title { font-size: 16px; }
+
   .metric-content {
     display: flex;
     align-items: center;
@@ -561,7 +563,6 @@
     font-size: 10px;
   }
 
-  body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
   body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.8); }
   body.calc-metrics-cramped .calc-metric-cramped-target .icon {
     width: calc(33px * 0.8);
@@ -1820,35 +1821,35 @@
       <section class="panel summary">
 
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleRatio">RATIO</div>
+          <div class="metric-title" id="metricTitleRatio">Ratio</div>
           <div class="metric-content">
             <div id="ratio" class="metric-value">51.7</div>
             <div id="metricIconRatio" class="icon blue">%</div>
           </div>
         </div>
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleMaxLoss">MAX LOSS</div>
+          <div class="metric-title" id="metricTitleMaxLoss">Max Loss</div>
           <div class="metric-content">
             <div id="maxLoss" class="metric-value red">$989</div>
             <div id="metricIconMaxLoss" class="icon red">↓</div>
           </div>
         </div>
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleMaxProfit">MAX PROFIT</div>
+          <div class="metric-title" id="metricTitleMaxProfit">Max Profit</div>
           <div class="metric-content">
             <div id="maxProfit" class="metric-value green">$511</div>
             <div id="metricIconMaxProfit" class="icon green">↑</div>
           </div>
         </div>
         <div class="metric">
-          <div class="metric-title" id="metricTitleProfitTaker">PROFIT TAKER</div>
+          <div class="metric-title" id="metricTitleProfitTaker">Profit Taker</div>
           <div class="metric-content">
             <div id="profitTaker" class="metric-value">-1.02</div>
             <div id="metricIconProfitTaker" class="icon blue">💰</div>
           </div>
         </div>
         <div class="metric">
-          <div id="dynamicStopTitle" class="metric-title">LOSS</div>
+          <div id="dynamicStopTitle" class="metric-title">Loss</div>
           <div class="metric-content">
             <div id="dynamicStopValue" class="metric-value red">$73</div>
             <div id="dynamicStopIcon" class="icon red">↓</div>
@@ -2679,7 +2680,7 @@
       stopIcon.classList.remove('green');
       stopIcon.classList.add('red');
     } else {
-      stopTitle.textContent = sideIsLoss ? 'LOSS' : 'PROFIT';
+      stopTitle.textContent = sideIsLoss ? 'Loss' : 'Profit';
       stopValue.textContent = '$' + Math.abs(state.fifthValue).toLocaleString('en-US');
       stopValue.classList.remove('missing');
       stopValue.classList.toggle('red', sideIsLoss);
@@ -2798,15 +2799,6 @@
     }
   }
 
-  function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  }
-
-  const CALC_METRIC_TITLE_IDS = [
-    'metricTitleRatio', 'metricTitleMaxLoss', 'metricTitleMaxProfit',
-    'metricTitleProfitTaker', 'dynamicStopTitle'
-  ];
-
   function checkCalcMetricsCrampedState() {
     document.body.classList.remove('calc-metrics-cramped');
     const targets = document.querySelectorAll('.calc-metric-cramped-target');
@@ -2852,12 +2844,6 @@
         ratioMetric.classList.toggle('calc-ratio-extra-shrink', stillOverflowing);
       }
     }
-    CALC_METRIC_TITLE_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el || !el.textContent) return;
-      const upper = el.textContent.toUpperCase();
-      el.textContent = cramped ? toTitleCase(upper) : upper;
-    });
   }
 
   function checkCalcCrampedLayout() {

@@ -8873,3 +8873,51 @@ $1,328 / $672 (the original screenshot's own numbers): both icons now
 digits, matching Max Profit's own 3): both icons correctly back to
 `display:flex` together -- neither one shows while the other hides,
 in either direction.
+
+## Metric titles: permanent Title Case + permanent -2px on Phone, not conditional
+
+Explicit follow-up: "instead of changing this titles and their fonts
+at a specific case, change the TITLES permanently all of them to cause
+less jitter and interference in UI ... Ratio, Max Loss, Max Profit,
+Profit Taker, Profit ... apply the -2px font size to all of them
+permanently [Phone] ... in desktop mode just adapt to [Title Case]
+without changing the TITLES FONTS." Supersedes the entire cramped-only
+JS title-casing mechanism built earlier in this thread (`CALC_METRIC_
+TITLE_IDS`, `toTitleCase()`, the ALL-CAPS<->Title-Case swap inside
+`checkCalcMetricsCrampedState()`) -- that mechanism visibly flipped
+text case as the cramped state toggled on/off (e.g. during a resize),
+which is the "jitter" being asked to remove.
+
+**Fix**:
+- All 5 titles are now hardcoded Title Case directly in the HTML
+  ("Ratio", "Max Loss", "Max Profit", "Profit Taker") -- no JS involved
+  for the static 4. `#dynamicStopTitle` (the one whose text genuinely
+  changes, "Profit"/"Loss" per state) has its own `calculate()`
+  assignment updated from `'LOSS' : 'PROFIT'` to `'Loss' : 'Profit'`
+  directly -- still dynamic (correctly), just never ALL CAPS anymore.
+- Removed `toTitleCase()`, `CALC_METRIC_TITLE_IDS`, and the swap loop
+  from `checkCalcMetricsCrampedState()` entirely -- titles are no
+  longer touched by that function at all now, only the value/icon
+  SIZE shrink (unrelated, unchanged) still lives there.
+- Removed the old cramped-only `.metric-title { font-size: 17px }`
+  rule (which was also scoped to only 3 of the 5 tiles). Replaced with
+  one permanent, unconditional rule: `body.portfolio-layout-mobile
+  .metric-title { font-size: 16px }` (18px base - 2px), keyed off the
+  same OS-based Desktop/Phone class this file already uses everywhere
+  else for that split -- NOT gated by `.calc-metrics-cramped` at all,
+  so it never changes based on overlap detection, and Desktop gets no
+  override at all (stays at the base 18px, per "without changing the
+  TITLES FONTS").
+
+### Verified
+
+Desktop layout: all 5 titles read Title Case, `#metricTitleRatio`
+computed font-size 18px (unchanged). Mobile layout: same Title Case
+text, computed font-size 16px, confirmed active with NO cramped
+classes present on `<body>` at all (proving it's unconditional, not
+overlap-triggered). Re-tested mobile at a genuinely cramped 320px
+width (Total 1000/Contracts 2/Limit 3.36/PT% 80): titles stay
+identical Title Case text and the same 16px -- no jitter -- while the
+UNRELATED value shrink (`#ratio`'s 30.4px) still correctly responds to
+the cramped state as before, confirming the two mechanisms are now
+properly decoupled.

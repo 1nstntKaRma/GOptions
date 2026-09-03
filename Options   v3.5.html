@@ -1192,6 +1192,15 @@
     margin-bottom: 10px;
     letter-spacing: 1px;
   }
+  /* Explicit follow-up: "apply the -2px font size to all of them
+     permanently [[Phone]]... in desktop mode just adapt to [Title
+     Case] without changing the TITLES FONTS." Permanent and
+     unconditional (not tied to .calc-metrics-cramped/overlap detection
+     at all, unlike the value/icon shrink above) -- Phone only, via the
+     same OS-based body.portfolio-layout-mobile class every other
+     Desktop/Phone Calculator split in this file already keys off of.
+     Desktop gets no override at all, so it stays at the base 18px. */
+  body.portfolio-layout-mobile .metric-title { font-size: 16px; }
 
   .metric-content {
     display: flex;
@@ -1279,14 +1288,14 @@
   /* 3) Ratio/Max Loss/Max Profit overlap -- SIZE shrink stays scoped to
      .calc-metric-cramped-target (see the HTML comment above those 3
      .metric divs) so Profit Taker/Profit, never reported as broken on
-     sizing, stay exactly as-is even while this is active (their TITLES
-     alone follow along Title Case -- see checkCalcMetricsCrampedState()
-     in the script). calc() off the existing values/variable (not new
-     hardcoded numbers) so retuning the base size elsewhere automatically
-     keeps the -1px/-20%/-20% relationship correct. Explicit follow-up:
-     "add another 10% font value shrink" -- 0.9 (10% off) wasn't enough,
-     now 0.8 (20% off the original 38px). */
-  body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
+     sizing, stay exactly as-is even while this is active. calc() off
+     the existing values/variable (not new hardcoded numbers) so
+     retuning the base size elsewhere automatically keeps the -20%/-20%
+     relationship correct. Explicit follow-up: "add another 10% font
+     value shrink" -- 0.9 (10% off) wasn't enough, now 0.8 (20% off the
+     original 38px). Titles no longer shrink HERE (conditionally) at
+     all -- see the permanent, unconditional `.metric-title` rule below
+     instead. */
   body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.8); }
   body.calc-metrics-cramped .calc-metric-cramped-target .icon {
     width: calc(33px * 0.8);
@@ -4115,48 +4124,50 @@
       <div id="calcInputsMobileSlot" class="calc-inputs-slot calc-inputs-mobile-slot"></div>
 
       <section class="panel summary">
-        <!-- Explicit follow-up: "RATIO | MAX LOSS | MAX PROFIT and
-             their respective values are overlapping... change title...
-             (and 1px smaller font size.) regarding the actual values,
-             make them 10% smaller... every symbol and its respect
-             frame by 20% smaller." .calc-metric-cramped-target marks
-             exactly these 3 for SIZING -- PROFIT TAKER/PROFIT (below)
-             weren't part of that ask, so their size stays untouched.
-             Their TITLE TEXT, however, now also swaps to Title Case in
-             sync with these 3 (see checkCalcMetricsCrampedState() in the
-             script) -- "change 'PROFIT TAKER' & 'PROFIT' to 'Profit
-             Taker' & 'Profit' when the other titles change... so it
-             doesnt look wierded out." -->
+        <!-- Explicit follow-up: "instead of changing this titles and
+             their fonts at a specific case, change the TITLES
+             permanently all of them... Ratio, Max Loss, Max Profit,
+             Profit Taker, Profit... apply the -2px font size to all of
+             them permanently [Phone]... in desktop mode just adapt to
+             [Title Case] without changing the TITLES FONTS." Supersedes
+             the earlier cramped-only, JS-toggled Title Case swap (which
+             caused visible jitter flipping between ALL CAPS and Title
+             Case as the cramped state changed) -- these 5 are now
+             ALWAYS Title Case, hardcoded here (dynamicStopTitle's own
+             "Loss"/"Profit" text is set the same way in calculate()).
+             .calc-metric-cramped-target still marks the 3 whose VALUE/
+             icon size shrinks under real overlap -- unrelated to this,
+             and unchanged. -->
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleRatio">RATIO</div>
+          <div class="metric-title" id="metricTitleRatio">Ratio</div>
           <div class="metric-content">
             <div id="ratio" class="metric-value">51.7</div>
             <div id="metricIconRatio" class="icon blue">%</div>
           </div>
         </div>
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleMaxLoss">MAX LOSS</div>
+          <div class="metric-title" id="metricTitleMaxLoss">Max Loss</div>
           <div class="metric-content">
             <div id="maxLoss" class="metric-value red">$989</div>
             <div id="metricIconMaxLoss" class="icon red">↓</div>
           </div>
         </div>
         <div class="metric calc-metric-cramped-target">
-          <div class="metric-title" id="metricTitleMaxProfit">MAX PROFIT</div>
+          <div class="metric-title" id="metricTitleMaxProfit">Max Profit</div>
           <div class="metric-content">
             <div id="maxProfit" class="metric-value green">$511</div>
             <div id="metricIconMaxProfit" class="icon green">↑</div>
           </div>
         </div>
         <div class="metric">
-          <div class="metric-title" id="metricTitleProfitTaker">PROFIT TAKER</div>
+          <div class="metric-title" id="metricTitleProfitTaker">Profit Taker</div>
           <div class="metric-content">
             <div id="profitTaker" class="metric-value">-1.02</div>
             <div id="metricIconProfitTaker" class="icon blue">💰</div>
           </div>
         </div>
         <div class="metric">
-          <div id="dynamicStopTitle" class="metric-title">LOSS</div>
+          <div id="dynamicStopTitle" class="metric-title">Loss</div>
           <div class="metric-content">
             <div id="dynamicStopValue" class="metric-value red">$73</div>
             <div id="dynamicStopIcon" class="icon red">↓</div>
@@ -5350,7 +5361,7 @@
       stopIcon.classList.remove('green');
       stopIcon.classList.add('red');
     } else {
-      stopTitle.textContent = sideIsLoss ? 'LOSS' : 'PROFIT';
+      stopTitle.textContent = sideIsLoss ? 'Loss' : 'Profit';
       stopValue.textContent = '$' + Math.abs(state.fifthValue).toLocaleString('en-US');
       stopValue.classList.remove('missing');
       stopValue.classList.toggle('red', sideIsLoss);
@@ -5572,31 +5583,14 @@
   }
 
   // Ratio/Max Loss/Max Profit values+icons overlapping each other or
-  // their own tile border. Also swaps ALL 5 metric titles (not just
-  // these 3) between their normal ALL CAPS text and the cramped-only
-  // Title Case wording -- a pure CSS text-transform can't produce
-  // "Max Loss" (capitalizing EACH word) from literal "MAX LOSS" source
-  // text, only JS can. Explicit follow-up: "change 'PROFIT TAKER' &
-  // 'PROFIT' to 'Profit Taker' & 'Profit' when the other titles change
-  // ... so it doesnt look wierded out" -- Profit Taker/Profit never got
-  // the SIZE shrink (still not .calc-metric-cramped-target), only the
-  // text case, purely so all 5 titles read consistently together.
-  function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  }
-  // #dynamicStopTitle's text isn't fixed -- calculate() sets it to
-  // "PROFIT" or "LOSS" per state, every time, BEFORE this runs (see
-  // calculate()'s own call order). Working generically off
-  // el.textContent.toUpperCase() (not a hardcoded normal/cramped pair
-  // per id) recovers the correct canonical ALL CAPS form every time,
-  // whether or not a PREVIOUS cramped pass already Title-Cased it --
-  // .toUpperCase() is idempotent regardless of current case, so this is
-  // safe to call on every check (including resize-triggered re-checks
-  // that run without calculate() having just refreshed the text).
-  const CALC_METRIC_TITLE_IDS = [
-    'metricTitleRatio', 'metricTitleMaxLoss', 'metricTitleMaxProfit',
-    'metricTitleProfitTaker', 'dynamicStopTitle'
-  ];
+  // their own tile border. Titles themselves are no longer touched here
+  // -- explicit follow-up: "instead of changing this titles and their
+  // fonts at a specific case, change the TITLES permanently... to cause
+  // less jitter." All 5 are now permanently Title Case (hardcoded in the
+  // HTML/calculate(), see the HTML comment above the summary section),
+  // so the cramped-only ALL-CAPS<->Title-Case swap that used to live
+  // here (and the visible jitter it caused flipping back and forth) is
+  // gone entirely.
   // Live-measured the actual failure mode via a real overlap: adjacent
   // grid cells always exactly TOUCH by design (one ends where the next
   // begins), so whole-cell-vs-whole-cell or icon-vs-its-own-value never
@@ -5679,12 +5673,6 @@
         ratioMetric.classList.toggle('calc-ratio-extra-shrink', stillOverflowing);
       }
     }
-    CALC_METRIC_TITLE_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el || !el.textContent) return;
-      const upper = el.textContent.toUpperCase();
-      el.textContent = cramped ? toTitleCase(upper) : upper;
-    });
   }
 
   function checkCalcCrampedLayout() {
