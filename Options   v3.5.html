@@ -5175,8 +5175,29 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  // "steppers... rounding up/down according to profit taker flat value
+  // .xx... need a smarter rule" -- root cause traced here: value*100
+  // often isn't an exact integer even when `value` is conceptually a
+  // clean 2-decimal number, because most decimals aren't exactly
+  // representable in a double (e.g. -9.78 is stored as
+  // -9.780000000000001 or -9.779999999999999 depending on how it was
+  // arrived at). Math.trunc() on the *999999999 case chopped a value
+  // that should truncate to itself down to the WRONG cent (confirmed
+  // live: truncate2(-9.78) was returning -9.77) -- everywhere this
+  // function is called, including the +/- steppers' own refine/sync
+  // round-trips, which is what made repeated "-" clicks appear to do
+  // nothing (the round-trip kept landing back on the pre-click cent).
+  // toFixed(6) resolves the *100 value to its intended shortest decimal
+  // first, removing that noise, before truncating -- 6 extra digits of
+  // precision is far below any real input this app ever computes with
+  // (prices/percentages needing only cents), so this can't mask a
+  // genuinely non-terminating division (e.g. 1/3 still truncates to the
+  // same 2-decimal answer either way). Single source of truth per the
+  // "CORE MATH ENGINE" contract above -- fixing it here fixes every
+  // caller at once instead of patching each one's symptom separately.
   function truncate2(value) {
-    return Math.trunc(value * 100) / 100;
+    const scaled = Number((value * 100).toFixed(6));
+    return Math.trunc(scaled) / 100;
   }
 
   function clamp(value, min, max) {
@@ -7437,6 +7458,27 @@
   // per-share price but not once contracts scales the value: the
   // smallest real step (1 cent per share) is now 0.01 * contracts,
   // not a fixed 0.01 -- needs its own contracts-aware stepper.
+  //
+  // "steppers long press, single press will no longer change values...
+  // MINUS... results in nothing" -- the missing piece was cdSyncFromVal()'s
+  // own round-trip (divide the stepped total by contracts, truncate2() to
+  // a per-share cent, multiply back), which can land EXACTLY back on the
+  // pre-click total: dividing by contracts is floating-point, not exact,
+  // and truncate2() always cuts toward zero -- so a total like
+  // -199.99000000000001 truncates fine, but its floating-point twin
+  // -199.98999999999998 truncates UP to -199.98, silently swallowing the
+  // "-" step. Simulated every cent value at every contracts count (1-100):
+  // this hits overwhelmingly on "down" (Math.trunc rounds toward zero,
+  // which is numerically UP for negatives) and isn't rare. Same category
+  // of bug stepPtPctValue() already guards against for #cdPtPct/#ptPct/
+  // #sdPt -- this applies the identical fix: verify the refined result
+  // actually landed on the requested side of `current` and keep nudging
+  // by one more cent-per-share until it does, instead of trusting the
+  // round-trip blindly.
+  function refineCdPtVal(candidateTotal, contracts) {
+    const perShare = truncate2(candidateTotal / contracts);
+    return formatTruncated2(perShare * contracts);
+  }
   function stepCdPtVal(direction) {
     const deal = deals.find(d => d.id === closingDealId);
     if (!deal) return;
@@ -7444,8 +7486,15 @@
     const el = document.getElementById('cdPtVal');
     const current = number(el.value, 0);
     const increment = 0.01 * contracts;
-    const next = direction === 'up' ? current + increment : current - increment;
-    el.value = formatTruncated2(next);
+    let candidate = direction === 'up' ? current + increment : current - increment;
+    let refined = parseFloat(refineCdPtVal(candidate, contracts));
+    let guard = 0;
+    while (guard < 50 && ((direction === 'up' && refined <= current) || (direction === 'down' && refined >= current))) {
+      candidate = direction === 'up' ? candidate + increment : candidate - increment;
+      refined = parseFloat(refineCdPtVal(candidate, contracts));
+      guard++;
+    }
+    el.value = refineCdPtVal(candidate, contracts);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
     el.dispatchEvent(new Event('blur'));

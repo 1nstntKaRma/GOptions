@@ -2536,7 +2536,8 @@
   }
 
   function truncate2(value) {
-    return Math.trunc(value * 100) / 100;
+    const scaled = Number((value * 100).toFixed(6));
+    return Math.trunc(scaled) / 100;
   }
 
   function clamp(value, min, max) {
@@ -3982,6 +3983,10 @@
     stepPtPctValue('cdPtPct', getLimitValueRaw(deal.limit), direction);
   }
 
+  function refineCdPtVal(candidateTotal, contracts) {
+    const perShare = truncate2(candidateTotal / contracts);
+    return formatTruncated2(perShare * contracts);
+  }
   function stepCdPtVal(direction) {
     const deal = deals.find(d => d.id === closingDealId);
     if (!deal) return;
@@ -3989,8 +3994,15 @@
     const el = document.getElementById('cdPtVal');
     const current = number(el.value, 0);
     const increment = 0.01 * contracts;
-    const next = direction === 'up' ? current + increment : current - increment;
-    el.value = formatTruncated2(next);
+    let candidate = direction === 'up' ? current + increment : current - increment;
+    let refined = parseFloat(refineCdPtVal(candidate, contracts));
+    let guard = 0;
+    while (guard < 50 && ((direction === 'up' && refined <= current) || (direction === 'down' && refined >= current))) {
+      candidate = direction === 'up' ? candidate + increment : candidate - increment;
+      refined = parseFloat(refineCdPtVal(candidate, contracts));
+      guard++;
+    }
+    el.value = refineCdPtVal(candidate, contracts);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
     el.dispatchEvent(new Event('blur'));
