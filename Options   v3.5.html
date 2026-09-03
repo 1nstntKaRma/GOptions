@@ -100,6 +100,24 @@
     --EditTickerPurpleFontSize-CalculatorPhone: 24px;
     /* ============================================================ */
     /* ============================================================
+       PHONE CALCULATOR "CRAMPED" LAYOUT -- EDIT HERE
+       Explicit follow-up: "Calculator mode fails to align and position
+       properly [at low res phones]... Login button on top of
+       Contracts... Deal button can be less wider... logo can move
+       slightly to the left... Contracts can move slightly to the
+       left... LOGIN BUTTON WILL NEVER MOVE." These only ever apply once
+       checkCalcCrampedLayout() (in the script) actually MEASURES a real
+       overlap at the device's current size and adds the matching
+       `.calc-top-cramped` / `.calc-limit-cramped` / `.calc-metrics-
+       cramped` class to <body> -- a phone that already renders cleanly
+       never gets these classes, so nothing here ever touches it.
+       Negative X = left, matching every other position knob in this
+       file. Retune freely -- nothing else needs to change to match. */
+    --calc-cramped-logo-nudge-x: -10px;
+    --calc-cramped-contracts-nudge-x: -10px;
+    --calc-cramped-deal-btn-padding-x: 4px;
+    /* ============================================================ */
+    /* ============================================================
        DESKTOP CALCULATOR VERTICAL SPACING -- EDIT HERE
        Explicit follow-up: "Display interference... page is slightly
        too high... vertical scroll bar" on a short browser window, then
@@ -1186,6 +1204,60 @@
     justify-content: center;
     background: none;
     padding: 0;
+  }
+
+  /* ============================================================
+     PHONE CALCULATOR "CRAMPED" LAYOUT -- see checkCalcCrampedLayout()
+     in the script for how/when these 3 classes actually get added to
+     <body>; this is purely the visual side. Nothing here fires unless
+     a real overlap was MEASURED at the device's current size -- a
+     phone rendering cleanly today never sees any of this.
+     ============================================================ */
+  /* 1) Logo / Login button / Contracts / Deal button collision.
+     "LOGIN BUTTON WILL NEVER MOVE" -- #googleSyncBtn has NO rule here
+     at all, on purpose; everything else nudges/shrinks around it
+     instead. Deal button loses horizontal padding only (no font-size
+     or height change) -- "less wider," not smaller text. Logo/Contracts
+     shift left by their own knobs (see :root) -- position:relative;left
+     for Contracts (a plain grid item, safe to add), but the LOGO is
+     already position:absolute with its own `left` (see
+     .calc-logo-corner above) -- adjusting that existing `left` via
+     calc() instead of layering position:relative on top, which would
+     silently break its whole anchor scheme. */
+  body.calc-top-cramped .top-deal-btn { padding: 0 var(--calc-cramped-deal-btn-padding-x); }
+  body.calc-top-cramped.portfolio-layout-mobile .calc-logo-corner { left: calc(35px + var(--calc-cramped-logo-nudge-x)); }
+  body.calc-top-cramped .contracts-mobile-slot { position: relative; left: var(--calc-cramped-contracts-nudge-x); }
+
+  /* 2) Limit $'s "-" prefix (.limit-sign-prefix) sitting behind the
+     digits -- moved from dead-center-overlapping (top:50%) to a small
+     label under the value instead, still inside the SAME input box
+     (no height change to the box itself, just where the prefix sits
+     within it). */
+  body.calc-limit-cramped .limit-sign-prefix {
+    top: auto;
+    bottom: 3px;
+    /* left is NOT set here -- checkCalcLimitCrampedState() (script)
+       sets it inline, centered in the space actually left of the
+       stepper buttons, not flat 50% of the whole box. An inline style
+       always wins over this class rule regardless, so a `left` here
+       would just be dead weight. */
+    transform: translateX(-50%);
+    font-size: 12px;
+  }
+
+  /* 3) Ratio/Max Loss/Max Profit overlap -- scoped to
+     .calc-metric-cramped-target (see the HTML comment above those 3
+     .metric divs) so Profit Taker/Profit, never reported as broken,
+     stay exactly as-is even while this is active. calc() off the
+     existing values/variable (not new hardcoded numbers) so retuning
+     the base size elsewhere automatically keeps the -1px/-10%/-20%
+     relationship correct. */
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.9); }
+  body.calc-metrics-cramped .calc-metric-cramped-target .icon {
+    width: calc(33px * 0.8);
+    height: calc(33px * 0.8);
+    font-size: calc(var(--legend-metric-icon-size) * 0.8);
   }
 
   .blue { color: var(--blue); }
@@ -3985,22 +4057,29 @@
       <div id="calcInputsMobileSlot" class="calc-inputs-slot calc-inputs-mobile-slot"></div>
 
       <section class="panel summary">
-        <div class="metric">
-          <div class="metric-title">RATIO</div>
+        <!-- Explicit follow-up: "RATIO | MAX LOSS | MAX PROFIT and
+             their respective values are overlapping... change title...
+             (and 1px smaller font size.) regarding the actual values,
+             make them 10% smaller... every symbol and its respect
+             frame by 20% smaller." .calc-metric-cramped-target marks
+             exactly these 3 -- PROFIT TAKER/PROFIT (below) weren't part
+             of this ask, so they stay untouched even when this fires. -->
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleRatio">RATIO</div>
           <div class="metric-content">
             <div id="ratio" class="metric-value">51.7</div>
             <div id="metricIconRatio" class="icon blue">%</div>
           </div>
         </div>
-        <div class="metric">
-          <div class="metric-title">MAX LOSS</div>
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleMaxLoss">MAX LOSS</div>
           <div class="metric-content">
             <div id="maxLoss" class="metric-value red">$989</div>
             <div id="metricIconMaxLoss" class="icon red">↓</div>
           </div>
         </div>
-        <div class="metric">
-          <div class="metric-title">MAX PROFIT</div>
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleMaxProfit">MAX PROFIT</div>
           <div class="metric-content">
             <div id="maxProfit" class="metric-value green">$511</div>
             <div id="metricIconMaxProfit" class="icon green">↑</div>
@@ -5220,7 +5299,186 @@
 
     renderChart(state.maxLoss, state.maxProfit);
     renderTable(state.ptPct, state.profitTakerMissing, state.rows);
+    checkCalcCrampedLayout();
   }
+
+  /* ===================================================================
+   * PHONE CALCULATOR "CRAMPED" LAYOUT DETECTION
+   * Explicit follow-up: "Calculator mode fails to align and position
+   * properly [at low res phones], items are on top of each other...
+   * this changes will only apply to when items are too cramped and
+   * overlapping one another... THIS WILL NOT ALTER the already superb
+   * calculator display on phones that can display it well!" A fixed
+   * breakpoint can't guarantee this -- the 345px tier already shrinks
+   * these same elements and real devices still overlapped (per the
+   * reported screenshot) -- so this MEASURES actual rendered overlap
+   * live (getBoundingClientRect, same technique fitPortfolioSummaryLine
+   * already uses elsewhere in this file) and only reacts to a genuine
+   * collision, on whichever device actually has one. 3 independent
+   * checks/classes (not one combined "cramped" flag) since the 3
+   * problem areas can occur independently of each other.
+   * =================================================================== */
+  function rectsOverlap(a, b) {
+    if (!a || !b) return false;
+    const r1 = a.getBoundingClientRect();
+    const r2 = b.getBoundingClientRect();
+    if (r1.width === 0 || r1.height === 0 || r2.width === 0 || r2.height === 0) return false;
+    return !(r1.right <= r2.left || r1.left >= r2.right || r1.bottom <= r2.top || r1.top >= r2.bottom);
+  }
+
+  // Logo / Login button / Contracts / Deal button colliding. "LOGIN
+  // BUTTON WILL NEVER MOVE" -- its own CSS is untouched in every case
+  // below; everything else nudges/shrinks AROUND it instead.
+  function checkCalcTopCrampedState() {
+    document.body.classList.remove('calc-top-cramped'); // measure the TRUE natural layout, not an already-compensated one
+    const logo = document.querySelector('.calc-logo-corner');
+    const contracts = document.getElementById('contractsMobileSlot');
+    const loginBtn = document.getElementById('googleSyncBtn');
+    const dealBtn = document.getElementById('topSaveBtnMobile');
+    if (!logo || !contracts || !loginBtn) return;
+    const cramped = rectsOverlap(logo, contracts) || rectsOverlap(loginBtn, contracts) ||
+      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts));
+    document.body.classList.toggle('calc-top-cramped', cramped);
+  }
+
+  // Canvas-measured text width -- same technique this file already uses
+  // elsewhere (see NOTES.md's several "canvas text-width measurement"
+  // fixes) for exactly this kind of precision problem.
+  function measureTextWidth(text, font) {
+    const canvas = measureTextWidth._canvas || (measureTextWidth._canvas = document.createElement('canvas'));
+    const ctx = canvas.getContext('2d');
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+
+  // Limit $'s "-" prefix (.limit-sign-prefix) sitting behind the digits.
+  // `#limit`'s own getBoundingClientRect() is the WHOLE input box
+  // (text-align:center, so it's much wider than the actual rendered
+  // digits) -- comparing the prefix against that whole box, not the
+  // actual glyphs, made this fire a false positive at EVERY width,
+  // including ones that render perfectly fine (live-confirmed: still
+  // flagged cramped at a comfortable 400px with a correctly-formatted
+  // value). Computing the text's real left/right edge (box center +/-
+  // measured half-width, matching text-align:center) fixes that.
+  function checkCalcLimitCrampedState() {
+    document.body.classList.remove('calc-limit-cramped');
+    const prefix = document.querySelector('#calcInputsMobileSlot .limit-sign-prefix');
+    const value = document.getElementById('limit');
+    // Clearing the CLASS above resets the CSS-driven position (top/
+    // bottom/font-size), but NOT an inline `style.left` left over from a
+    // PREVIOUS call that found this cramped (see the stepper-centering
+    // block below) -- without also clearing it here, a stale small px
+    // value from that earlier call corrupts THIS measurement with a
+    // hybrid state (leftover cramped `left`, but reverted `top`) that
+    // matches neither the true default nor true cramped position. Found
+    // live: caused a false positive at a comfortable 400px right after
+    // a narrower-width run had legitimately gone cramped.
+    if (prefix) prefix.style.left = '';
+    if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
+    const valRect = value.getBoundingClientRect();
+    const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
+    const boxCenter = valRect.left + valRect.width / 2;
+    const textLeft = boxCenter - textWidth / 2;
+    const textRight = boxCenter + textWidth / 2;
+    const prefixRect = prefix.getBoundingClientRect();
+    const overlap = !(prefixRect.right <= textLeft || prefixRect.left >= textRight);
+    document.body.classList.toggle('calc-limit-cramped', overlap);
+    // Explicit follow-up: "if '-' moves below the value it must be
+    // centered within the space left in the field (since steppers takes
+    // place aswell)." Centering at a flat 50% (the CSS default) ignores
+    // that .total-stepper (the +/- buttons) is ALSO position:absolute
+    // inside this same .total-stepper-wrap, eating real estate off the
+    // right side -- "50% of the whole box" is NOT "50% of what's
+    // actually left after the stepper." Live-measures the stepper's own
+    // rect (its width isn't a fixed number -- it's retuned per
+    // breakpoint elsewhere in this file) and centers within the gap to
+    // its left instead, via an inline `left` override (wins over the
+    // CSS class rule's `left:50%` automatically, no !important needed).
+    // Cleared back to '' when not cramped so the CSS default governs
+    // again once this stops applying.
+    const wrap = value.closest('.total-stepper-wrap');
+    const stepper = wrap ? wrap.querySelector('.total-stepper') : null;
+    if (overlap && wrap && stepper) {
+      const wrapRect = wrap.getBoundingClientRect();
+      const stepperRect = stepper.getBoundingClientRect();
+      const availableWidth = Math.max(0, stepperRect.left - wrapRect.left);
+      prefix.style.left = (availableWidth / 2) + 'px';
+    } else {
+      prefix.style.left = '';
+    }
+  }
+
+  // Ratio/Max Loss/Max Profit values+icons overlapping each other or
+  // their own tile border. Also swaps the 3 titles between their normal
+  // ALL CAPS text and the cramped-only Title Case wording -- a pure CSS
+  // text-transform can't produce "Max Loss" (capitalizing EACH word)
+  // from literal "MAX LOSS" source text, only JS can.
+  const CALC_METRIC_TITLES = [
+    { id: 'metricTitleRatio', normal: 'RATIO', cramped: 'Ratio' },
+    { id: 'metricTitleMaxLoss', normal: 'MAX LOSS', cramped: 'Max Loss' },
+    { id: 'metricTitleMaxProfit', normal: 'MAX PROFIT', cramped: 'Max Profit' }
+  ];
+  // Live-measured the actual failure mode via a real overlap: adjacent
+  // grid cells always exactly TOUCH by design (one ends where the next
+  // begins), so whole-cell-vs-whole-cell or icon-vs-its-own-value never
+  // actually overlap in the geometric sense -- what really happens is a
+  // cell's OWN content (value text, or the icon) overflowing PAST that
+  // cell's own boundary into its neighbor's space (confirmed: Ratio's
+  // icon right edge landed 8px past its own cell's right edge, directly
+  // into Max Loss's cell -- not caught by either check above). This
+  // checks each cell's content against its OWN boundary instead.
+  function checkCalcMetricsCrampedState() {
+    document.body.classList.remove('calc-metrics-cramped');
+    const targets = document.querySelectorAll('.calc-metric-cramped-target');
+    if (!targets.length) return;
+    let cramped = false;
+    targets.forEach(metric => {
+      const content = metric.querySelector('.metric-content');
+      const icon = metric.querySelector('.icon');
+      if (content && content.scrollWidth > metric.clientWidth) cramped = true;
+      if (icon) {
+        const iconRect = icon.getBoundingClientRect();
+        const metricRect = metric.getBoundingClientRect();
+        if (iconRect.right > metricRect.right || iconRect.left < metricRect.left) cramped = true;
+      }
+    });
+    document.body.classList.toggle('calc-metrics-cramped', cramped);
+    CALC_METRIC_TITLES.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.textContent = cramped ? t.cramped : t.normal;
+    });
+  }
+
+  function checkCalcCrampedLayout() {
+    // Guards `currentMode`/`gPortfolioLayout` themselves, not just their
+    // VALUES -- calculate() runs once at top level (line ~5530) to seed
+    // the initial display, before either `let` below it has actually
+    // executed yet. A bare reference to a not-yet-initialized `let` in
+    // the SAME script throws (temporal dead zone), which -- being an
+    // uncaught top-level throw -- would silently abort everything the
+    // rest of this script still needed to declare. Nothing meaningful to
+    // check yet at that point anyway (mode/layout aren't decided until
+    // later in the same init sequence), so a safe no-op is correct here,
+    // not just a workaround.
+    try {
+      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') return;
+    } catch (err) { return; }
+    checkCalcTopCrampedState();
+    checkCalcLimitCrampedState();
+    checkCalcMetricsCrampedState();
+  }
+
+  // Nothing else in this file has a resize listener -- the 3 checks
+  // above are the first thing that needs to react live to the SAME
+  // window actually changing size (orientation flip, a responsive
+  // devtools drag), not just a fresh page load. Debounced -- resize
+  // fires continuously while dragging, and re-measuring 6+ rects on
+  // every single event would be wasteful.
+  let gCrampedResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(gCrampedResizeTimer);
+    gCrampedResizeTimer = setTimeout(checkCalcCrampedLayout, 150);
+  });
 
   function renderChart(loss, profit) {
     // The axis ceiling used to round UP to the next multiple of 200 (e.g.
@@ -5432,6 +5690,7 @@
       btn.onclick = () => setMode('calculator');
       renderPortfolio();
     }
+    checkCalcCrampedLayout();
   }
 
   /* ===================================================================
@@ -5463,6 +5722,7 @@
     syncTopRowTargets();
     updateHamburgerMenuLabels();
     if (currentMode === 'portfolio') renderPortfolio();
+    checkCalcCrampedLayout();
   }
 
   function initPortfolioLayout() {
@@ -6422,21 +6682,21 @@
     return a < b ? -1 : a > b ? 1 : 0;
   }
 
-  // Explicit follow-up: "Order Deals By 'Status' (ARROW UP): most top
-  // will show latest 'OPEN' deal (Start Date), most bottom will show
-  // latest 'CLOSED' deal (Date Closed). If ARROW DOWN, reversed
-  // obviously." Status alone (0/1) can't express this -- it only
-  // groups Open before Closed, with no defined order WITHIN each
-  // group. This builds the full arrangement directly: Open deals
-  // newest-Start-Date-first (so the newest lands at the very top of
-  // the whole list), then Closed deals oldest-Close-Date-first (so the
-  // newest lands at the very bottom of the whole list, not the top of
-  // its own group). Reversing this ENTIRE sequence for ARROW DOWN (not
-  // just flipping the comparator's sign) is what makes Closed end up on
-  // top AND newest-close-date-first, Open end up on bottom AND oldest-
-  // start-date-first -- a true mirror image, matching "reversed" as
-  // literally as possible rather than just re-sorting each group the
-  // same way in a different position.
+  // Explicit follow-up (corrected after the first pass): "Order Deals
+  // By 'Status' (ARROW UP): most top will show latest 'OPEN' deal
+  // (Start Date), most bottom will show OLDEST 'CLOSED' deal (Date
+  // Closed). If ARROW DOWN, reversed obviously." Status alone (0/1)
+  // can't express this -- it only groups Open before Closed, with no
+  // defined order WITHIN each group. This builds the full arrangement
+  // directly: Open deals newest-Start-Date-first (so the newest lands
+  // at the very top of the whole list), then Closed deals newest-
+  // Close-Date-first (so the OLDEST lands at the very bottom of the
+  // whole list, not the top of its own group). Reversing this ENTIRE
+  // sequence for ARROW DOWN (not just flipping the comparator's sign)
+  // is what makes Closed end up on top AND oldest-close-date-first,
+  // Open end up on bottom AND oldest-start-date-first -- a true mirror
+  // image, matching "reversed" as literally as possible rather than
+  // just re-sorting each group the same way in a different position.
   function sortDealsByStatusGroup(list, dir) {
     const open = list.filter(d => !d.closed).sort((a, b) => compareDealDates(b.startDate, a.startDate));
     const closed = list.filter(d => d.closed).sort((a, b) => compareDealDates(b.closeDate, a.closeDate));

@@ -8472,3 +8472,162 @@ new user sees this arrangement immediately.
 confirm both orders exactly: ascending = `OPEN_NEW, OPEN_OLD,
 CLOSED_OLD, CLOSED_NEW`; descending = the literal reverse,
 `CLOSED_NEW, CLOSED_OLD, OPEN_OLD, OPEN_NEW`. No console errors.
+
+## Phone Calculator: live-measured "cramped" layout detection
+
+Explicit follow-up, planned with the user across several rounds before
+building (a provided screenshot at genuine low-res, then 2 correction
+rounds pinning down exact strategy): "Calculator mode fails to align
+and position properly... ONLY at low res phones... Login button on top
+of Contracts... Limit $ placeholder (-) displayed behind the value...
+RATIO | MAX LOSS | MAX PROFIT overlapping... change title to Title
+Case (1px smaller)... values 10% smaller... symbols+frames 20%
+smaller... do not adjust vertical height, utilize it better... only
+apply when actually cramped, will NOT alter the already superb display
+on phones that render well... Deal button less wide... logo/Contracts
+can move slightly left... LOGIN BUTTON WILL NEVER MOVE."
+
+**Why not a fixed breakpoint**: the existing 345px tier already shrinks
+these same elements, and the reported screenshot still showed overlap
+-- a static px cutoff can't guarantee no-overlap across real device
+variance (fonts, DPI, browser chrome). Built `checkCalcCrampedLayout()`
+instead -- 3 independent live measurements (`getBoundingClientRect`,
+same technique `fitPortfolioSummaryLine` already uses for Portfolio),
+each toggling its OWN `<body>` class (`calc-top-cramped`/`calc-limit-
+cramped`/`calc-metrics-cramped`) only when a REAL collision is found at
+the device's current size. All 3 problem areas are independent of each
+other on purpose. Hooked into `calculate()`, `applyPortfolioLayout()`,
+`setMode()`, and a new debounced `resize` listener (the only one in
+this file) -- every place content or viewport could change enough to
+flip the cramped state.
+
+**1) Logo / Login / Contracts / Deal collision**: "LOGIN BUTTON WILL
+NEVER MOVE" -- `#googleSyncBtn` has zero CSS in the cramped state,
+confirmed live (identical `getBoundingClientRect()` before/after
+`.calc-top-cramped` toggles). Everything else works around it instead:
+Deal button loses horizontal padding only via `--calc-cramped-deal-btn-
+padding-x` ("less wide," not smaller text/height); logo's existing
+`left` (already `position:absolute`, can't also become `position:
+relative` without breaking its whole anchor) shifted via `calc(35px +
+var(--calc-cramped-logo-nudge-x))`; Contracts (a plain grid item, safe
+to layer `position:relative` on top of) shifted via `--calc-cramped-
+contracts-nudge-x`. Both nudge knobs default to `-10px`, hand-editable
+in `:root` like every other position knob in this file.
+
+**2) Limit $ prefix overlap -- 2 bugs found while measuring this
+correctly**:
+- First version compared the prefix's rect against `#limit`'s WHOLE
+  input box (`getBoundingClientRect()`), not the actual rendered
+  digits -- `#limit` is `text-align:center`, so its box is far wider
+  than the short value text inside it, making this fire a false
+  positive at EVERY width, including a comfortable 400px that was
+  never actually broken (live-confirmed before fixing). Replaced with a
+  canvas-measured text width (`measureTextWidth()`, matching this
+  file's own established "canvas text-width measurement" precedent) to
+  compute the text's REAL left/right edge from the box's center +/-
+  half the measured width, matching `text-align:center`'s own layout
+  math, then compares the prefix against THAT instead.
+- Fix (once actually cramped): the prefix moves from dead-center-
+  overlapping (`top:50%`) to a small label under the value, `bottom:
+  3px`, still inside the SAME input box -- no height change to the box
+  itself, per "do not adjust vertical height."
+
+**3) Ratio/Max Loss/Max Profit -- also 2 bugs found while measuring**:
+- First version checked icon-vs-its-own-value and whole-cell-vs-whole-
+  cell -- neither can ever actually fire, since adjacent grid cells
+  always exactly TOUCH by design (one ends where the next begins) and
+  same-cell icon/value rarely reach each other. Live-measured the REAL
+  failure: Ratio's icon right edge landed 8px PAST its own cell's right
+  edge, into Max Loss's cell -- content overflowing its own boundary,
+  not two whole cells overlapping. Rewrote to check each `.calc-metric-
+  cramped-target` cell's own content against its OWN boundary instead
+  (`.metric-content`'s `scrollWidth` vs the cell's `clientWidth`, plus
+  the icon's rect against its own cell's rect).
+- Fix (once actually cramped), exact spec, scoped to ONLY these 3
+  cells via `.calc-metric-cramped-target` (added to just Ratio/Max
+  Loss/Max Profit's HTML -- Profit Taker/Profit, never reported as
+  broken, keep their normal size even while this is active): titles
+  swap ALL CAPS -> Title Case (JS `textContent` swap, `CALC_METRIC_
+  TITLES` -- a pure CSS `text-transform` can't produce "Max Loss" from
+  literal "MAX LOSS" source text, only per-word JS can) at `-1px`;
+  values at `calc(38px * 0.9)`; icon box + font at `calc(33px * 0.8)` /
+  `calc(var(--legend-metric-icon-size) * 0.8)` -- calc() off the
+  existing values/variable, not new hardcoded numbers, so retuning the
+  base size elsewhere keeps the -1px/-10%/-20% relationship correct
+  automatically. At the most extreme tested width (320px) a small
+  residual overflow remains even after this exact shrink -- the spec's
+  own numbers, applied correctly, just aren't quite enough to fully
+  close that specific gap at the narrowest edge case; flagged rather
+  than silently exceeding the given percentages.
+
+**2 unrelated TDZ (temporal dead zone) bugs found and fixed while
+building this** -- same class of bug as an earlier round's
+`portfolioSettings` issue, same root cause (an uncaught top-level throw
+silently aborts the REST of the script's declarations, while every
+already-hoisted `function` keeps existing -- which is what made it easy
+to miss without directly testing `deals`/`gPortfolioLayout` afterward):
+1. `checkCalcCrampedLayout()` read `gPortfolioLayout`/`currentMode`,
+   both declared LATER in the script than the very first top-level
+   `calculate()` call (line ~5530) that seeds the initial display on
+   load -- calling it that early hit both `let`s' TDZ. Wrapped in
+   try/catch (a safe no-op is correct there anyway -- mode/layout
+   aren't decided yet at that point in the init sequence).
+
+### Verified
+
+Login button position measured byte-identical via `getBoundingClientRect()`
+before/after `.calc-top-cramped` toggles, at every tested width. 400px
+(a working width): all 3 cramped classes correctly OFF with a properly-
+formatted value -- confirmed FALSE before the text-measurement fix (was
+firing on `.calc-limit-cramped` unconditionally), confirmed fixed
+after. 320px (matching the reported screenshot): `calc-top-cramped` and
+`calc-metrics-cramped` both correctly ON; exact CSS values confirmed
+applied via `getComputedStyle` (17.6px icon font = `22*0.8`, 34.2px
+value font = `38*0.9`, titles read "Ratio"/"Max Loss"/"Max Profit").
+280px (narrower still): `calc-limit-cramped` correctly turns ON exactly
+where the canvas-measured text genuinely reaches the prefix's rect,
+confirming the mechanism reacts to a real collision, not just a width
+threshold. No console errors through any of this.
+
+## Limit $ prefix: center within the space left of the stepper, not the whole box
+
+Explicit follow-up: "if '-' moves below the value it must be centered
+within the space left in the field (since steppers takes place
+aswell)." The cramped-state CSS was centering the prefix at a flat
+`left:50%` of the WHOLE `.total-stepper-wrap` box -- ignoring that
+`.total-stepper` (the +/- buttons) is ALSO `position:absolute` inside
+that same wrap, eating real width off the right side. "50% of the
+whole box" isn't "50% of what's actually left after the stepper."
+
+**Fix**: `checkCalcLimitCrampedState()` now live-measures the
+stepper's own rect (its width isn't a fixed number -- it's retuned per
+breakpoint elsewhere in this file, so a hardcoded CSS value would've
+been wrong at some tier regardless) and sets the prefix's `left`
+inline, centered in the gap to the stepper's left, only while actually
+cramped. The CSS class rule's own `left:50%` was removed (an inline
+style always wins anyway, so it was dead weight, not a fallback).
+
+**A 2nd bug found while verifying this fix**: clearing `.calc-limit-
+cramped` at the top of the function resets the CSS-driven position
+(top/bottom/font-size) but does NOT clear a leftover inline
+`style.left` from a PREVIOUS call that found this cramped -- without
+also clearing it, that stale small px value corrupted the NEXT
+measurement into a hybrid state (leftover cramped `left`, but reverted
+`top`) matching neither the true default nor true cramped position.
+Live-confirmed: caused a false positive at a comfortable 400px
+immediately after a narrower-width run had legitimately gone cramped
+-- exactly the kind of state-leak this whole live-measurement
+mechanism has to stay free of to be trustworthy. Fixed by clearing
+`prefix.style.left = ''` in the same place the class gets removed.
+
+### Verified
+
+280px: `calc-limit-cramped` correctly ON, prefix's measured rendered
+center (`25px` from the wrap's own left edge) exactly matches half the
+measured available space left of the stepper (`49px / 2 = 24.5px`) --
+confirmed centered in the CORRECT space, not the whole box. Full
+round-trip re-tested to catch the state-leak bug specifically: 280px
+(cramped, `left` set) -> 400px (correctly clears to not-cramped, `left`
+back to `''`) -> 280px again (correctly re-cramped, `left` recomputed
+fresh) -- all three steps confirmed via live `getBoundingClientRect()`/
+inline-style checks, not assumed. No console errors.

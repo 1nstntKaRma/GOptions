@@ -62,6 +62,10 @@
     --EditTickerPurplePosition-CalculatorPhone: 25px, 69px;
     --EditTickerPurpleFontSize-CalculatorPhone: 24px;
 
+    --calc-cramped-logo-nudge-x: -10px;
+    --calc-cramped-contracts-nudge-x: -10px;
+    --calc-cramped-deal-btn-padding-x: 4px;
+
     --calc-vspacing-top-row-gap-min: 22px;   
     --calc-vspacing-metrics-gap-min: 16px;   
     --calc-vspacing-metric-tile-height-min: 110px; 
@@ -537,6 +541,26 @@
     justify-content: center;
     background: none;
     padding: 0;
+  }
+
+  body.calc-top-cramped .top-deal-btn { padding: 0 var(--calc-cramped-deal-btn-padding-x); }
+  body.calc-top-cramped.portfolio-layout-mobile .calc-logo-corner { left: calc(35px + var(--calc-cramped-logo-nudge-x)); }
+  body.calc-top-cramped .contracts-mobile-slot { position: relative; left: var(--calc-cramped-contracts-nudge-x); }
+
+  body.calc-limit-cramped .limit-sign-prefix {
+    top: auto;
+    bottom: 3px;
+
+    transform: translateX(-50%);
+    font-size: 12px;
+  }
+
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-title { font-size: 17px; }
+  body.calc-metrics-cramped .calc-metric-cramped-target .metric-value { font-size: calc(38px * 0.9); }
+  body.calc-metrics-cramped .calc-metric-cramped-target .icon {
+    width: calc(33px * 0.8);
+    height: calc(33px * 0.8);
+    font-size: calc(var(--legend-metric-icon-size) * 0.8);
   }
 
   .blue { color: var(--blue); }
@@ -1784,22 +1808,23 @@
       <div id="calcInputsMobileSlot" class="calc-inputs-slot calc-inputs-mobile-slot"></div>
 
       <section class="panel summary">
-        <div class="metric">
-          <div class="metric-title">RATIO</div>
+
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleRatio">RATIO</div>
           <div class="metric-content">
             <div id="ratio" class="metric-value">51.7</div>
             <div id="metricIconRatio" class="icon blue">%</div>
           </div>
         </div>
-        <div class="metric">
-          <div class="metric-title">MAX LOSS</div>
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleMaxLoss">MAX LOSS</div>
           <div class="metric-content">
             <div id="maxLoss" class="metric-value red">$989</div>
             <div id="metricIconMaxLoss" class="icon red">↓</div>
           </div>
         </div>
-        <div class="metric">
-          <div class="metric-title">MAX PROFIT</div>
+        <div class="metric calc-metric-cramped-target">
+          <div class="metric-title" id="metricTitleMaxProfit">MAX PROFIT</div>
           <div class="metric-content">
             <div id="maxProfit" class="metric-value green">$511</div>
             <div id="metricIconMaxProfit" class="icon green">↑</div>
@@ -2656,7 +2681,107 @@
 
     renderChart(state.maxLoss, state.maxProfit);
     renderTable(state.ptPct, state.profitTakerMissing, state.rows);
+    checkCalcCrampedLayout();
   }
+
+  function rectsOverlap(a, b) {
+    if (!a || !b) return false;
+    const r1 = a.getBoundingClientRect();
+    const r2 = b.getBoundingClientRect();
+    if (r1.width === 0 || r1.height === 0 || r2.width === 0 || r2.height === 0) return false;
+    return !(r1.right <= r2.left || r1.left >= r2.right || r1.bottom <= r2.top || r1.top >= r2.bottom);
+  }
+
+  function checkCalcTopCrampedState() {
+    document.body.classList.remove('calc-top-cramped'); 
+    const logo = document.querySelector('.calc-logo-corner');
+    const contracts = document.getElementById('contractsMobileSlot');
+    const loginBtn = document.getElementById('googleSyncBtn');
+    const dealBtn = document.getElementById('topSaveBtnMobile');
+    if (!logo || !contracts || !loginBtn) return;
+    const cramped = rectsOverlap(logo, contracts) || rectsOverlap(loginBtn, contracts) ||
+      (dealBtn && dealBtn.offsetParent && rectsOverlap(dealBtn, contracts));
+    document.body.classList.toggle('calc-top-cramped', cramped);
+  }
+
+  function measureTextWidth(text, font) {
+    const canvas = measureTextWidth._canvas || (measureTextWidth._canvas = document.createElement('canvas'));
+    const ctx = canvas.getContext('2d');
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+
+  function checkCalcLimitCrampedState() {
+    document.body.classList.remove('calc-limit-cramped');
+    const prefix = document.querySelector('#calcInputsMobileSlot .limit-sign-prefix');
+    const value = document.getElementById('limit');
+
+    if (prefix) prefix.style.left = '';
+    if (!prefix || !value || getComputedStyle(prefix).opacity === '0' || !value.value) return;
+    const valRect = value.getBoundingClientRect();
+    const textWidth = measureTextWidth(value.value, getComputedStyle(value).font);
+    const boxCenter = valRect.left + valRect.width / 2;
+    const textLeft = boxCenter - textWidth / 2;
+    const textRight = boxCenter + textWidth / 2;
+    const prefixRect = prefix.getBoundingClientRect();
+    const overlap = !(prefixRect.right <= textLeft || prefixRect.left >= textRight);
+    document.body.classList.toggle('calc-limit-cramped', overlap);
+
+    const wrap = value.closest('.total-stepper-wrap');
+    const stepper = wrap ? wrap.querySelector('.total-stepper') : null;
+    if (overlap && wrap && stepper) {
+      const wrapRect = wrap.getBoundingClientRect();
+      const stepperRect = stepper.getBoundingClientRect();
+      const availableWidth = Math.max(0, stepperRect.left - wrapRect.left);
+      prefix.style.left = (availableWidth / 2) + 'px';
+    } else {
+      prefix.style.left = '';
+    }
+  }
+
+  const CALC_METRIC_TITLES = [
+    { id: 'metricTitleRatio', normal: 'RATIO', cramped: 'Ratio' },
+    { id: 'metricTitleMaxLoss', normal: 'MAX LOSS', cramped: 'Max Loss' },
+    { id: 'metricTitleMaxProfit', normal: 'MAX PROFIT', cramped: 'Max Profit' }
+  ];
+
+  function checkCalcMetricsCrampedState() {
+    document.body.classList.remove('calc-metrics-cramped');
+    const targets = document.querySelectorAll('.calc-metric-cramped-target');
+    if (!targets.length) return;
+    let cramped = false;
+    targets.forEach(metric => {
+      const content = metric.querySelector('.metric-content');
+      const icon = metric.querySelector('.icon');
+      if (content && content.scrollWidth > metric.clientWidth) cramped = true;
+      if (icon) {
+        const iconRect = icon.getBoundingClientRect();
+        const metricRect = metric.getBoundingClientRect();
+        if (iconRect.right > metricRect.right || iconRect.left < metricRect.left) cramped = true;
+      }
+    });
+    document.body.classList.toggle('calc-metrics-cramped', cramped);
+    CALC_METRIC_TITLES.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) el.textContent = cramped ? t.cramped : t.normal;
+    });
+  }
+
+  function checkCalcCrampedLayout() {
+
+    try {
+      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') return;
+    } catch (err) { return; }
+    checkCalcTopCrampedState();
+    checkCalcLimitCrampedState();
+    checkCalcMetricsCrampedState();
+  }
+
+  let gCrampedResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(gCrampedResizeTimer);
+    gCrampedResizeTimer = setTimeout(checkCalcCrampedLayout, 150);
+  });
 
   function renderChart(loss, profit) {
 
@@ -2814,6 +2939,7 @@
       btn.onclick = () => setMode('calculator');
       renderPortfolio();
     }
+    checkCalcCrampedLayout();
   }
 
   let gPortfolioLayout = 'desktop';   
@@ -2831,6 +2957,7 @@
     syncTopRowTargets();
     updateHamburgerMenuLabels();
     if (currentMode === 'portfolio') renderPortfolio();
+    checkCalcCrampedLayout();
   }
 
   function initPortfolioLayout() {
