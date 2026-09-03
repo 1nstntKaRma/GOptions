@@ -5675,6 +5675,31 @@
     }
   }
 
+  // Explicit follow-up: Portfolio's OWN "Deal" button (#topNewDealBtn)
+  // came out "chopped"/too small on low-res phones -- root cause was
+  // this file's OWN 3 cramped classes never getting CLEARED when
+  // leaving Calculator-mobile for Portfolio (or Desktop Calculator):
+  // checkCalcCrampedLayout() early-returned without touching them, so
+  // whatever `calc-top-cramped` etc. were left at from the last time
+  // Calculator-mobile was cramped just stayed on <body> -- and
+  // `body.calc-top-cramped .top-deal-btn { padding: ... }` matches
+  // Portfolio's Deal button too, since it shares the same `.top-deal-
+  // btn` class. Always visible before, but only became "chopped"
+  // rather than merely a little tight once that shared padding knob
+  // got reduced to 1px this session. Also clears the inline styles the
+  // 3 check functions themselves set (Contracts' shift/width, the
+  // Limit $ prefix's position) -- same reasoning: leftovers from
+  // Calculator-mobile shouldn't survive into a mode/layout where none
+  // of this applies.
+  function clearCalcCrampedState() {
+    document.body.classList.remove('calc-top-cramped', 'calc-limit-cramped', 'calc-metrics-cramped');
+    const contracts = document.getElementById('contractsMobileSlot');
+    const contractsInput = document.getElementById('contracts');
+    if (contracts) contracts.style.left = '';
+    if (contractsInput) contractsInput.style.width = '';
+    const prefix = document.querySelector('#calcInputsMobileSlot .limit-sign-prefix');
+    if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
+  }
   function checkCalcCrampedLayout() {
     // Guards `currentMode`/`gPortfolioLayout` themselves, not just their
     // VALUES -- calculate() runs once at top level (line ~5530) to seed
@@ -5685,9 +5710,13 @@
     // rest of this script still needed to declare. Nothing meaningful to
     // check yet at that point anyway (mode/layout aren't decided until
     // later in the same init sequence), so a safe no-op is correct here,
-    // not just a workaround.
+    // not just a workaround -- nothing could have been SET yet either,
+    // this early, so no cleanup is needed on this path specifically.
     try {
-      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') return;
+      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') {
+        clearCalcCrampedState();
+        return;
+      }
     } catch (err) { return; }
     checkCalcTopCrampedState();
     checkCalcLimitCrampedState();

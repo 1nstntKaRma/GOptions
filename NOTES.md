@@ -8921,3 +8921,44 @@ identical Title Case text and the same 16px -- no jitter -- while the
 UNRELATED value shrink (`#ratio`'s 30.4px) still correctly responds to
 the cramped state as before, confirming the two mechanisms are now
 properly decoupled.
+
+## Cramped classes leaked from Calculator into Portfolio's own Deal button
+
+Screenshot: Portfolio mode's OWN "Deal" button (`#topNewDealBtn`) came
+out chopped/too small on a low-res phone. "changing calculator deal
+icon probably caused this" -- correct instinct, but not directly: this
+session's Deal-button padding knob reduction (134px/12px ->
+126px/8px for Calculator's MOBILE button specifically, and separately
+`--calc-cramped-deal-btn-padding-x` 4px -> 1px for Calculator's
+CRAMPED state) was ID-scoped/knob-scoped and should never have touched
+Portfolio's button directly -- but `checkCalcCrampedLayout()`'s guard
+(`if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile')
+return;`) only ever SKIPPED re-measuring the 3 cramped classes when
+leaving Calculator-mobile, it never CLEARED them. So switching from a
+genuinely-cramped Calculator-mobile session to Portfolio left
+`calc-top-cramped` stuck on `<body>` -- and `body.calc-top-cramped
+.top-deal-btn { padding: 0 var(--calc-cramped-deal-btn-padding-x) }`
+matches Portfolio's Deal button too, since it shares the same
+`.top-deal-btn` class Calculator's mobile button uses. This leak
+existed before this session (the guard has always just `return`ed),
+it just went from "a little tight" to "chopped" once that shared
+padding knob got reduced to 1px.
+
+**Fix**: extracted `clearCalcCrampedState()` (removes all 3 classes
+plus the inline styles the 3 check functions themselves set on
+Contracts/the Limit $ prefix) and calls it on the early-return path
+instead of a bare `return` -- so leaving Calculator-mobile for
+Portfolio (or Desktop Calculator) always resets to a clean slate
+rather than freezing whatever was last measured.
+
+### Verified
+
+Reproduced the exact leak: forced Calculator-mobile cramped at 320px
+(all 3 classes present), then `setMode('portfolio')` -- BEFORE the fix
+this would have left the classes stuck; AFTER the fix, confirmed all 3
+correctly removed from `<body>` and `#topNewDealBtn`'s computed
+padding back to the correct base 8px (not the 1px cramped-only knob).
+Screenshot confirms Portfolio's Deal button renders at its proper
+size. Switched back to Calculator mode afterward: cramped state
+correctly re-applies (all 3 classes back), confirming the fix only
+clears when actually leaving Calculator-mobile, not on every call.

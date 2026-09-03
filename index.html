@@ -2846,10 +2846,22 @@
     }
   }
 
+  function clearCalcCrampedState() {
+    document.body.classList.remove('calc-top-cramped', 'calc-limit-cramped', 'calc-metrics-cramped');
+    const contracts = document.getElementById('contractsMobileSlot');
+    const contractsInput = document.getElementById('contracts');
+    if (contracts) contracts.style.left = '';
+    if (contractsInput) contractsInput.style.width = '';
+    const prefix = document.querySelector('#calcInputsMobileSlot .limit-sign-prefix');
+    if (prefix) { prefix.style.left = ''; prefix.style.top = ''; prefix.style.bottom = ''; }
+  }
   function checkCalcCrampedLayout() {
 
     try {
-      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') return;
+      if (currentMode !== 'calculator' || gPortfolioLayout !== 'mobile') {
+        clearCalcCrampedState();
+        return;
+      }
     } catch (err) { return; }
     checkCalcTopCrampedState();
     checkCalcLimitCrampedState();
