@@ -3026,6 +3026,11 @@
 
   stopValueEl.setAttribute('inputmode', 'numeric');
 
+  let stopValueViewportListener = null;
+  function keepProfitTileVisible() {
+    stopValueEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
   stopValueEl.addEventListener('click', () => {
     if (stopValueEl.isContentEditable) return; 
     if (!stopValueEl.classList.contains('editable')) return; 
@@ -3033,6 +3038,15 @@
     stopValueEl.contentEditable = 'true';
     stopValueEl.textContent = '';
     stopValueEl.focus();
+
+    if (window.innerWidth <= 700) {
+      if (window.visualViewport) {
+        stopValueViewportListener = keepProfitTileVisible;
+        window.visualViewport.addEventListener('resize', stopValueViewportListener);
+      }
+
+      setTimeout(keepProfitTileVisible, 350);
+    }
   });
 
   stopValueEl.addEventListener('keydown', e => {
@@ -3056,6 +3070,10 @@
   stopValueEl.addEventListener('blur', () => {
     if (!stopValueEl.isContentEditable) return;
     stopValueEl.contentEditable = 'false';
+    if (window.visualViewport && stopValueViewportListener) {
+      window.visualViewport.removeEventListener('resize', stopValueViewportListener);
+      stopValueViewportListener = null;
+    }
     const digits = stopValueEl.textContent.replace(/\D/g, '');
     const target = Number(digits);
     if (digits !== '' && target > 0) {
@@ -3063,6 +3081,8 @@
       if (solved !== null) ptPctEl.value = String(solved);
     }
     calculate();
+
+    if (window.innerWidth <= 700) window.scrollTo(0, 0);
   });
 
   calculate();

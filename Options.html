@@ -5973,6 +5973,22 @@
 
   stopValueEl.setAttribute('inputmode', 'numeric');
 
+  // Explicit follow-up: "in phone mode, when editing 'Profit' value,
+  // sometimes the keyboard pops and blocks the value from sight." The
+  // on-screen keyboard resizes the visual viewport ASYNCHRONOUSLY, after
+  // focus() below already ran (often after its own show animation too),
+  // so a single immediate scroll here is too early / not enough --
+  // visualViewport's own 'resize' event fires exactly when the keyboard
+  // has actually finished changing the visible area, which is the real
+  // signal to re-center on; not desktop-relevant, so gated to the same
+  // <=700px phone breakpoint this file already uses everywhere else (see
+  // @media (max-width:700px)) -- desktop has no on-screen keyboard to
+  // fight with, so it keeps the exact click-to-edit behavior unchanged.
+  let stopValueViewportListener = null;
+  function keepProfitTileVisible() {
+    stopValueEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
   stopValueEl.addEventListener('click', () => {
     if (stopValueEl.isContentEditable) return; // already editing
     if (!stopValueEl.classList.contains('editable')) return; // Loss / no Limit $ set
@@ -5980,6 +5996,16 @@
     stopValueEl.contentEditable = 'true';
     stopValueEl.textContent = '';
     stopValueEl.focus();
+
+    if (window.innerWidth <= 700) {
+      if (window.visualViewport) {
+        stopValueViewportListener = keepProfitTileVisible;
+        window.visualViewport.addEventListener('resize', stopValueViewportListener);
+      }
+      // Fallback nudge in case the keyboard's own resize event lags
+      // behind its slide-in animation on a given device/browser.
+      setTimeout(keepProfitTileVisible, 350);
+    }
   });
 
   // Keystroke allow-list instead of post-hoc stripping -- for a
@@ -6010,6 +6036,10 @@
   stopValueEl.addEventListener('blur', () => {
     if (!stopValueEl.isContentEditable) return;
     stopValueEl.contentEditable = 'false';
+    if (window.visualViewport && stopValueViewportListener) {
+      window.visualViewport.removeEventListener('resize', stopValueViewportListener);
+      stopValueViewportListener = null;
+    }
     const digits = stopValueEl.textContent.replace(/\D/g, '');
     const target = Number(digits);
     if (digits !== '' && target > 0) {
@@ -6017,6 +6047,12 @@
       if (solved !== null) ptPctEl.value = String(solved);
     }
     calculate();
+    // "once editing is done, go up to top of the page" -- same
+    // window.scrollTo(0,0) pattern already used by openDealInCalculator
+    // for the same "return to a known scroll position" reason. Phone-only
+    // (see the click handler's own comment on the <=700px gate) -- on
+    // Desktop there's no keyboard-driven scroll to undo.
+    if (window.innerWidth <= 700) window.scrollTo(0, 0);
   });
 
   calculate();

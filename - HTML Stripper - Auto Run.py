@@ -1,4 +1,3 @@
-# TARGET_FILE: "Options   v3.5.html" next to this script
 """
 HTML Comment Stripper (auto-run edition)
 -----------------------------------------
@@ -345,7 +344,7 @@ def collapse_blank_lines(text: str) -> str:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-TARGET_FILE = os.path.join(SCRIPT_DIR, "Options   v3.5.html")
+TARGET_FILE = os.path.join(SCRIPT_DIR, "Options.html")
 
 # Stripped output is written directly to this fixed filename, in the
 # same folder as TARGET_FILE (overwritten every run).
