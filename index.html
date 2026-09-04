@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
 <meta name="color-scheme" content="dark" />
-<title>Options v3.7 - Golan</title>
+<title>Options v3.8 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
-
     color-scheme: dark;
     --bg: #000;
     --panel: #080808;
     --border: #2c2c2c;
     --text: #9c9c9c;
     --muted: #646464;
+    --closed-row-bg: #0a0a0a;
+    --closed-value-grey: #7a7a7a;
     --blue: #047ebb;
     --btn-blue: #007cba;
     --green: #038800;
@@ -871,6 +871,21 @@
     margin-bottom: 14px;
   }
   .portfolio-row.deal-row.open { border-color: var(--blue); }
+
+  .portfolio-row.deal-row.closed { background: var(--closed-row-bg); }
+  .portfolio-row.deal-row.closed .deal-cell-ratio,
+  .portfolio-row.deal-row.closed .deal-cell-maxloss,
+  .portfolio-row.deal-row.closed .deal-cell-maxprofit,
+  .portfolio-row.deal-row.closed .deal-cell-ptvalue {
+    color: var(--closed-value-grey);
+  }
+  .portfolio-row.deal-row.closed .deal-cell-ptpct {
+    color: var(--blue);
+    font-size: 18px;
+  }
+  .portfolio-row.deal-row.closed .deal-cell-pl {
+    font-size: 18px;
+  }
   .deal-cards-mobile { margin-top: var(--portfolio-deals-phone-y); }
   .deal-cards-mobile.has-closed-deals { margin-top: var(--portfolio-dealsClosed-phone-y); }
 
@@ -1925,7 +1940,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v3.7 By Golan</div>
+    <div class="footer">Options v3.8 By Golan</div>
     </main>
   </div>
 </div>
@@ -3510,18 +3525,18 @@
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
-      plCell = `<b class="deal-metric-cell ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</b>`;
+      plCell = `<b class="deal-metric-cell deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</b>`;
     } else {
 
       ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
       ptValueCell = m.profitTakerMissing ? '—' : formatTruncated2(m.profitTaker);
       plCell = m.fifthMissing
         ? `<b class="deal-metric-cell missing">—</b>`
-        : `<b class="deal-metric-cell ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</b>`;
+        : `<b class="deal-metric-cell deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</b>`;
     }
 
     return `
-      <div class="portfolio-row deal-row ${isClosed ? '' : 'open'}">
+      <div class="portfolio-row deal-row ${isClosed ? 'closed' : 'open'}">
         <div class="deal-ticker-cell">
           <div class="deal-name">${tickerHtml} ${titleHtml}</div>
           <div class="deal-sub">${escapeHtml(deal.spreadType || '')}</div>
@@ -3533,11 +3548,11 @@
           ${isClosed ? '' : dealPriceDisplayHtml(deal)}
         </div>
         <div class="deal-dte-cell${dteCellClass}">${dteCell}</div>
-        <b class="deal-metric-cell blue">${truncate2(m.ratio)}%</b>
-        <b class="deal-metric-cell red">${money0(m.maxLoss)}</b>
-        <b class="deal-metric-cell green">${money0(m.maxProfit)}</b>
-        <b class="deal-metric-cell">${ptPctCell}</b>
-        <b class="deal-metric-cell blue">${ptValueCell}</b>
+        <b class="deal-metric-cell deal-cell-ratio blue">${truncate2(m.ratio)}%</b>
+        <b class="deal-metric-cell deal-cell-maxloss red">${money0(m.maxLoss)}</b>
+        <b class="deal-metric-cell deal-cell-maxprofit green">${money0(m.maxProfit)}</b>
+        <b class="deal-metric-cell deal-cell-ptpct">${ptPctCell}</b>
+        <b class="deal-metric-cell deal-cell-ptvalue blue">${ptValueCell}</b>
         <div class="deal-strikes-cell">
           Buy <b>$${escapeHtml(deal.shortStrike || '—')}</b><br>
           Sell <b>$${escapeHtml(deal.longStrike || '—')}</b>
