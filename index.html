@@ -903,6 +903,15 @@
   }
   .deal-card.open { border-color: var(--blue); }
 
+  .deal-card.closed { background: var(--closed-row-bg); }
+  .deal-card.closed .deal-cell-ratio,
+  .deal-card.closed .deal-cell-maxloss,
+  .deal-card.closed .deal-cell-maxprofit,
+  .deal-card.closed .deal-cell-ptvalue {
+    color: var(--closed-value-grey);
+  }
+  .deal-card.closed .deal-cell-ptpct { color: var(--blue); }
+
   .deal-card-border-badge { position: absolute; top: -10px; display: flex; align-items: center; gap: 6px; }
   .deal-card-border-badge.open { left: var(--phone-badge-open-x); }
   .deal-card-border-badge.closed { left: var(--phone-badge-closed-x); }
@@ -3682,17 +3691,17 @@
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
-      plHtml = `<span class="deal-card-metric-value ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</span>`;
+      plHtml = `<span class="deal-card-metric-value deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</span>`;
     } else {
       ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
       ptValueCell = m.profitTakerMissing ? '—' : formatTruncated2(m.profitTaker);
       plHtml = m.fifthMissing
         ? `<span class="deal-card-metric-value missing">—</span>`
-        : `<span class="deal-card-metric-value ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</span>`;
+        : `<span class="deal-card-metric-value deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</span>`;
     }
 
     return `
-      <div class="deal-card ${isClosed ? '' : 'open'}">
+      <div class="deal-card ${isClosed ? 'closed' : 'open'}">
         ${borderBadge}
         <div class="deal-card-header">
           <div class="deal-card-title-block">
@@ -3718,10 +3727,10 @@
              margin-top gap between them) -- now ONE grid, 8 cells,
              styled by .deal-card-metrics-mesh (see CSS). -->
         <div class="deal-card-metrics-mesh">
-          <div class="deal-card-metric"><span class="deal-card-metric-label">Ratio</span><span class="deal-card-metric-value blue">${truncate2(m.ratio)}%</span></div>
-          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Loss</span><span class="deal-card-metric-value red">${money0(m.maxLoss)}</span></div>
-          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Profit</span><span class="deal-card-metric-value green">${money0(m.maxProfit)}</span></div>
-          <div class="deal-card-metric"><span class="deal-card-metric-label">PT %</span><span class="deal-card-metric-value blue">${ptPctCell}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Ratio</span><span class="deal-card-metric-value deal-cell-ratio blue">${truncate2(m.ratio)}%</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Loss</span><span class="deal-card-metric-value deal-cell-maxloss red">${money0(m.maxLoss)}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">Max Profit</span><span class="deal-card-metric-value deal-cell-maxprofit green">${money0(m.maxProfit)}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">PT %</span><span class="deal-card-metric-value deal-cell-ptpct blue">${ptPctCell}</span></div>
           <div class="deal-card-metric deal-card-metric-stacked">
             <span class="deal-card-metric-label">Start</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.startDate) || '—')}</span>
             <span class="deal-card-metric-label">Expiry</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</span>
@@ -3731,7 +3740,7 @@
             <span class="deal-card-metric-label">Sell</span><span class="deal-card-metric-stacked-value">$${escapeHtml(deal.longStrike || '—')}</span>
           </div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">P/L</span>${plHtml}</div>
-          <div class="deal-card-metric"><span class="deal-card-metric-label">PT Value</span><span class="deal-card-metric-value blue">${ptValueCell}</span></div>
+          <div class="deal-card-metric"><span class="deal-card-metric-label">PT Value</span><span class="deal-card-metric-value deal-cell-ptvalue blue">${ptValueCell}</span></div>
         </div>
       </div>`;
   }
