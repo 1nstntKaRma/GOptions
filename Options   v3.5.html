@@ -1199,6 +1199,24 @@
   .metric-value.red { color: var(--red); }
   .metric-value.green { color: var(--green); }
 
+  /* Global Calculator new feature (2026-09-04): "Profit" value is now
+     editable, reverse-solving Profit Taker % from a typed dollar target.
+     Explicit requirement: "Must not alter the design and looks of this
+     field... but allow manual editing on press" -- #dynamicStopValue
+     itself is toggled contenteditable in place (see the click/blur
+     handlers near calculate()) rather than swapping in a separate
+     <input>, so it can never visually drift from the plain-text look at
+     any breakpoint (same element, same .metric-value/.green/.red rules
+     above, both Desktop and Phone -- there's only ever this one shared
+     element, see the CSS comment on .portfolio-row.deal-row.closed for
+     the same "only one renderer" fact already confirmed for Portfolio).
+     .editable only toggles the cursor affordance (see calculate()) --
+     never a color/size/spacing change. outline:none suppresses the
+     browser's own default contenteditable focus ring, which would
+     otherwise be a visual change this field never had before. */
+  #dynamicStopValue.editable { cursor: pointer; }
+  #dynamicStopValue:focus { outline: none; }
+
   .icon {
     font-size: var(--legend-metric-icon-size);
     line-height: 1;
@@ -4872,6 +4890,7 @@
   const limitEl = document.getElementById('limit');
   const ptPctEl = document.getElementById('ptPct');
   const contractsEl = document.getElementById('contracts');
+  const stopValueEl = document.getElementById('dynamicStopValue');
 
   /* ===================================================================
    * TOTAL $ QUICK-SELECT STEPPER
@@ -5349,6 +5368,33 @@
     };
   }
 
+  // Global Calculator new feature: editable "Profit" tile (see the click/
+  // blur handlers on #dynamicStopValue near calculate()) -- the INVERSE
+  // of fifthValue's own formula above (fifthValue = round(maxProfitPer-
+  // Contract * ptPct/100) * contracts): given a desired whole-dollar
+  // PROFIT total (already contracts-scaled, matching what the tile
+  // displays), solves for the Profit Taker % that produces it. "MATH MUST
+  // BE MATHING... UNIFIED EVERYWHERE" -- routed through the exact same
+  // getLimitValueRaw/getContractsValue/sanitizePtPct primitives every
+  // other PT%-touching field already uses, not a one-off parallel calc.
+  // Because of the round()+contracts step, not every whole dollar is
+  // exactly reachable (e.g. 3 contracts can't hit a $100 total) -- same
+  // self-refining round-trip philosophy as PT%<->PT$ elsewhere (Close
+  // Deal, etc.): this hands back an exact-precision % candidate, and the
+  // caller re-runs it through the SAME forward math (calculate() ->
+  // computeMetrics()) to redraw whatever that % actually produces, rather
+  // than trusting the inverse blindly. Returns null when there's no valid
+  // Limit $ to solve against (maxProfitPerContract would be 0).
+  function ptPctFromProfitTarget(targetTotal, limitRaw, contractsRaw) {
+    const limit = getLimitValueRaw(limitRaw);
+    const contracts = getContractsValue(contractsRaw);
+    const maxProfitPerContract = Math.abs(limit) * 100;
+    if (maxProfitPerContract <= 0) return null;
+    const perContractTarget = targetTotal / contracts;
+    const exact = (perContractTarget * 100) / maxProfitPerContract;
+    return sanitizePtPct(exact);
+  }
+
   function setMetric(id, missing, computeText, staticColorClass) {
     const el = document.getElementById(id);
     if (missing) {
@@ -5380,23 +5426,40 @@
     const stopValue = document.getElementById('dynamicStopValue');
     const stopIcon = document.getElementById('dynamicStopIcon');
 
-    if (state.fifthMissing) {
-      stopTitle.textContent = '';
-      stopValue.textContent = 'Missing Value';
-      stopValue.classList.remove('red', 'green');
-      stopValue.classList.add('missing');
-      stopIcon.textContent = '?';
-      stopIcon.classList.remove('green');
-      stopIcon.classList.add('red');
-    } else {
-      stopTitle.textContent = sideIsLoss ? 'Loss' : 'Profit';
-      stopValue.textContent = '$' + Math.abs(state.fifthValue).toLocaleString('en-US');
-      stopValue.classList.remove('missing');
-      stopValue.classList.toggle('red', sideIsLoss);
-      stopValue.classList.toggle('green', !sideIsLoss);
-      stopIcon.textContent = sideIsLoss ? '↓' : '↑';
-      stopIcon.classList.toggle('red', sideIsLoss);
-      stopIcon.classList.toggle('green', !sideIsLoss);
+    // Editable "Profit" tile -- eligible whenever there's a real Limit $
+    // to solve against and it isn't currently showing "Loss" (explicit
+    // scope: Profit side only, per-share basis unaffected by totalMissing
+    // since fifthValue never depends on Total $). Deliberately does NOT
+    // require a real ptPct already -- a never-set (ptMissing) "Missing
+    // Value" tile is still eligible, since typing a target profit is
+    // meant to WORK as the first way to set Profit Taker %, not only as
+    // an edit to an existing one. Skip touching the element's text/class
+    // (but NOT the rest of calculate() -- chart/table/cramped-layout
+    // still need to run) while the user is actively mid-edit
+    // (isContentEditable), so an unrelated recalculation (e.g. another
+    // field's own blur firing first) can never clobber what they're
+    // mid-typing.
+    if (!stopValue.isContentEditable) {
+      stopValue.classList.toggle('editable', !state.limitMissing && !sideIsLoss);
+
+      if (state.fifthMissing) {
+        stopTitle.textContent = '';
+        stopValue.textContent = 'Missing Value';
+        stopValue.classList.remove('red', 'green');
+        stopValue.classList.add('missing');
+        stopIcon.textContent = '?';
+        stopIcon.classList.remove('green');
+        stopIcon.classList.add('red');
+      } else {
+        stopTitle.textContent = sideIsLoss ? 'Loss' : 'Profit';
+        stopValue.textContent = '$' + Math.abs(state.fifthValue).toLocaleString('en-US');
+        stopValue.classList.remove('missing');
+        stopValue.classList.toggle('red', sideIsLoss);
+        stopValue.classList.toggle('green', !sideIsLoss);
+        stopIcon.textContent = sideIsLoss ? '↓' : '↑';
+        stopIcon.classList.toggle('red', sideIsLoss);
+        stopIcon.classList.toggle('green', !sideIsLoss);
+      }
     }
 
     renderChart(state.maxLoss, state.maxProfit);
@@ -5897,6 +5960,63 @@
       calculate();
       limitEl.blur();
     }
+  });
+
+  /* Global Calculator new feature: editable "Profit" tile. Toggled
+     contenteditable in place on click (see .editable CSS comment above)
+     rather than a separate <input>, so the resting look never changes.
+     PROFIT_TILE_MAX_DIGITS caps typed length so an unusually large number
+     can't visibly overflow the tile -- it has no auto-shrink-on-overlap
+     safety net the way Ratio/Max Loss/Max Profit do (see
+     checkCalcCrampedLayout's own .calc-metric-cramped-target scope). */
+  const PROFIT_TILE_MAX_DIGITS = 7;
+
+  stopValueEl.setAttribute('inputmode', 'numeric');
+
+  stopValueEl.addEventListener('click', () => {
+    if (stopValueEl.isContentEditable) return; // already editing
+    if (!stopValueEl.classList.contains('editable')) return; // Loss / no Limit $ set
+    stopValueEl.classList.remove('missing');
+    stopValueEl.contentEditable = 'true';
+    stopValueEl.textContent = '';
+    stopValueEl.focus();
+  });
+
+  // Keystroke allow-list instead of post-hoc stripping -- for a
+  // contenteditable div (unlike an <input>) there's no simple "set
+  // .value then fix the caret" correction, so blocking anything that
+  // isn't a digit (or a navigation/editing key) AT THE SOURCE avoids ever
+  // needing to touch textContent/selection ourselves. Explicit spec:
+  // "must be whole number, no '.'" -- no digit grouping, decimal point,
+  // or minus sign is ever allowed through.
+  stopValueEl.addEventListener('keydown', e => {
+    if (!stopValueEl.isContentEditable) return;
+    if (e.key === 'Enter') { e.preventDefault(); stopValueEl.blur(); return; }
+    const navKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+    if (navKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[0-9]$/.test(e.key)) { e.preventDefault(); return; }
+    const digitsSoFar = stopValueEl.textContent.replace(/\D/g, '').length;
+    if (digitsSoFar >= PROFIT_TILE_MAX_DIGITS) e.preventDefault();
+  });
+
+  stopValueEl.addEventListener('paste', e => {
+    if (!stopValueEl.isContentEditable) return;
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    const room = PROFIT_TILE_MAX_DIGITS - stopValueEl.textContent.replace(/\D/g, '').length;
+    document.execCommand('insertText', false, pasted.slice(0, Math.max(0, room)));
+  });
+
+  stopValueEl.addEventListener('blur', () => {
+    if (!stopValueEl.isContentEditable) return;
+    stopValueEl.contentEditable = 'false';
+    const digits = stopValueEl.textContent.replace(/\D/g, '');
+    const target = Number(digits);
+    if (digits !== '' && target > 0) {
+      const solved = ptPctFromProfitTarget(target, limitEl.value, contractsEl.value);
+      if (solved !== null) ptPctEl.value = String(solved);
+    }
+    calculate();
   });
 
   calculate();
