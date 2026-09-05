@@ -4280,11 +4280,22 @@
         <button type="button" class="hamburger-item" id="pmHideClosedItem" onclick="togglePortfolioSetting('hideClosedDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
-        <!-- Explicit follow-up: "new exact titles + emojis for each
-             button" -- &#128193; (folder) leading, &#129518; (abacus)
-             trailing, matching the toggle items' leading/trailing
-             emoji pattern above. -->
-        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;  Order Deals By  &#129518;</button>
+        <!-- Explicit follow-up: "new styling for titles & emojis" --
+             both emoji now lead together (&#128188; briefcase, was
+             &#128193; folder, + &#129518; abacus), no trailing emoji,
+             matching the toggle items' own updated leading-pair style
+             (see updatePortfolioMenuLabels()). -->
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128188;&#129518;  Order Deals By</button>
+        <!-- Explicit follow-up: "add another button which says 'Deleted
+             Deals'... show all previous deleted deals and allow
+             restoring them, or permanently deletion of each deal." See
+             openDeletedDealsModal() -- reuses the Sync Conflicts
+             dialog's own .modal-panel/.modal-scroll/.conflict-row
+             markup (already phone-responsive) rather than building a
+             new dialog shape from scratch. Emoji order updated to match
+             the "new styling" follow-up above (both leading, no
+             trailing). -->
+        <button type="button" class="hamburger-item" onclick="openDeletedDealsModal(); closePortfolioMenu();">&#128465;&#65039;&#10060;  Deleted Deals</button>
       </div>
       <div class="portfolio-header">
         <div class="top-row-left">
@@ -6318,17 +6329,19 @@
   // the given default-state label text ("Show Closed Deals" etc. while
   // hideClosedDeals is false, i.e. nothing hidden yet) confirmed this is
   // a CURRENT-STATE readout, not the destination-action convention
-  // updateHamburgerMenuLabels() uses ("what clicking it will DO") --
-  // reversed from the previous round to match. 👀 = currently showing,
-  // 🙈 = currently hidden; leading emoji still identifies WHICH toggle
-  // (🔒 Closed, ⚡ Active, 🏷️ Entry Price).
+  // updateHamburgerMenuLabels() uses ("what clicking it will DO"). 👀 =
+  // currently showing, 🙈 = currently hidden. Explicit follow-up: "new
+  // styling for titles & emojis" moved BOTH emoji to lead together (no
+  // trailing emoji at all anymore) -- the first of the pair identifies
+  // WHICH toggle (🔒 Closed, ✔️ Active -- was ⚡ -- 🏷️ Entry Price), the
+  // second is the 🙈/👀 state, same meaning as before, just relocated.
   function updatePortfolioMenuLabels() {
     const hideClosedItem = document.getElementById('pmHideClosedItem');
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
-    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}  Hide Closed Deals  \u{1F648}' : '\u{1F512}  Show Closed Deals  \u{1F440}';
-    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{26A1}  Hide Active Deals  \u{1F648}' : '\u{26A1}  Show Active Deals  \u{1F440}';
-    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}  Hide Entry Price  \u{1F648}' : '\u{1F3F7}\u{FE0F}  Show Entry Price  \u{1F440}';
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}\u{1F648}  Hide Closed Deals' : '\u{1F512}\u{1F440}  Show Closed Deals';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{2714}\u{FE0F}\u{1F648}  Hide Active Deals' : '\u{2714}\u{FE0F}\u{1F440}  Show Active Deals';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}\u{1F648}  Hide Entry Price' : '\u{1F3F7}\u{FE0F}\u{1F440}  Show Entry Price';
   }
 
   function togglePortfolioSetting(key) {
@@ -7740,7 +7753,13 @@
     if (!confirm(`Delete ${label} permanently?`)) return;
     deals = deals.filter(d => d.id !== id);
     tombstones = tombstones.filter(t => t.id !== id);
-    tombstones.push({ id, deletedAt: Date.now() });
+    // Explicit follow-up: "Deleted Deals" recovery menu -- the tombstone
+    // now carries a snapshot of the deal's own data (a plain shallow
+    // copy; `deal` itself is about to go out of scope entirely, so there
+    // is no shared-reference mutation risk), not just its id, so it can
+    // actually be restored later instead of only ever being provably
+    // "gone." See openDeletedDealsModal()/restoreDeletedDeal().
+    tombstones.push({ id, deletedAt: Date.now(), deal: deal ? { ...deal } : undefined });
     clearResolved(id);
     renderPortfolio();
     pushToDriveDebounced();
@@ -8279,6 +8298,22 @@
     return { deals: Array.from(byId.values()), tombstones: Array.from(tombById.values()), conflicts };
   }
 
+  // Explicit follow-up: "Deleted Deals" recovery menu, "no cap, but
+  // instead add a smarter system: an auto complete deletion for each
+  // deal after it has been deleted for 1 month." Applied to a merge's
+  // RESULT (never to local/remote tombstones before merging) -- pruning
+  // beforehand would be pointless, since mergeDealSets() unions local
+  // and remote by id, so a tombstone dropped from just one side gets
+  // silently resurrected from the other the moment they merge. Called
+  // after EVERY merge on BOTH pull and push so both devices
+  // independently converge on the same pruned set within a sync cycle
+  // or two, without needing to coordinate who does it.
+  const TOMBSTONE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 1 month
+  function pruneOldTombstones(list) {
+    const cutoff = Date.now() - TOMBSTONE_RETENTION_MS;
+    return (list || []).filter(t => (t.deletedAt || 0) >= cutoff);
+  }
+
   async function fetchRemoteState() {
     const file = await driveApi(() => driveFindFile());
     if (!file) return { fileId: null, deals: [], tombstones: [], portfolioSettings: null, modifiedTime: null };
@@ -8357,7 +8392,7 @@
       const merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, isFreshSignIn, pendingConflictIds());
       const changed = !dealsEqual(merged.deals, deals);
       deals = merged.deals;
-      tombstones = merged.tombstones;
+      tombstones = pruneOldTombstones(merged.tombstones);
       const settingsChanged = adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
       if (changed || settingsChanged) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
@@ -8385,7 +8420,7 @@
       // and a device that DOES have an unsynced edit (even one queued
       // from before this pull, e.g. a push that failed earlier) still
       // correctly detects the difference and flushes it, same as before.
-      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(merged.tombstones, remote.tombstones);
+      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(tombstones, remote.tombstones);
       if (hasLocalOnlyChanges) pushToDriveDebounced();
       scheduleDrivePoll();
     } catch (err) {
@@ -8456,6 +8491,7 @@
         for (let attempt = 0; attempt < 5; attempt++) {
           remote = await fetchRemoteState();
           merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
+          merged.tombstones = pruneOldTombstones(merged.tombstones);
           // Pick up a newer REMOTE settings write (e.g. from another
           // device) before deciding what to upload -- otherwise this push
           // would silently clobber it with our own older local copy.
@@ -8483,7 +8519,7 @@
       const settled = mergeDealSets(deals, tombstones, merged.deals, merged.tombstones, gResolvedConflicts, false, pendingConflictIds());
       const changed = !dealsEqual(settled.deals, deals);
       deals = settled.deals;
-      tombstones = settled.tombstones;
+      tombstones = pruneOldTombstones(settled.tombstones);
       if (changed) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution([...merged.conflicts, ...settled.conflicts]);
@@ -8653,7 +8689,10 @@
         if (choice === 'delete') {
           deals = deals.filter(d => d.id !== c.id);
           tombstones = tombstones.filter(t => t.id !== c.id);
-          tombstones.push({ id: c.id, deletedAt: Date.now() });
+          // Same snapshot-carrying tombstone as deleteDeal() -- c.deal is
+          // already the live deal object from mergeDealSets()'s conflict
+          // record, so no separate lookup is needed.
+          tombstones.push({ id: c.id, deletedAt: Date.now(), deal: c.deal ? { ...c.deal } : undefined });
         } else {
           tombstones = tombstones.filter(t => t.id !== c.id);
         }
@@ -8676,6 +8715,107 @@
       for (const c of conflicts) gDeferredConflictIds.add(c.id);
       closeDialog();
     };
+  }
+
+  /* ---------- Deleted Deals recovery ----------
+   * Explicit follow-up: "add another button which says 'Deleted
+   * Deals'... show all previous deleted deals and allow restoring
+   * them, or permanently deletion of each deal" -- a manual safety net
+   * on top of the sync-race fix above, for the case where something
+   * still needs undoing. Reuses the Sync Conflicts dialog's own
+   * .modal-panel/.modal-scroll/.conflict-row/.conflict-choice-btn
+   * markup verbatim (already phone-responsive, see the @media rules
+   * on .modal-panel/.modal-backdrop) rather than inventing new CSS --
+   * Restore/Delete Forever act immediately on click here (no
+   * select-then-Apply step), so the `.active` class is just applied
+   * permanently per button for its green/red color coding, not
+   * toggled.
+   *
+   * A tombstone whose deal id is STILL present in `deals` is a
+   * currently-pending sync CONFLICT (mergeDealSets keeps both the
+   * tombstone AND the deal until the user resolves it -- see its own
+   * comment), not a genuinely deleted deal -- excluded here so the
+   * same deal never appears to be both alive in Portfolio and "deleted"
+   * in this list at once. That case already has its own dedicated
+   * conflict dialog/badge.
+   *
+   * Tombstones created before this feature shipped only ever had
+   * {id, deletedAt}, no `deal` snapshot -- shown as "Content
+   * unavailable" with Restore hidden (nothing to restore), Delete
+   * Forever still available so old clutter can still be cleared through
+   * this same UI. Entries also disappear on their own after 1 month --
+   * see pruneOldTombstones().
+   */
+  function openDeletedDealsModal() {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-panel" id="deletedDealsPanel">
+        <h2>Deleted Deals</h2>
+        <p class="modal-sub">Restore a deal, or remove it forever. Entries clear automatically after 1 month.</p>
+        <div class="modal-scroll" id="deletedDealsScroll"></div>
+        <div class="modal-actions">
+          <button type="button" id="deletedDealsCloseBtn" class="btn btn-primary">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeDialog(); };
+
+    function closeDialog() { backdrop.remove(); }
+
+    function render() {
+      const liveIds = new Set(deals.map(d => d.id));
+      const entries = tombstones
+        .filter(t => !liveIds.has(t.id))
+        .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+      const scroll = backdrop.querySelector('#deletedDealsScroll');
+      if (!entries.length) {
+        scroll.innerHTML = '<p class="modal-sub">No deleted deals.</p>';
+        return;
+      }
+      scroll.innerHTML = entries.map(t => {
+        const d = t.deal;
+        const head = d
+          ? ((d.ticker && d.ticker !== dealDisplayName(d)) ? `${escapeHtml(d.ticker)}  —  ${escapeHtml(dealDisplayName(d))}` : escapeHtml(dealDisplayName(d)))
+          : '<em>Content unavailable</em>';
+        const dateStr = t.deletedAt ? new Date(t.deletedAt).toLocaleDateString() : 'Unknown date';
+        return `
+          <div class="conflict-row" data-id="${escapeHtml(t.id)}">
+            <div class="conflict-row-title" title="${d ? head : ''}">${head}<br><span class="modal-sub" style="margin:0;">Deleted ${escapeHtml(dateStr)}</span></div>
+            <div class="conflict-row-choice">
+              ${d ? '<button type="button" class="conflict-choice-btn active" data-choice="keep" data-action="restore">Restore</button>' : ''}
+              <button type="button" class="conflict-choice-btn active" data-choice="delete" data-action="forget">Delete Forever</button>
+            </div>
+          </div>`;
+      }).join('');
+      scroll.querySelectorAll('[data-action="restore"]').forEach(btn => {
+        btn.onclick = () => { restoreDeletedDeal(btn.closest('.conflict-row').dataset.id); render(); };
+      });
+      scroll.querySelectorAll('[data-action="forget"]').forEach(btn => {
+        btn.onclick = () => { forgetDeletedDeal(btn.closest('.conflict-row').dataset.id); render(); };
+      });
+    }
+
+    backdrop.querySelector('#deletedDealsCloseBtn').onclick = closeDialog;
+    render();
+  }
+
+  function restoreDeletedDeal(id) {
+    const t = tombstones.find(x => x.id === id);
+    if (!t || !t.deal) return;
+    tombstones = tombstones.filter(x => x.id !== id);
+    deals.push({ ...t.deal, updatedTs: Date.now() });
+    clearResolved(id);
+    gPendingConflicts = gPendingConflicts.filter(c => c.id !== id);
+    updateConflictBadge();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  function forgetDeletedDeal(id) {
+    tombstones = tombstones.filter(x => x.id !== id);
+    clearResolved(id);
+    pushToDriveDebounced();
   }
 
   window.addEventListener('load', initGoogleSync);

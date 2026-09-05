@@ -1925,7 +1925,9 @@
         <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
 
-        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128193;  Order Deals By  &#129518;</button>
+        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128188;&#129518;  Order Deals By</button>
+
+        <button type="button" class="hamburger-item" onclick="openDeletedDealsModal(); closePortfolioMenu();">&#128465;&#65039;&#10060;  Deleted Deals</button>
       </div>
       <div class="portfolio-header">
         <div class="top-row-left">
@@ -3287,9 +3289,9 @@
     const hideClosedItem = document.getElementById('pmHideClosedItem');
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
-    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}  Hide Closed Deals  \u{1F648}' : '\u{1F512}  Show Closed Deals  \u{1F440}';
-    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{26A1}  Hide Active Deals  \u{1F648}' : '\u{26A1}  Show Active Deals  \u{1F440}';
-    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}  Hide Entry Price  \u{1F648}' : '\u{1F3F7}\u{FE0F}  Show Entry Price  \u{1F440}';
+    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}\u{1F648}  Hide Closed Deals' : '\u{1F512}\u{1F440}  Show Closed Deals';
+    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{2714}\u{FE0F}\u{1F648}  Hide Active Deals' : '\u{2714}\u{FE0F}\u{1F440}  Show Active Deals';
+    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}\u{1F648}  Hide Entry Price' : '\u{1F3F7}\u{FE0F}\u{1F440}  Show Entry Price';
   }
 
   function togglePortfolioSetting(key) {
@@ -4166,7 +4168,8 @@
     if (!confirm(`Delete ${label} permanently?`)) return;
     deals = deals.filter(d => d.id !== id);
     tombstones = tombstones.filter(t => t.id !== id);
-    tombstones.push({ id, deletedAt: Date.now() });
+
+    tombstones.push({ id, deletedAt: Date.now(), deal: deal ? { ...deal } : undefined });
     clearResolved(id);
     renderPortfolio();
     pushToDriveDebounced();
@@ -4524,6 +4527,12 @@
     return { deals: Array.from(byId.values()), tombstones: Array.from(tombById.values()), conflicts };
   }
 
+  const TOMBSTONE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; 
+  function pruneOldTombstones(list) {
+    const cutoff = Date.now() - TOMBSTONE_RETENTION_MS;
+    return (list || []).filter(t => (t.deletedAt || 0) >= cutoff);
+  }
+
   async function fetchRemoteState() {
     const file = await driveApi(() => driveFindFile());
     if (!file) return { fileId: null, deals: [], tombstones: [], portfolioSettings: null, modifiedTime: null };
@@ -4578,13 +4587,13 @@
       const merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, isFreshSignIn, pendingConflictIds());
       const changed = !dealsEqual(merged.deals, deals);
       deals = merged.deals;
-      tombstones = merged.tombstones;
+      tombstones = pruneOldTombstones(merged.tombstones);
       const settingsChanged = adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
       if (changed || settingsChanged) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution(merged.conflicts);
 
-      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(merged.tombstones, remote.tombstones);
+      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(tombstones, remote.tombstones);
       if (hasLocalOnlyChanges) pushToDriveDebounced();
       scheduleDrivePoll();
     } catch (err) {
@@ -4614,6 +4623,7 @@
         for (let attempt = 0; attempt < 5; attempt++) {
           remote = await fetchRemoteState();
           merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
+          merged.tombstones = pruneOldTombstones(merged.tombstones);
 
           adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
           payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
@@ -4635,7 +4645,7 @@
       const settled = mergeDealSets(deals, tombstones, merged.deals, merged.tombstones, gResolvedConflicts, false, pendingConflictIds());
       const changed = !dealsEqual(settled.deals, deals);
       deals = settled.deals;
-      tombstones = settled.tombstones;
+      tombstones = pruneOldTombstones(settled.tombstones);
       if (changed) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution([...merged.conflicts, ...settled.conflicts]);
@@ -4776,7 +4786,8 @@
         if (choice === 'delete') {
           deals = deals.filter(d => d.id !== c.id);
           tombstones = tombstones.filter(t => t.id !== c.id);
-          tombstones.push({ id: c.id, deletedAt: Date.now() });
+
+          tombstones.push({ id: c.id, deletedAt: Date.now(), deal: c.deal ? { ...c.deal } : undefined });
         } else {
           tombstones = tombstones.filter(t => t.id !== c.id);
         }
@@ -4799,6 +4810,78 @@
       for (const c of conflicts) gDeferredConflictIds.add(c.id);
       closeDialog();
     };
+  }
+
+  function openDeletedDealsModal() {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-panel" id="deletedDealsPanel">
+        <h2>Deleted Deals</h2>
+        <p class="modal-sub">Restore a deal, or remove it forever. Entries clear automatically after 1 month.</p>
+        <div class="modal-scroll" id="deletedDealsScroll"></div>
+        <div class="modal-actions">
+          <button type="button" id="deletedDealsCloseBtn" class="btn btn-primary">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeDialog(); };
+
+    function closeDialog() { backdrop.remove(); }
+
+    function render() {
+      const liveIds = new Set(deals.map(d => d.id));
+      const entries = tombstones
+        .filter(t => !liveIds.has(t.id))
+        .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+      const scroll = backdrop.querySelector('#deletedDealsScroll');
+      if (!entries.length) {
+        scroll.innerHTML = '<p class="modal-sub">No deleted deals.</p>';
+        return;
+      }
+      scroll.innerHTML = entries.map(t => {
+        const d = t.deal;
+        const head = d
+          ? ((d.ticker && d.ticker !== dealDisplayName(d)) ? `${escapeHtml(d.ticker)}  —  ${escapeHtml(dealDisplayName(d))}` : escapeHtml(dealDisplayName(d)))
+          : '<em>Content unavailable</em>';
+        const dateStr = t.deletedAt ? new Date(t.deletedAt).toLocaleDateString() : 'Unknown date';
+        return `
+          <div class="conflict-row" data-id="${escapeHtml(t.id)}">
+            <div class="conflict-row-title" title="${d ? head : ''}">${head}<br><span class="modal-sub" style="margin:0;">Deleted ${escapeHtml(dateStr)}</span></div>
+            <div class="conflict-row-choice">
+              ${d ? '<button type="button" class="conflict-choice-btn active" data-choice="keep" data-action="restore">Restore</button>' : ''}
+              <button type="button" class="conflict-choice-btn active" data-choice="delete" data-action="forget">Delete Forever</button>
+            </div>
+          </div>`;
+      }).join('');
+      scroll.querySelectorAll('[data-action="restore"]').forEach(btn => {
+        btn.onclick = () => { restoreDeletedDeal(btn.closest('.conflict-row').dataset.id); render(); };
+      });
+      scroll.querySelectorAll('[data-action="forget"]').forEach(btn => {
+        btn.onclick = () => { forgetDeletedDeal(btn.closest('.conflict-row').dataset.id); render(); };
+      });
+    }
+
+    backdrop.querySelector('#deletedDealsCloseBtn').onclick = closeDialog;
+    render();
+  }
+
+  function restoreDeletedDeal(id) {
+    const t = tombstones.find(x => x.id === id);
+    if (!t || !t.deal) return;
+    tombstones = tombstones.filter(x => x.id !== id);
+    deals.push({ ...t.deal, updatedTs: Date.now() });
+    clearResolved(id);
+    gPendingConflicts = gPendingConflicts.filter(c => c.id !== id);
+    updateConflictBadge();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
+
+  function forgetDeletedDeal(id) {
+    tombstones = tombstones.filter(x => x.id !== id);
+    clearResolved(id);
+    pushToDriveDebounced();
   }
 
   window.addEventListener('load', initGoogleSync);

@@ -9053,3 +9053,109 @@ file) and drove `pullFromDrive()`/`pushToDrive()` directly:
 - Clean reload after all mock testing: no console errors, `deals` is a
   proper array, Calculator still renders/calculates correctly --
   confirms the mock testing didn't corrupt any live app state.
+
+## Deleted Deals recovery menu, plus a real data-model change to support it
+
+Explicit follow-up, on top of the sync-race fix above: "add another
+guard rail... add another button which says 'Deleted Deals'... show
+all previous deleted deals and allow restoring them, or permanently
+deletion of each deal." Planned with the user via AskUserQuestion
+first (the Python cross-sync app, pre-existing tombstones with no
+snapshot, and retention policy) before writing anything.
+
+**The real blocker**: `deleteDeal()` only ever recorded `{id,
+deletedAt}` -- the deal's actual content was gone from memory the
+moment it was filtered out of `deals`. "Restore" was impossible with
+the existing data model, not just missing a UI. Fixed by having both
+places that create a tombstone (`deleteDeal()`, and the conflict
+dialog's "Delete" resolution) also carry a shallow-copied snapshot of
+the deal: `{ id, deletedAt, deal: {...} }`. `mergeDealSets()` needed
+zero changes -- its "keep whichever tombstone has the later
+`deletedAt`" logic already carries the whole object through untouched,
+snapshot included.
+
+**UI**: reused the Sync Conflicts dialog's own `.modal-backdrop`/
+`.modal-panel`/`.modal-scroll`/`.conflict-row`/`.conflict-choice-btn`
+markup verbatim instead of inventing new CSS -- it's already
+phone-responsive (see the `.modal-panel`/`.modal-backdrop` `@media`
+rules), so "also designed for phones!" came for free. New Portfolio
+menu button `🗑️ Deleted Deals ❌` opens it (`openDeletedDealsModal()`),
+listing tombstones newest-first with Restore (green,
+`.conflict-choice-btn.active[data-choice="keep"]`) and Delete Forever
+(red, `[data-choice="delete"]`) -- reused permanently-applied instead
+of toggled, since these act immediately on click rather than
+select-then-Apply like the conflict dialog does.
+
+**A correctness detail caught during design, not reported**: a
+tombstone whose deal id is STILL present in `deals` is a currently-
+PENDING sync conflict (`mergeDealSets` deliberately keeps both the
+deal and the tombstone until the user resolves it), not a genuinely
+deleted deal. Without excluding these, the same deal would appear to
+be both alive in Portfolio AND "deleted" in this new list
+simultaneously. Filtered out via `!liveIds.has(t.id)` before rendering
+-- that case already has its own dedicated conflict dialog/badge.
+
+**Old tombstones** (created before this shipped) only ever have `{id,
+deletedAt}`, no snapshot -- shown as "Content unavailable" with
+Restore hidden, Delete Forever still available so old clutter can
+still be cleared through this same UI, per the user's own choice.
+
+**Retention** ("no cap, but instead add a smarter system: an auto
+complete deletion for each deal after it has been deleted for 1
+month"): `pruneOldTombstones()` filters out anything with `deletedAt`
+past 30 days. Applied to a merge's RESULT only, on both pull and push
+-- pruning beforehand would be pointless, since `mergeDealSets()`
+unions local and remote tombstones by id, so dropping one from just
+one side gets silently resurrected from the other the moment they
+merge. Both devices independently converge on the same pruned set
+within a sync cycle or two this way, with no coordination needed.
+
+The Python cross-sync app mentioned in the sync code's own comments
+was confirmed by the user to be permanently discontinued, so no
+snapshot-stripping compatibility risk from that side remains a
+concern.
+
+### Verified
+
+Live-tested end to end via `deleteDeal()`/the real UI, not just direct
+data manipulation: deleted 2 real deals, confirmed both tombstones
+carry the correct snapshot (`hasSnapshot: true`, correct ticker).
+Injected an old-style snapshot-less tombstone and a simulated pending-
+conflict (a deal present in BOTH `deals` and `tombstones`) -- opened
+the modal and confirmed exactly the 2 genuine deletions plus the old
+one showed (3 rows), the simulated conflict correctly excluded.
+Confirmed exact rendered content per row: named/ticker-only labels
+render correctly, the snapshot-less entry shows "Content unavailable"
+with no Restore button, both entries with a snapshot show both
+buttons. Clicked Restore on a real row: deal reappeared in `deals`
+with a fresh `updatedTs`, tombstone removed, modal list refreshed in
+place to drop that row. Clicked Delete Forever on the snapshot-less
+row: tombstone removed permanently, modal refreshed correctly. Tested
+`pruneOldTombstones()` directly with a 40-day-old and a 10-day-old
+entry: only the 10-day one survived. Tested the empty state ("No
+deleted deals."). Verified the actual menu button text render exactly
+as specified ("🗑️ Deleted Deals ❌"), that it opens via a real click on
+the real DOM element (not just calling the function directly), that
+the menu closes correctly when it does, and confirmed the modal
+renders cleanly and fully usable at 375px (phone width) via
+screenshot. No console errors through any of this, and a completely
+fresh page reload afterward confirmed no regressions elsewhere.
+
+## Portfolio menu: both emoji lead together, no trailing emoji
+
+Explicit follow-up with exact strings for all 5 buttons ("🔒🙈  Hide
+Closed Deals", ..., "🗑️❌  Deleted Deals"). Restyled from "leading
+emoji + text + trailing emoji" to "both emoji leading, no trailing" --
+also 2 incidental emoji swaps bundled into the same request: Active
+Deals' identifying emoji ⚡ -> ✔️, and Order Deals By's leading emoji
+📁 -> 💼. `updatePortfolioMenuLabels()`'s 3 dynamic toggle labels and
+the 2 static buttons (Order Deals By, Deleted Deals) all updated to
+match.
+
+### Verified
+
+All 8 label variants (4 toggles x 2 states, plus the 2 static
+buttons) read back via `.textContent` exactly matching the requested
+strings -- toggled each of the 3 settings on then back off to confirm
+both the "Hide"/🙈 and "Show"/👀 variants render correctly, not just
+the default state. No console errors.
