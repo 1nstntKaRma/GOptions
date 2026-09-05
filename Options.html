@@ -8362,10 +8362,31 @@
       if (changed || settingsChanged) renderPortfolio();
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution(merged.conflicts);
-      // If the merge pulled in local-only changes the cloud didn't have
-      // yet (new local deals, or this client's tombstones), reconcile
-      // Drive immediately rather than waiting for the next edit.
-      pushToDriveDebounced();
+      // Explicit follow-up: "only allow push updates from the device
+      // which is currently editing... stop push updates from the
+      // sleeper side, if no changes have been made this side should
+      // only check for new changes." This used to call
+      // pushToDriveDebounced() unconditionally after EVERY pull,
+      // including routine poll-triggered ones -- so an idle device with
+      // zero local edits still wrote back to Drive purely as a side
+      // effect of noticing the OTHER device's change, every ~5s poll
+      // cycle it happened to catch one. Beyond being wasteful, this
+      // meant BOTH devices were writing to the shared file almost
+      // continuously in any session where only one was actually being
+      // used, needlessly widening the window for the write-race
+      // pushToDrive()'s retry loop already exists to guard against.
+      // Only push now if the merge actually produced something the
+      // remote didn't already have -- comparing `merged` against
+      // `remote` (not against pre-merge local state) isolates exactly
+      // that: local-only deals/edits/tombstones this device is holding
+      // that Drive hasn't seen yet. A device with nothing local-only to
+      // contribute naturally never pushes on a routine pull, without
+      // needing to explicitly track "which device is active" at all --
+      // and a device that DOES have an unsynced edit (even one queued
+      // from before this pull, e.g. a push that failed earlier) still
+      // correctly detects the difference and flushes it, same as before.
+      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(merged.tombstones, remote.tombstones);
+      if (hasLocalOnlyChanges) pushToDriveDebounced();
       scheduleDrivePoll();
     } catch (err) {
       handleSyncError(err);
@@ -8404,23 +8425,54 @@
       // blindly -- this is what "especially buggy with HTML & Python both
       // running" was hitting: two independent read-modify-write cycles
       // racing with no coordination beyond whichever one wrote last.
-      let remote, merged, payload;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        remote = await fetchRemoteState();
-        merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
-        // Pick up a newer REMOTE settings write (e.g. from another
-        // device) before deciding what to upload -- otherwise this push
-        // would silently clobber it with our own older local copy.
-        adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
-        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
-        const recheck = await driveApi(() => driveFindFile());
-        const recheckModified = recheck ? recheck.modifiedTime : null;
-        if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {
-          continue; // someone else wrote since our fetch -- redo with fresh state
+      //
+      // Explicit follow-up after a real data-loss report ("a lot of data
+      // was deleted... this should have been saved by the conflict
+      // system"): it wasn't, because this specific failure mode never
+      // goes through a tombstone at all -- mergeDealSets()'s conflict
+      // detection only ever looks at tombstone-vs-deal pairs, but a
+      // write-race here just silently drops a concurrent ADDITION with
+      // no delete marker anywhere, so there's nothing for that system to
+      // see. The recheck above only closes the gap BEFORE the upload
+      // (someone wrote before we started uploading); it can't see a
+      // write that lands DURING our own upload call. Drive API v3 has no
+      // documented If-Match/ETag support on files.update to make the
+      // write itself atomic, so instead: immediately after our own
+      // upload, re-check the file's metadata one more time. If it still
+      // shows OUR just-completed write (the modifiedTime our own upload
+      // returned), nothing raced us -- done. If it shows something else,
+      // someone else's write landed in that gap and may have been
+      // overwritten-by or overwritten our own -- redo the ENTIRE
+      // fetch/merge/upload cycle against whatever's actually there now
+      // (our own local `deals`/`tombstones` are untouched in memory, so
+      // nothing WE made is lost by retrying) rather than trusting an
+      // upload response that's already possibly stale. Bounded at 3
+      // full cycles -- if contention is still this persistent after
+      // that, proceed with the last attempt rather than looping forever;
+      // this is strictly an ADDITIONAL safety net on top of the existing
+      // pre-write recheck, never a reason to skip it.
+      let remote, merged, payload, result;
+      for (let cycle = 0; cycle < 3; cycle++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          remote = await fetchRemoteState();
+          merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
+          // Pick up a newer REMOTE settings write (e.g. from another
+          // device) before deciding what to upload -- otherwise this push
+          // would silently clobber it with our own older local copy.
+          adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+          payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
+          const recheck = await driveApi(() => driveFindFile());
+          const recheckModified = recheck ? recheck.modifiedTime : null;
+          if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {
+            continue; // someone else wrote since our fetch -- redo with fresh state
+          }
+          break;
         }
-        break;
+        result = await driveApi(() => driveUpload(remote.fileId, payload));
+        const verify = await driveApi(() => driveFindFile());
+        if (!verify || !result.modifiedTime || verify.modifiedTime === result.modifiedTime) break; // confirmed: our write is what's actually there now
+        // someone else's write raced in right after ours completed -- loop back and redo the whole cycle against fresh remote
       }
-      const result = await driveApi(() => driveUpload(remote.fileId, payload));
       gDriveFileId = result.id || remote.fileId;
       gDriveModifiedTime = result.modifiedTime || remote.modifiedTime;
       // Re-merge what was just confirmed-uploaded against whatever local

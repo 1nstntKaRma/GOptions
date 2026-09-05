@@ -4584,7 +4584,8 @@
       setSyncButton(BUTTON_EMOJIS.syncOk, 'Google Account Synced.');
       offerConflictResolution(merged.conflicts);
 
-      pushToDriveDebounced();
+      const hasLocalOnlyChanges = !dealsEqual(merged.deals, remote.deals) || !dealsEqual(merged.tombstones, remote.tombstones);
+      if (hasLocalOnlyChanges) pushToDriveDebounced();
       scheduleDrivePoll();
     } catch (err) {
       handleSyncError(err);
@@ -4608,21 +4609,26 @@
     setSyncButton(BUTTON_EMOJIS.syncSyncing, 'Syncing…');
     try {
 
-      let remote, merged, payload;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        remote = await fetchRemoteState();
-        merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
+      let remote, merged, payload, result;
+      for (let cycle = 0; cycle < 3; cycle++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          remote = await fetchRemoteState();
+          merged = mergeDealSets(deals, tombstones, remote.deals, remote.tombstones, gResolvedConflicts, false, pendingConflictIds());
 
-        adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
-        payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
-        const recheck = await driveApi(() => driveFindFile());
-        const recheckModified = recheck ? recheck.modifiedTime : null;
-        if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {
-          continue; 
+          adoptRemotePortfolioSettingsIfNewer(remote.portfolioSettings);
+          payload = { version: 2, updatedAt: new Date().toISOString(), deals: merged.deals, tombstones: merged.tombstones, portfolioSettings: portfolioSettings };
+          const recheck = await driveApi(() => driveFindFile());
+          const recheckModified = recheck ? recheck.modifiedTime : null;
+          if (remote.modifiedTime && recheckModified && recheckModified !== remote.modifiedTime) {
+            continue; 
+          }
+          break;
         }
-        break;
+        result = await driveApi(() => driveUpload(remote.fileId, payload));
+        const verify = await driveApi(() => driveFindFile());
+        if (!verify || !result.modifiedTime || verify.modifiedTime === result.modifiedTime) break; 
+
       }
-      const result = await driveApi(() => driveUpload(remote.fileId, payload));
       gDriveFileId = result.id || remote.fileId;
       gDriveModifiedTime = result.modifiedTime || remote.modifiedTime;
 

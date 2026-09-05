@@ -8962,3 +8962,94 @@ Screenshot confirms Portfolio's Deal button renders at its proper
 size. Switched back to Calculator mode afterward: cramped state
 correctly re-applies (all 3 classes back), confirming the fix only
 clears when actually leaving Calculator-mobile, not on every call.
+
+## Multi-device Google sync: stop the idle device's redundant pushes, close a real data-loss race
+
+Explicit follow-up: "when 2 devices (1 desktop, 1 phone) are logged in
+at the same time... only allow push updates from the device which is
+currently editing... stop push updates from the sleeper side," plus a
+2nd follow-up after realizing the ACTUAL mechanism: "a lot of data was
+deleted to one of the users and this should have been saved by the
+conflict system" -- it wasn't, and understanding why reshaped the fix.
+Planned with the user via AskUserQuestion before touching anything,
+given real data loss was already reported.
+
+**Existing architecture** (`initGoogleSync` block, ~line 7889 on):
+both devices read/write ONE shared JSON file in Drive's private
+appDataFolder. `mergeDealSets()` does a per-record, timestamp-based
+merge (not a blind overwrite) -- `updatedTs` for edits, tombstones
+with `deletedAt` for deletes, with a real conflict dialog for genuine
+edit-after-delete ambiguity. Each device polls Drive every 5s and
+pulls in remote changes; any local edit triggers a debounced (600ms)
+push that re-fetches/re-merges/rechecks for a concurrent write before
+uploading. This is considerably more sophisticated than "two dumb
+clients overwriting each other" -- but two real gaps existed under it.
+
+**Gap 1 -- the sleeper WAS pushing.** `pullFromDrive()` called
+`pushToDriveDebounced()` unconditionally at the end of EVERY pull,
+including routine poll-triggered ones with zero local edits -- an idle
+device would write back to Drive purely as a side effect of noticing
+the other device's change, every ~5s cycle. Every OTHER push call-site
+in the file is tied to a genuine local mutation (save/delete/edit a
+deal, change settings, resolve a conflict); this was the one
+exception. Fixed by comparing `merged` against `remote` (not
+pre-merge local state) and only pushing if the merge actually produced
+something remote didn't already have -- a device with nothing
+local-only naturally never pushes on a routine pull, no explicit
+"which device is active" flag needed; a device with a genuinely
+unsynced edit (even one queued from an earlier failed push) still
+correctly detects the difference and flushes it.
+
+**Gap 2 -- the actual root cause of the reported data loss.** Audited
+every deal-mutation code path (save/edit/close/import) for missing
+`updatedTs`/`createdTs` first -- all set them correctly, ruling that
+out. The real cause: `mergeDealSets()`'s conflict system ONLY inspects
+tombstone-vs-deal pairs. A write-race in `pushToDrive()` -- the
+existing pre-write recheck only catches a concurrent write that lands
+BEFORE our own upload starts, not one that lands DURING it -- can
+silently let a stale upload overwrite a concurrent ADDITION from the
+other device. No delete, no tombstone, nothing for the conflict system
+to ever see -- exactly matching "conflict system never popped" despite
+real data going missing. Drive API v3 has no documented If-Match/ETag
+support on `files.update` to make the write itself atomic (considered
+and deliberately NOT used, given real uncertainty about whether Drive
+actually honors it -- a header that's silently ignored would be worse
+than no header, a false sense of protection). Instead: after our own
+upload completes, one more cheap metadata check confirms the file
+still shows OUR just-completed write; if it shows something else
+instead, someone else's write landed in that gap, so the ENTIRE
+fetch/merge/upload cycle redoes against fresh remote state (our own
+in-memory `deals`/`tombstones` are untouched, so nothing WE made is
+lost by retrying) rather than trusting a now-possibly-stale response.
+Bounded at 3 full cycles as a backstop against pathological contention
+-- proceeds with the last attempt rather than looping forever.
+
+### Verified
+
+Could not test against the real Drive API (no OAuth credentials
+available here) -- built a mock Drive backend instead (`window.fetch`
+override simulating LIST/DOWNLOAD/UPLOAD against an in-memory fake
+file) and drove `pullFromDrive()`/`pushToDrive()` directly:
+- Local device with nothing local-only vs. a matching remote: pull
+  produces zero UPLOAD calls (Gap 1's fix confirmed -- an idle device
+  genuinely never pushes).
+- Local device holding one genuinely unsynced deal: pull still
+  correctly triggers exactly one push, deal lands on the mock remote
+  (confirms the fix didn't over-correct into "never pushes at all").
+- Race reproduction for Gap 2: injected a simulated concurrent write
+  (adding `otherDeviceDeal`) to land exactly during the gap between
+  our own upload and our own post-write verify call. Confirmed the OLD
+  code's exact call sequence up to that point (fetch, recheck, upload)
+  would have left the shared file with ONLY our own deals, silently
+  discarding `otherDeviceDeal` -- reproducing the reported bug exactly.
+  With the fix: the verify step detects the mismatch, redoes the whole
+  cycle, and the final remote AND local state both end up with all
+  three deals (`existing1`, `ourNewDeal`, `otherDeviceDeal`) -- no data
+  lost from either side.
+- No-contention case re-verified afterward: exact same call pattern as
+  before (fetch, recheck, upload) plus one extra cheap metadata check
+  at the end -- confirms the added safety net costs one metadata call
+  per push and never loops unnecessarily when nothing is racing.
+- Clean reload after all mock testing: no console errors, `deals` is a
+  proper array, Calculator still renders/calculates correctly --
+  confirms the mock testing didn't corrupt any live app state.
