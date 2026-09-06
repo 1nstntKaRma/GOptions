@@ -733,6 +733,23 @@
     justify-content: center;
     box-shadow: 0 4px 14px rgba(0,0,0,.5);
   }
+  /* Explicit follow-up: replace the mode-toggle button's static emoji
+     with an animated GIF for BOTH directions (Calculator's 🧮 first,
+     then Portfolio's 💼 once its own GIF was provided) -- see
+     setModeToggleIcon() in the script for where either gets swapped
+     in/out. 100%/100%, not a smaller percentage -- this
+     button's own padding is asymmetric (1px top/bottom, 6px left/
+     right, live-measured), so a same-percentage width/height would
+     resolve against a non-SQUARE content box and stretch the square
+     96x96 GIF into a squeezed rectangle. object-fit:contain is what
+     actually keeps it square and uncropped regardless: it scales the
+     image CONTENT (not this box) to fit within whatever box results,
+     preserving its own aspect ratio -- so it renders as a properly
+     proportioned square letterboxed inside the box, correct at every
+     breakpoint (38px/32px, see .mode-toggle-btn's own width/height
+     overrides) without needing a separate override at each tier, and
+     immune to the button's own padding shape either way. */
+  .mode-toggle-gif { width: 100%; height: 100%; object-fit: contain; }
   /* Conflict badge sits beside the sign-in/sync icon specifically --
      position:relative anchor for the badge below -- it's taken OUT of
      normal flex flow (position:absolute) so its own width never affects
@@ -1550,6 +1567,14 @@
   .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
   .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
   .btn-danger:hover { background: rgba(201,4,10,.1); }
+  /* Explicit follow-up: "Delete All" button in Deleted Deals, "red+red
+     frame" -- a SOLID red fill + matching red border, not the
+     outline-only .btn-danger above. Same tone already used for Delete
+     Forever's own per-row button (.conflict-choice-btn.active
+     [data-choice="delete"]), just at the standard .btn size instead of
+     that compact per-row size. */
+  .btn-danger-solid { background: #7a2b2b; border: 1px solid #7a2b2b; color: var(--text); }
+  .btn-danger-solid:hover { background: #8f3232; border-color: #8f3232; }
   /* Explicit follow-up: "deploy new red 'Cancel' Button where ever the
      old cancel button existed (old cancel had purple frame when
      hovered.)" The 3 actual Cancel buttons (Save/Edit modal, Close Deal
@@ -4104,7 +4129,11 @@
                         title="Sign in with Google to sync your portfolio via Drive">&#x1F511;</button>
                 <button id="syncConflictBadge" onclick="showConflictDialog(true)" title="Sync conflicts waiting for your decision"></button>
               </div>
-              <button id="modeToggleBtn" class="mode-toggle-btn" title="Switch to Portfolio Mode" onclick="setMode('portfolio')">&#x1F4BC;</button>
+              <!-- Explicit follow-up: both directions now show an
+                   animated GIF instead of a static emoji -- see
+                   setModeToggleIcon() (script) for where this initial
+                   content gets replaced on load/mode switches. -->
+              <button id="modeToggleBtn" class="mode-toggle-btn" title="Switch to Portfolio Mode" onclick="setMode('portfolio')"><img class="mode-toggle-gif" src="ICO/Portfolio.gif" alt="Switch to Portfolio Mode"></button>
               <div class="hamburger-wrap">
                 <!-- Explicit bug fix: hamburger menu background rendering
                      transparent in Calculator/Desktop mode on a real
@@ -4794,8 +4823,9 @@
    *  Emoji Legend - Legend Emojis (DO NOT DELETE THIS LINE!)
    * =================================================================== */
   const BUTTON_EMOJIS = {
-    modeToPortfolio:    '\u{1F4BC}',  // 💼 Mode Toggle, shown while in Calculator (click -> Portfolio)
-    modeToCalculator:   '\u{1F9EE}',  // 🧮 Mode Toggle, shown while in Portfolio (click -> Calculator)
+    // modeToPortfolio (💼) / modeToCalculator (🧮) removed -- both
+    // directions of #modeToggleBtn are animated GIFs now (see
+    // setModeToggleIcon() near setMode()), not plain emoji text.
     hamburger:          '☰',          // Hamburger Menu
     ratio:               '%',          // Ratio Icon
     maxLoss:             '↓',          // Max Loss Icon
@@ -4873,7 +4903,7 @@
     // temporal-dead-zone this early), so the toggle's initial glyph is
     // always the "switch TO Portfolio" one; setMode() takes over from
     // here for every click afterward.
-    if (modeBtn) modeBtn.textContent = BUTTON_EMOJIS.modeToPortfolio;
+    if (modeBtn) setModeToggleIcon(modeBtn, 'portfolio');
     if (hamburgerBtn) hamburgerBtn.textContent = BUTTON_EMOJIS.hamburger;
     if (iconRatio) iconRatio.textContent = BUTTON_EMOJIS.ratio;
     if (iconMaxLoss) iconMaxLoss.textContent = BUTTON_EMOJIS.maxLoss;
@@ -6149,16 +6179,33 @@
     syncTopRowTargets();
     const btn = document.getElementById('modeToggleBtn');
     if (mode === 'calculator') {
-      btn.textContent = BUTTON_EMOJIS.modeToPortfolio;
+      setModeToggleIcon(btn, 'portfolio');
       btn.title = 'Switch to Portfolio Mode';
       btn.onclick = () => setMode('portfolio');
     } else {
-      btn.textContent = BUTTON_EMOJIS.modeToCalculator;
+      setModeToggleIcon(btn, 'calculator');
       btn.title = 'Switch to Calculator Mode';
       btn.onclick = () => setMode('calculator');
       renderPortfolio();
     }
     checkCalcCrampedLayout();
+  }
+
+  // Explicit follow-up: both directions of #modeToggleBtn show an
+  // animated GIF now (originally just the Calculator direction, then
+  // extended to Portfolio too once its own GIF was provided) -- neither
+  // is a static emoji anymore. `direction` is which mode clicking the
+  // button switches TO. innerHTML (not textContent) so an actual <img>
+  // renders instead of literal tag text; GIFs animate natively in an
+  // <img>, no extra JS needed to keep them moving. .mode-toggle-gif
+  // (CSS, see .mode-toggle-btn above) fits it inside the button at
+  // every breakpoint. Reassigning `innerHTML` on the other call fully
+  // replaces whichever <img> was there before -- no leftover element to
+  // clean up first.
+  function setModeToggleIcon(btn, direction) {
+    const src = direction === 'portfolio' ? 'ICO/Portfolio.gif' : 'ICO/Calculator.gif';
+    const label = direction === 'portfolio' ? 'Switch to Portfolio Mode' : 'Switch to Calculator Mode';
+    btn.innerHTML = `<img class="mode-toggle-gif" src="${src}" alt="${label}">`;
   }
 
   /* ===================================================================
@@ -8279,8 +8326,30 @@
       }
     }
 
+    // Explicit bug reports: "restoring a deleted deal on 1 device can
+    // result in it being shown on 1 device, and not shown on 2nd
+    // device"; "'Delete Forever' can temporarily delete a deal, then it
+    // re appears again." Same root cause for both: restoreDeletedDeal()
+    // and forgetDeletedDeal() used to just filter their own tombstone
+    // OUT of the local array -- but the union above always keeps
+    // WHICHEVER side's copy has the latest `deletedAt`, so a plain
+    // local removal does nothing once the NEXT merge re-introduces a
+    // stale original from Drive (nobody's pushed the removal yet) or
+    // from a 2nd device that never saw the change -- that stale
+    // original just wins the recency comparison right back, silently
+    // re-deleting a just-restored deal, or resurrecting a "deleted
+    // forever" entry. `restored: true` (set with a FRESH `deletedAt`,
+    // so it still wins that same recency comparison against a stale
+    // original regardless of which side offers which copy) marks a
+    // tombstone as retracted -- skipped entirely here (never treated as
+    // an active deletion, deal left alone, no conflict raised) but
+    // still returned in the array below so it keeps competing against
+    // late-arriving stale duplicates (e.g. a 3rd device that hasn't
+    // synced in a while) until it eventually ages out via
+    // pruneOldTombstones(), same retention as any other tombstone.
     const conflicts = [];
     for (const t of tombById.values()) {
+      if (t.restored) continue;
       const d = byId.get(t.id);
       if (!d) continue;
       const action = resolved[t.id];
@@ -8694,7 +8763,15 @@
           // record, so no separate lookup is needed.
           tombstones.push({ id: c.id, deletedAt: Date.now(), deal: c.deal ? { ...c.deal } : undefined });
         } else {
+          // Same resurrection bug as restoreDeletedDeal() -- a plain
+          // filter() leaves nothing to out-compete a stale copy of this
+          // SAME tombstone still sitting on Drive (not pushed yet) or on
+          // a 2nd device that hasn't seen this resolution, which would
+          // otherwise win the next merge's recency comparison right
+          // back and silently re-raise the exact same conflict. See
+          // mergeDealSets()'s own comment on `restored`.
           tombstones = tombstones.filter(t => t.id !== c.id);
+          tombstones.push({ id: c.id, deletedAt: Date.now(), restored: true });
         }
       }
       gPendingConflicts = gPendingConflicts.filter(c => !conflicts.some(x => x.id === c.id));
@@ -8755,6 +8832,13 @@
         <p class="modal-sub">Restore a deal, or remove it forever. Entries clear automatically after 1 month.</p>
         <div class="modal-scroll" id="deletedDealsScroll"></div>
         <div class="modal-actions">
+          <!-- Explicit follow-up: "add a 'Delete All' red+red frame
+               button near cancel button" -- .btn-danger-solid (see its
+               own CSS comment) matches the same solid red used by
+               Delete Forever's own per-row button just above, applied
+               here at the standard .btn size to sit naturally beside
+               Close instead of the smaller per-row button size. -->
+          <button type="button" id="deletedDealsDeleteAllBtn" class="btn btn-danger-solid">Delete All</button>
           <button type="button" id="deletedDealsCloseBtn" class="btn btn-primary">Close</button>
         </div>
       </div>`;
@@ -8763,12 +8847,20 @@
 
     function closeDialog() { backdrop.remove(); }
 
-    function render() {
+    function visibleEntries() {
       const liveIds = new Set(deals.map(d => d.id));
-      const entries = tombstones
-        .filter(t => !liveIds.has(t.id))
+      // `restored` markers (see restoreDeletedDeal()/forgetDeletedDeal())
+      // are retracted, not genuinely deleted -- excluded here the same
+      // way a still-live deal's own tombstone already is.
+      return tombstones
+        .filter(t => !t.restored && !liveIds.has(t.id))
         .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+    }
+
+    function render() {
+      const entries = visibleEntries();
       const scroll = backdrop.querySelector('#deletedDealsScroll');
+      backdrop.querySelector('#deletedDealsDeleteAllBtn').style.display = entries.length ? '' : 'none';
       if (!entries.length) {
         scroll.innerHTML = '<p class="modal-sub">No deleted deals.</p>';
         return;
@@ -8797,13 +8889,32 @@
     }
 
     backdrop.querySelector('#deletedDealsCloseBtn').onclick = closeDialog;
+    backdrop.querySelector('#deletedDealsDeleteAllBtn').onclick = () => {
+      const ids = visibleEntries().map(t => t.id);
+      if (!ids.length) return;
+      if (!confirm(`Delete ${ids.length} deal(s) forever? This cannot be undone.`)) return;
+      ids.forEach(id => forgetDeletedDeal(id));
+      render();
+    };
     render();
   }
 
+  // Explicit bug reports: "restoring a deleted deal on 1 device can
+  // result in it being shown on 1 device, and not shown on 2nd device";
+  // "'Delete Forever' can temporarily delete a deal, then it re appears
+  // again." Both used to just tombstones.filter(...) their own entry
+  // OUT of the local array -- see mergeDealSets()'s own comment on
+  // `restored` for the full reasoning on why that doesn't survive a
+  // sync merge. Replacing the entry with a `restored: true` marker
+  // (fresh `deletedAt`, so it still wins the SAME recency comparison a
+  // stale original would otherwise win right back) instead of just
+  // removing it is what actually makes the change durable across
+  // devices.
   function restoreDeletedDeal(id) {
     const t = tombstones.find(x => x.id === id);
     if (!t || !t.deal) return;
     tombstones = tombstones.filter(x => x.id !== id);
+    tombstones.push({ id, deletedAt: Date.now(), restored: true });
     deals.push({ ...t.deal, updatedTs: Date.now() });
     clearResolved(id);
     gPendingConflicts = gPendingConflicts.filter(c => c.id !== id);
@@ -8814,6 +8925,7 @@
 
   function forgetDeletedDeal(id) {
     tombstones = tombstones.filter(x => x.id !== id);
+    tombstones.push({ id, deletedAt: Date.now(), restored: true });
     clearResolved(id);
     pushToDriveDebounced();
   }

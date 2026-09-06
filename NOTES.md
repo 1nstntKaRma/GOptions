@@ -9159,3 +9159,176 @@ buttons) read back via `.textContent` exactly matching the requested
 strings -- toggled each of the 3 settings on then back off to confirm
 both the "Hide"/🙈 and "Show"/👀 variants render correctly, not just
 the default state. No console errors.
+
+## Mode toggle: animated GIF replacing the 🧮 emoji (Portfolio -> Calculator direction)
+
+Explicit follow-up: replace 🧮 (the "switch to Calculator" direction of
+`#modeToggleBtn`) with `ICO/Calculator.gif` (96x96, confirmed a real
+20-frame animated GIF via PIL, ~40ms/frame), staying alive/moving and
+fitting the button "without cutting or breaking anything." `setMode()`
+now sets `btn.innerHTML` to an `<img class="mode-toggle-gif">` for the
+Portfolio->Calculator direction specifically (GIFs animate natively in
+an `<img>`, no extra JS needed) -- the OTHER direction still uses
+plain `textContent`, which fully replaces the `<img>` with the 💼
+emoji when switching back, no manual cleanup needed.
+
+**A real sizing bug found during verification, not assumed correct
+from the CSS alone**: first attempt sized the img at `width:70%;
+height:70%`. Live-measured this produced a NON-square 26.9x33.9px box
+inside the 52x52 button -- `.mode-toggle-btn` has asymmetric padding
+(1px top/bottom, 6px left/right, live-measured), so percentage width/
+height (which resolve against the parent's CONTENT box, padding
+already subtracted) inherited that asymmetry, stretching what should
+render as a square icon. Fixed by sizing the img at `width:100%;
+height:100%` instead (filling whatever the content box actually is,
+square or not) and relying on `object-fit:contain` to do the actual
+proportion-preserving work -- it scales the image's own CONTENT to fit
+within that box while keeping its 1:1 aspect ratio, so the visible
+icon renders as a correctly proportioned square regardless of the
+button's own padding shape, at every breakpoint, with no per-tier
+override needed.
+
+**Testing note**: this file has no dev server, and this session's
+`file://` preview renders as an inlined data: URL snapshot with no
+real directory context -- relative asset paths like `ICO/Calculator.gif`
+silently fail to resolve under that mode specifically (confirmed:
+`img.complete` true but `naturalWidth/Height` 0x0, no network request
+even fired). Added `.claude/launch.json` (a plain `python -m
+http.server 8123` static file server) so this and any future
+asset-loading verification in this project has a real HTTP base URL to
+resolve relative paths against.
+
+### Verified
+
+Via the new local static server (not the file:// preview, per the
+note above): `img.naturalWidth/Height` 96x96 confirms a genuine
+successful load. Box-fit re-verified after the padding-asymmetry fix
+at both the base 52px button (38.4x48.4 content box) and the narrow
+32px phone-breakpoint button (18.4x28.4) -- fits within the button at
+both, confirmed via `getBoundingClientRect()` comparison, and via
+screenshot at 340px phone width showing it rendered cleanly with no
+visible cropping or stretching. Switching back to Calculator mode
+confirmed via `innerHTML` that the `<img>` is fully replaced by the
+plain 💼 emoji, not left behind alongside it. Could not directly prove
+frame-by-frame animation from within this harness (canvas-sampled
+pixels were identical across a 1.2s window) -- cross-checked this
+against the GIF file itself via PIL first (genuinely 20 frames,
+`is_animated: True`), and this matches a known limitation already
+surfaced once earlier this session ("the Browser pane is not
+displayed, so the page is not compositing frames") rather than a
+real defect -- a plain `<img>` requires no custom animation code, so
+a confirmed-valid, confirmed-loaded animated GIF will play normally
+once actually viewed in a real, visible browser tab.
+
+## Two real cross-device sync bugs: tombstone "removal" doesn't survive a merge
+
+Two explicit bug reports: "restoring a deleted deal on 1 device can
+result it being shown on 1 device, and not shown on 2nd device";
+"'Delete Forever' can temporarily delete a deal, then it re appears
+again." Both traced to the SAME root cause in `mergeDealSets()`'s own
+tombstone union: `tombById.set(t.id, t)` only ever keeps whichever
+side's copy has the LATER `deletedAt` -- there was no way to make a
+tombstone genuinely GO AWAY, only to be OUTCOMPETED by a fresher one.
+`restoreDeletedDeal()`/`forgetDeletedDeal()` both used to just
+`tombstones.filter(...)` their own entry out of the LOCAL array and
+call it done -- but the moment the next merge re-fetches a remote that
+hasn't caught up yet (nobody's pushed the change), or unions against a
+2ND DEVICE that never saw the change at all, that stale original has
+NOTHING to compete against on the "local" side anymore and simply
+wins the recency comparison right back: a restored deal's tombstone
+resurrects (re-deleting it, or at minimum spuriously re-flagging it as
+a sync conflict), and a "deleted forever" entry's tombstone
+resurrects too (reappearing in the list even though the underlying
+deal was never actually revived).
+
+**Fix**: instead of removing a tombstone entry, REPLACE it with a
+`{ id, deletedAt: Date.now(), restored: true }` marker -- the FRESH
+`deletedAt` is what lets it win the exact same recency comparison a
+stale original would otherwise win, regardless of which side (remote,
+or a 2nd/3rd device) still offers which copy. `mergeDealSets()` now
+skips any `restored` tombstone entirely (no auto-delete, no conflict,
+deal left alone) but still RETURNS it in the merged array, so it keeps
+competing against late-arriving stale duplicates until it eventually
+ages out via the existing `pruneOldTombstones()` (same 1-month
+retention as any other tombstone -- no new cleanup concept needed).
+Applied consistently to all 3 places that ever retract a tombstone:
+`restoreDeletedDeal()`, `forgetDeletedDeal()`, and the Sync Conflicts
+dialog's own "Keep" resolution (found via code inspection while fixing
+the other two -- exact same bug, not separately reported, but clearly
+the same class of issue left half-fixed otherwise). The Deleted Deals
+modal's own row list now also excludes `restored` entries (alongside
+the existing pending-conflict exclusion) so a forgotten entry
+disappears from the UI immediately, not just once it happens to
+outcompete a stale duplicate.
+
+**Also added**: "Delete All" button (`.btn-danger-solid`, a new solid
+red+red-border style matching Delete Forever's own per-row red, at
+standard `.btn` size) next to Close in the Deleted Deals modal --
+confirms once, then forgets every currently-visible entry via the
+same fixed `forgetDeletedDeal()`. Hidden when the list is empty.
+
+### Verified
+
+Direct `mergeDealSets()` unit tests simulating the exact 2-device
+scenario first: Device B holding a stale, un-retracted copy of a
+tombstone Device A has since restored/forgotten, merged against
+Device A's already-pushed `restored` marker -- confirmed the deal
+survives with ZERO conflicts raised for restore, and confirmed the
+`restored` marker (not the stale original) wins for forget. Re-ran
+the SAME restore scenario with the OLD (pre-fix) removal logic to
+confirm it actually reproduces the bug: deal technically survived in
+`merged.deals`, but a SPURIOUS conflict was raised for it -- the
+likely mechanism behind "shown on 1, not 2" if that conflict then gets
+answered wrong. Re-ran the OLD forget logic too: confirmed the stale
+original tombstone (not a `restored` marker) won the merge, i.e. exact
+reproduction of "temporarily deleted, then reappears."
+
+Then a full end-to-end pass through the REAL functions (not just the
+merge primitive) via the same mock-Drive-backend technique used
+earlier this session: deleted a deal and pushed ("Device A" synced),
+pulled into a separate `deals`/`tombstones` state ("Device B" now
+holds its own copy of the tombstone), restored it back on "Device A"
+and pushed, then pulled on "Device B" *using its own stale
+pre-restore tombstone copy* -- confirmed the deal correctly appears
+with zero pending conflicts. Repeated for Delete All: deleted 2 deals,
+synced both to "Device B," clicked Delete All on "Device A," pushed,
+then pulled on "Device B" with its stale tombstone copies still
+in memory -- confirmed zero visible rows and the correct "No deleted
+deals" empty state, i.e. no resurrection on the second device.
+Confirmed the confirm() dialog actually blocks Delete All when
+cancelled (list unchanged). Screenshot confirms the new button's
+"red+red frame" styling next to Close, and confirmed via
+`getComputedStyle` that it hides when the list is empty. No console
+errors on a full fresh reload afterward.
+
+## Mode toggle: both directions now animated GIFs (Portfolio.gif added)
+
+Follow-up to the Calculator.gif round -- `ICO/Portfolio.gif` provided
+(confirmed 96x96, 17-frame animated GIF via PIL) to replace the
+remaining 💼 emoji (the OTHER direction of `#modeToggleBtn`, "switch to
+Portfolio"). Extracted the duplicated inline-HTML-string logic from
+that earlier round into one shared `setModeToggleIcon(btn, direction)`
+helper (`direction` is which mode clicking the button switches TO) now
+that BOTH directions need the same `<img class="mode-toggle-gif">`
+treatment, instead of copy-pasting the pattern a 2nd time across 3
+call sites (initial HTML, `applyButtonEmojis()`'s load-time set,
+`setMode()`'s own 2 branches). Removed `BUTTON_EMOJIS.modeToPortfolio`/
+`.modeToCalculator` -- both fully dead once this landed, no remaining
+references anywhere (confirmed via grep before removing; left the
+"Emoji Legend" section-header comment itself untouched, per its own
+"DO NOT DELETE THIS LINE" -- that warning is about the header line
+specifically, not every entry beneath it).
+
+### Verified
+
+Via the local static server (real HTTP, so relative GIF paths
+actually resolve -- see the Calculator.gif round's own note on why
+the `file://` preview can't be used for this): confirmed the initial
+page state shows `ICO/Portfolio.gif` (96x96, loaded successfully),
+switching to Portfolio mode correctly swaps to `ICO/Calculator.gif`
+with matching alt/title text, and switching back to Calculator
+correctly swaps back to `ICO/Portfolio.gif` -- both directions
+round-tripped, not just one. Box-fit re-confirmed at both the 32px
+narrow-phone breakpoint (18x28 image box) and the 52px desktop button
+(38x48), both within their respective button bounds. No console
+errors on reload.
