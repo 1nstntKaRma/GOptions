@@ -119,6 +119,19 @@
 
   .btn-primary:hover { filter: brightness(1.2); }
 
+  /* First (only) disabled .btn-primary in the file (Set Limit from
+     Ask/Bid, gated until both fields are filled) -- explicit :hover
+     pair beats .btn-primary:hover regardless of source order. */
+  .btn-primary:disabled,
+  .btn-primary:disabled:hover {
+    opacity: .45;
+    cursor: not-allowed;
+    filter: none;
+    background: var(--panel);
+    border-color: var(--muted);
+    color: var(--muted);
+  }
+
   /* While editing an existing deal (openDealInCalculator()/
      setDealButtonEditingState()), the topbar Deal button relabels to
      "Update 💾" (Phone: icon-only) and recolors to this purple.
@@ -2784,6 +2797,41 @@
      key, confirmed with the user before building this). */
   .order-arrow-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
 
+  /* ---------- Limit Finder (midPriceModal) ----------
+     Ask/Bid are negative by rule, same as Limit $ -- displayed as
+     magnitude only (normalizeAskPriceOnBlur/normalizeBidPriceOnBlur).
+     Label left, field right. .mid-price-field wraps ONLY the input+sign
+     (not the label) so the sign's vertical centering is scoped to the
+     input alone -- reusing .limit-sign-prefix's color/weight but
+     overriding its position:absolute to static so it takes part in
+     this flex pair instead. DOM order is input-then-sign (required for
+     the :focus/:placeholder-shown ~ sibling selectors below); row-reverse
+     flips the VISUAL order so the sign renders first (left of the value)
+     without breaking that selector direction. */
+  .mid-price-panel { width: min(340px, 92vw); }
+  /* h2 nudge: was reading as dead-center in the panel, pulled slightly
+     up/left instead. */
+  .mid-price-panel h2 { margin: -6px 0 0 -6px; }
+  /* Grid (not flex/space-between) so each label is centered -- both
+     axes -- within its OWN column, the same column its field sits in,
+     rather than pinned to the row's outer edges. Columns are `1fr`
+     shares of the row's width, which itself already scales with the
+     panel (min(340px, 92vw)), so this stays centered at any window
+     size, not just the sizes tested. */
+  .mid-price-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 12px; }
+  .mid-price-row label { margin-bottom: 0; text-align: center; }
+  .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; justify-self: center; }
+  .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 6px; }
+  .mid-price-sign { position: static; transform: none; }
+  #mpAskPrice, .mid-price-ask label { color: var(--blue); font-weight: 800; }
+  #mpBidPrice, .mid-price-bid label { color: var(--red); font-weight: 800; }
+  .mid-price-ask .mid-price-sign { color: var(--blue); }
+  .mid-price-bid .mid-price-sign { color: var(--red); }
+  /* Visible while editing now (only hidden when the field is truly
+     empty) -- was also hidden on :focus before. */
+  #mpAskPrice:placeholder-shown ~ .mid-price-sign,
+  #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
+
 
   /* ---------- month/day date picker (no year field) ---------- */
   .date-pair { display: flex; align-items: center; gap: 6px; }
@@ -3423,6 +3471,7 @@
      `.hamburger-menu`'s own `top: calc(100% + 10px); right: 0;` fights
      the inline styles JS sets on open. */
   .portfolio-logo-corner { cursor: pointer; }
+  .calc-logo-corner { cursor: pointer; }
 
   .portfolio-menu { position: fixed; top: auto; right: auto; left: auto; }
 
@@ -3541,7 +3590,7 @@
            #calculatorView so it hides automatically in Portfolio mode.
            Plain relative path (not an absolute one) so it resolves
            against this file's own folder wherever the project lives. -->
-      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" />
+      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" onclick="openMidPriceModal()" title="Limit Finder" />
       <!-- Shows which deal is loaded while editing (see
            openDealInCalculator()) -- its own independent
            position:absolute element, like the logo, hidden by default
@@ -4191,6 +4240,41 @@
   </div>
 </div>
 
+<!-- Quick mid-price entry, opened from the Calculator logo. Ask/Bid are
+     scratch values only (never saved) -- averaging them just writes
+     #limit, the same field a manual edit would. Plain div, not <form>,
+     so Enter can be hijacked for field-to-field advance instead of
+     submitting. -->
+<div id="midPriceModal" class="modal-backdrop hidden">
+  <div class="modal-panel mid-price-panel">
+    <h2>Limit Finder</h2>
+    <div class="form-row mid-price-row mid-price-ask">
+      <label for="mpAskPrice">Ask Price</label>
+      <div class="mid-price-field">
+        <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
+               onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
+               oninput="updateMidPriceButtonState()" />
+        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
+      </div>
+    </div>
+    <div class="form-row mid-price-row mid-price-bid">
+      <label for="mpBidPrice">Bid Price</label>
+      <div class="mid-price-field">
+        <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
+               onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
+               oninput="updateMidPriceButtonState()" />
+        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeMidPriceModal()">Close</button>
+      <button type="button" id="mpSetLimitBtn" class="btn btn-primary" onclick="applyMidPrice()" disabled>Set limit</button>
+    </div>
+  </div>
+</div>
+
 <script>
   /* ===================================================================
    * LEGEND (emoji half) -- color/size half lives in :root (search
@@ -4737,6 +4821,68 @@
     el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
   }
   document.getElementById('sdLimit').addEventListener('blur', normalizeSdLimitOnBlur);
+
+  /* ---------- Limit Finder (midPriceModal) ----------
+     Averages Ask+Bid into Limit $ -- (ask+bid)/2, both already forced
+     negative by getLimitValueRaw(), so this is a plain average, then
+     written back through the exact same magnitude-only display Limit $
+     itself uses. Ask/Bid are scratch values only, reset blank on every
+     open, never saved anywhere. Auto-focusing Ask Price on open is
+     deliberate -- unlike Save/Close Deal (where auto-focus was removed
+     after a "phone defaults into editing a field" complaint), fast
+     keyboard entry is this popup's entire purpose. */
+  function normalizeAskPriceOnBlur() {
+    const el = document.getElementById('mpAskPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  function normalizeBidPriceOnBlur() {
+    const el = document.getElementById('mpBidPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  // Enter or blur on one field jumps to the other, but ONLY if the
+  // other is still empty -- never steals focus from (or overwrites)
+  // a field the user already filled in.
+  function advanceIfOtherEmpty(fromId, toId) {
+    const other = document.getElementById(toId);
+    if (other.value.trim() === '') {
+      other.focus();
+      other.select();
+    }
+  }
+
+  function updateMidPriceButtonState() {
+    const ask = document.getElementById('mpAskPrice').value.trim();
+    const bid = document.getElementById('mpBidPrice').value.trim();
+    document.getElementById('mpSetLimitBtn').disabled = !ask || !bid;
+  }
+
+  function openMidPriceModal() {
+    document.getElementById('mpAskPrice').value = '';
+    document.getElementById('mpBidPrice').value = '';
+    updateMidPriceButtonState();
+    document.getElementById('midPriceModal').classList.remove('hidden');
+    const askEl = document.getElementById('mpAskPrice');
+    askEl.focus();
+    askEl.select();
+  }
+
+  function closeMidPriceModal() {
+    document.getElementById('midPriceModal').classList.add('hidden');
+  }
+
+  function applyMidPrice() {
+    if (document.getElementById('mpSetLimitBtn').disabled) return;
+    const ask = getLimitValueRaw(document.getElementById('mpAskPrice').value);
+    const bid = getLimitValueRaw(document.getElementById('mpBidPrice').value);
+    const avg = (ask + bid) / 2;
+    limitEl.value = Math.abs(avg).toFixed(2);
+    calculate();
+    closeMidPriceModal();
+  }
 
   /* contractsRaw is optional (defaults to 1 via getContractsValue when
      omitted/blank) -- every pre-existing call site that doesn't pass it
