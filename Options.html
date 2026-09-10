@@ -2809,9 +2809,12 @@
      flips the VISUAL order so the sign renders first (left of the value)
      without breaking that selector direction. */
   .mid-price-panel { width: min(340px, 92vw); }
-  /* h2 nudge: was reading as dead-center in the panel, pulled slightly
-     up/left instead. */
-  .mid-price-panel h2 { margin: -6px 0 0 -6px; }
+  /* Centered to sit above the Ask Price/Bid Price grid row below it
+     (same content width, since both share .modal-panel as their
+     container) -- was left-nudged before, which read as cornered on
+     phones where the panel's own lateral padding is already small.
+     Slight upward nudge kept (was reading dead-center vertically). */
+  .mid-price-panel h2 { text-align: center; margin: -6px 0 0; }
   /* Grid (not flex/space-between) so each label is centered -- both
      axes -- within its OWN column, the same column its field sits in,
      rather than pinned to the row's outer edges. Columns are `1fr`
@@ -2905,6 +2908,11 @@
        both instead of needing a second copy. */
     .modal-backdrop { padding: 20px 0; }
     .modal-panel { width: 100vw; padding: 14px 12px 10px; }
+
+    /* Limit Finder's title reads cramped against the window frame at
+       this panel padding -- a touch more breathing room than the base
+       desktop nudge (which pulls it UP, the opposite direction). */
+    .mid-price-panel h2 { margin-top: 6px; }
 
     /* display:contents on .sd-header-row/.sd-hero-row/.sd-cards
        flattens them so their children become direct children of
