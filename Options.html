@@ -2813,17 +2813,29 @@
      (same content width, since both share .modal-panel as their
      container) -- was left-nudged before, which read as cornered on
      phones where the panel's own lateral padding is already small.
-     Slight upward nudge kept (was reading dead-center vertically). */
-  .mid-price-panel h2 { text-align: center; margin: -6px 0 0; }
-  /* Grid (not flex/space-between) so each label is centered -- both
-     axes -- within its OWN column, the same column its field sits in,
-     rather than pinned to the row's outer edges. Columns are `1fr`
-     shares of the row's width, which itself already scales with the
-     panel (min(340px, 92vw)), so this stays centered at any window
-     size, not just the sizes tested. */
-  .mid-price-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 12px; }
-  .mid-price-row label { margin-bottom: 0; text-align: center; }
-  .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; justify-self: center; }
+     margin-top/-bottom are equal and opposite (-10/+10) so the title
+     shifts up WITHIN the panel's existing padding without eating it
+     entirely (an earlier, larger negative-top-only margin pulled it
+     flush against the panel's own border) and without changing the
+     panel's total flow height or nudging anything below it. */
+  .mid-price-panel h2 { text-align: center; margin: -13px 0 13px; }
+  /* label+field are a single centered flex GROUP (not 2 independent
+     grid columns each centered on their own) -- label sits immediately
+     next to its field and the pair moves/centers together, so
+     shrinking the label's font (see below) doesn't leave it stranded
+     in the middle of its own half-empty column. Still responsive to
+     the panel's own width (min(340px, 92vw)), not a fixed layout. */
+  .mid-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  /* Fixed label width (not auto/content-based) -- "Ask Price" and "Bid
+     Price" render at slightly different widths (different letters,
+     same character count), which was shifting each row's centered
+     [label+field] pair by a few px, so the two fields didn't line up
+     into a clean column even though the fields themselves are already
+     an identical fixed width. Locking the label to one shared width
+     makes both rows' total width identical, so the fields land at the
+     same X in both rows. */
+  .mid-price-row label { margin-bottom: 0; text-align: center; font-size: 16px; flex: 0 0 105px; }
+  .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; }
   .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 6px; }
   .mid-price-sign { position: static; transform: none; }
   #mpAskPrice, .mid-price-ask label { color: var(--blue); font-weight: 800; }
@@ -2909,10 +2921,13 @@
     .modal-backdrop { padding: 20px 0; }
     .modal-panel { width: 100vw; padding: 14px 12px 10px; }
 
-    /* Limit Finder's title reads cramped against the window frame at
-       this panel padding -- a touch more breathing room than the base
-       desktop nudge (which pulls it UP, the opposite direction). */
-    .mid-price-panel h2 { margin-top: 6px; }
+    /* Back on phone (was display:none) -- kept clear of the Ask/Bid
+       rows below via the same equal-and-opposite margin technique as
+       the base rule, just a smaller pull since the panel's own
+       padding-top is smaller here (14px vs desktop's 26px): -8/+8
+       leaves a real 6px gap above the title instead of touching the
+       panel's border, same reasoning as the desktop value. */
+    .mid-price-panel h2 { margin: -8px 0 8px; }
 
     /* display:contents on .sd-header-row/.sd-hero-row/.sd-cards
        flattens them so their children become direct children of
