@@ -2917,6 +2917,15 @@
     border: 1px solid transparent; background: transparent; color: var(--green);
     font-size: 12px; line-height: 1; cursor: pointer;
   }
+  /* Author `display:flex` above otherwise beats the browser's own
+     `[hidden]{display:none}` default at equal specificity (author
+     always wins over user-agent) -- without this, toggling
+     `.hidden = true` on any of these 4 buttons (sdSwapBtn/
+     cdApplyLiveBtn/epOpenApplyLiveBtn/epCloseApplyLiveBtn) left them
+     visibly on-screen, e.g. Edit Deal's ♻️ staying clickable forever
+     after a correct swap instead of disappearing (same bug class as
+     .form-grid-2[hidden] elsewhere in this file). */
+  .strike-close-apply-btn[hidden] { display: none; }
   .strike-close-apply-btn.needs-apply {
     width: 18px; height: 18px; border-radius: 50%;
     border: 1px solid var(--green); background: transparent;
@@ -3039,8 +3048,7 @@
      taller, bigger stepper -- matches this session's other field fixes. */
   #commissionsModal .total-stepper-wrap { width: 84%; margin: 0 auto; }
   #commissionsModal .total-stepper-wrap input { height: 72px; font-size: 20px; text-align: center; padding-right: 52px; }
-  #commissionsModal #commissionFeeInput { padding-left: 30px; }
-  #commissionsModal #taxRateInput { padding-left: 14px; }
+  #commissionsModal #commissionFeeInput, #commissionsModal #taxRateInput { padding-left: 14px; }
   #commissionsModal .total-stepper-sm { width: 46px; }
   #commissionsModal .total-stepper-sm .total-stepper-btn { font-size: 24px; }
 
@@ -3077,7 +3085,7 @@
      without the row ever needing to grow past this panel's own
      min(340px, 92vw) cap on any screen size. */
   .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
-  .income-summary-label { font-size: 13px; color: var(--muted); }
+  .income-summary-label { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Bold + sign-colored -- a positive total reads Bold Green, a
      negative one Bold Red, same green/red convention every other P/L
      figure in this file already uses. */
@@ -3095,7 +3103,7 @@
      without duplicating Gross/After Commissions as separate rows.
      Centered in its own fixed column; Gross Income's cell is simply
      empty, holding the track open so its total still lines up. */
-  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; padding-left: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Portfolio's 4 top summary stats now open the Income Summary popup. */
   .portfolio-summary-clickable { cursor: pointer; }
@@ -4565,7 +4573,7 @@
              Profit Taker % itself (this field, not yet saved) instead
              of making the user navigate away to work out and re-type
              it by hand. Never shown once green -- nothing to apply. -->
-        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4666,7 +4674,7 @@
              Loss/Max Profit/Ratio all derive from Limit $ too, and
              leaving them stale while the Prices frame goes green would
              be its own inconsistency. -->
-        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4709,7 +4717,7 @@
              separate Save step" pattern already used elsewhere for
              fields this modal's own Save button doesn't otherwise
              govern. -->
-        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4822,10 +4830,9 @@
     <p class="modal-sub">Applies to every closed deal's income figures.</p>
     <div class="form-grid-2">
       <div class="form-row">
-        <label for="commissionFeeInput">Commission Fee</label>
+        <label for="commissionFeeInput">&#x1F91D; Commission Fee $</label>
         <div class="total-stepper-wrap">
           <input id="commissionFeeInput" type="text" inputmode="decimal" class="sd-price-input" onblur="commitCommissionFee()" />
-          <span class="sd-dollar-prefix" aria-hidden="true">$</span>
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Commission Fee" onclick="stepCommissionFee('up')">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Commission Fee" onclick="stepCommissionFee('down')">&#8722;</button>
@@ -4833,7 +4840,7 @@
         </div>
       </div>
       <div class="form-row">
-        <label for="taxRateInput">Tax Fee %</label>
+        <label for="taxRateInput">&#x1F9FE; Tax Fee %</label>
         <div class="total-stepper-wrap">
           <input id="taxRateInput" type="text" inputmode="decimal" onblur="commitTaxRate()" />
           <div class="total-stepper total-stepper-sm">
@@ -6745,12 +6752,12 @@
     commissionPerContract: 8,
     taxRatePct: 25,
     summaryMode: 'gross',   // 'gross' | 'afterCommissions' | 'net' -- which figure the main Portfolio summary total shows
-    // 'toggle' (default): a closed deal's Prices cell shows ONE side at a
-    // time (Open or Closed), click/tap to flip -- see dealPricesView/
-    // togglePricesView(). 'sideBySide': both shown at once, Open left /
-    // Closed right (desktop only -- phone always uses 'toggle', no room
-    // for side-by-side there).
-    desktopPricesDisplayMethod: 'toggle',
+    // 'sideBySide' (default): both shown at once, Open left / Closed
+    // right (desktop only -- phone always uses 'toggle', no room for
+    // side-by-side there). 'toggle': a closed deal's Prices cell shows
+    // ONE side at a time (Open or Closed), click/tap to flip -- see
+    // dealPricesView/togglePricesView().
+    desktopPricesDisplayMethod: 'sideBySide',
     updatedAt: 0
   };
 
@@ -7977,7 +7984,7 @@
       // Order is correct and it already matches Limit $ -- a plain,
       // non-clickable confirmation (nothing to fix), not a button.
       swapBtn.hidden = false;
-      swapBtn.textContent = '✔️';
+      swapBtn.textContent = '✔︎';
       swapBtn.classList.remove('needs-apply');
       swapBtn.classList.add('info-only');
       swapBtn.onclick = null;
@@ -8367,13 +8374,28 @@
       if (bought < sold) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapCdStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+        // Already correct -- a plain confirmation, not a button (see
+        // Edit Deal's own info-only state). onclick MUST be null here:
+        // applyCdLiveToTarget() re-derives Profit Taker % from these 2
+        // fields every time, and that round-trip isn't a guaranteed
+        // fixed point (see cdComputeValFromPct()'s own comment on PT%
+        // drift), so leaving this clickable could silently drift an
+        // already-correct value on a stray click.
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyCdLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+        applyBtn.title = 'Apply this value to Profit Taker %';
       }
     }
     // Grey target line -- the deal's Profit Taker %/$-derived figure
@@ -8588,15 +8610,28 @@
       if (bought < sold) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapEpClosedStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+        // Already correct -- a plain confirmation, not a button.
+        // onclick MUST be null: applyEpCloseLiveToTarget() writes
+        // straight to deal.closePtPct and pushes to Drive immediately,
+        // so leaving this clickable risked a stray click silently
+        // re-deriving and persisting a drifted value (see
+        // applyCdLiveToTarget's own comment on the %<->$ round-trip).
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
-        // Framed/actionable for red, bare frameless checkmark for
-        // green (nothing to apply).
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        // Framed/actionable for red -- nothing to fix when green (above).
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyEpCloseLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+        applyBtn.title = 'Apply this value to Profit Taker %';
       }
     }
     const f = finalStats(deal);
@@ -8693,15 +8728,28 @@
       if (soldVal < boughtVal) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapEpOpenStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+        // Already correct -- a plain confirmation, not a button.
+        // onclick MUST be null: applyEpOpenLiveToTarget() writes
+        // straight to deal.limit (which Max Loss/Max Profit/Ratio all
+        // derive from) and pushes to Drive immediately, so leaving this
+        // clickable risked a stray click silently overwriting an
+        // already-correct Limit $ with a re-derived one.
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
-        // Framed/actionable for red, bare frameless checkmark for
-        // green (nothing to apply).
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        // Framed/actionable for red -- nothing to fix when green (above).
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyEpOpenLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
+        applyBtn.title = 'Apply this value to Limit $';
       }
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
