@@ -2809,28 +2809,41 @@
      mis-centered the value AND left too little room for the stepper at
      this width -- the root cause of "cutting steppers, not centered".
      Height matches this modal's own 79px convention (#cdPtPct/#cdPtVal,
-     .cd-price-row) instead of falling through to the plain 58px base. */
+     .cd-price-row) instead of falling through to the plain 58px base.
+     Stepper deliberately NOT overridden here -- letting it fall through
+     to this modal's own plain `.total-stepper-sm` (48px, 22px glyph;
+     40px/20px at the 345px tier) keeps it identical to every OTHER
+     stepper in this window, per "way bigger, similar to other steppers"
+     -- an earlier narrower stepper here read as undersized next to them. */
   #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 68px 1fr; align-items: center; }
   #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
-  #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { height: 79px; font-size: 20px; padding-left: 14px; padding-right: 40px; text-align: center; }
-  #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 34px; }
-  #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 18px; }
+  #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { height: 79px; font-size: 18px; padding-left: 12px; padding-right: 61px; text-align: center; }
 
-  .cd-strike-close-pl { display: flex; align-items: center; justify-content: center; }
+  .cd-strike-close-pl { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   .cd-strike-close-pl b { font-size: 15px; font-weight: 800; }
+  .cd-strike-close-pl-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
-  /* Stock Price modal's OWN Strike Sold $/Strike Bought $ (2nd editable
-     entry point for the same deal.closedStrikeSold/closedStrikeBought
-     Close Deal's row writes -- see #epClosedStrikeRow) had no styling of
-     their own at all, silently falling through to the plain 58px/32px
-     base with no padding-left to match the stepper's padding-right --
-     the exact same asymmetric-box bug already fixed for Close Deal's own
-     copy of these fields (see the "cd-strike-close-row" comment above).
-     Matched here to Entry/Closed Price's OWN exact values (height/
-     padding/centering) directly above, since these live in the same
-     `.form-grid-2` half-width columns -- "universal size" literally
-     means identical to that pair, not just similarly-sized. */
-  #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { height: 79px; padding-left: 51px; padding-right: 61px; text-align: center; }
+  /* Stock Price modal's OWN Strike Sold $/Strike Bought $ -- both the
+     Open pair (#epOpenStrikeRow, deal.longStrike/shortStrike, a 3rd
+     editable entry point alongside Edit Deal) and the Closed pair
+     (#epClosedStrikeRow, 2nd entry point alongside Close Deal) share
+     this same 3-column field|value|field layout (full parity --
+     "New Deal Prices"/"Closed Deal Prices" both get their live design/
+     systems). Unlike Close Deal, this modal has no per-modal stepper
+     override of its own at any breakpoint (confirmed live: stays the
+     plain global 48px/22px everywhere) -- so padding-right stays a
+     constant 61px for stepper clearance instead of shrinking tier by
+     tier like Close Deal's does. */
+  #entryPriceModal .ep-strike-close-row { grid-template-columns: 1fr 68px 1fr; align-items: center; }
+  #entryPriceModal .ep-strike-close-row #epClosedStrikeSold,
+  #entryPriceModal .ep-strike-close-row #epClosedStrikeBought,
+  #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
+  #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { height: 79px; font-size: 18px; padding-left: 12px; padding-right: 61px; text-align: center; }
+
+  .ep-open-limit { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .ep-open-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+  .ep-open-limit b { font-size: 15px; color: var(--muted); }
+  .ep-open-limit b.ep-open-limit-match { color: var(--green); }
 
   /* every label in both modals, plus the pre-existing Profit Taker %/$ labels
      in Close Deal which were never centered in an earlier round (only their
@@ -2933,14 +2946,31 @@
 
   /* ---------- Commissions + Taxes modal ---------- */
   .commissions-panel { width: min(360px, 92vw); }
+
+  /* Commission Fee/Tax Fee were falling through to the plain 58px/32px-
+     font/10px-left-46px-right base -- `.sd-price-input`'s OWN styling is
+     #saveDealModal-scoped, doesn't reach this modal -- the same
+     asymmetric-box mis-centering bug fixed elsewhere in this file.
+     Narrowed + centered within their grid column (84%, auto margins),
+     taller, bigger stepper -- matches this session's other field fixes. */
+  #commissionsModal .total-stepper-wrap { width: 84%; margin: 0 auto; }
+  #commissionsModal .total-stepper-wrap input { height: 72px; font-size: 20px; text-align: center; padding-right: 52px; }
+  #commissionsModal #commissionFeeInput { padding-left: 30px; }
+  #commissionsModal #taxRateInput { padding-left: 14px; }
+  #commissionsModal .total-stepper-sm { width: 46px; }
+  #commissionsModal .total-stepper-sm .total-stepper-btn { font-size: 24px; }
+
   .commissions-mode-label { margin: 16px 0 8px; }
   .commissions-mode-list { display: flex; flex-direction: column; gap: 6px; }
   .commissions-mode-btn {
     height: 44px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--row); color: var(--text); font-size: 14px; font-weight: 600;
-    cursor: pointer; text-align: left; padding: 0 14px;
+    cursor: pointer; text-align: center; padding: 0 14px;
   }
-  .commissions-mode-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
+  /* Green, not blue -- this picker's "selected" state shares no meaning
+     with the blue "active sort" indicator elsewhere (.order-arrow-btn),
+     so it gets its own color rather than reusing that one by coincidence. */
+  .commissions-mode-btn.active { border-color: var(--green); color: var(--green); background: rgba(3,136,0,.15); }
 
   @media (max-width: 700px) {
     /* Phone always uses click-to-toggle (no room for side-by-side) --
@@ -2951,9 +2981,24 @@
   /* ---------- Income Summary popup ---------- */
   .income-summary-panel { width: min(340px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-  .income-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+  .income-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
   .income-summary-label { font-size: 13px; color: var(--muted); }
-  .income-summary-value { font-size: 18px; }
+  /* Bold + sign-colored -- a positive total reads Bold Green, a
+     negative one Bold Red, same green/red convention every other P/L
+     figure in this file already uses. */
+  .income-summary-value { font-size: 18px; font-weight: 800; }
+  .income-summary-value.green { color: var(--green); }
+  .income-summary-value.red { color: var(--red); }
+
+  /* Contracts-total / tax-rate annotation next to the row's own label
+     (e.g. "After Commissions (6)", "Net Income (-25%)") -- small and
+     muted, secondary to the label itself. */
+  .income-summary-annotation { color: var(--muted); font-weight: 400; }
+  /* The $ actually subtracted at this step (commission total / tax
+     total) -- always red, since a deduction is a deduction regardless
+     of the row's own final sign, shown so the calculation is visible
+     without duplicating Gross/After Commissions as separate rows. */
+  .income-summary-deduction { font-size: 13px; color: var(--red); }
 
   /* Portfolio's 4 top summary stats now open the Income Summary popup. */
   .portfolio-summary-clickable { cursor: pointer; }
@@ -3297,18 +3342,28 @@
        instead.
     */
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; }
-    #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { padding: 0 46px; }
+    /* Strike Sold $/Strike Bought $'s 3-column row (see base tier)
+       tightened for this width -- padding-right stays 61px (stepper
+       never shrinks in this modal, see the base-tier comment). */
+    #entryPriceModal .ep-strike-close-row { grid-template-columns: 1fr 56px 1fr; }
+    #entryPriceModal .ep-strike-close-row #epClosedStrikeSold,
+    #entryPriceModal .ep-strike-close-row #epClosedStrikeBought,
+    #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
+    #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 15px; padding-left: 8px; padding-right: 61px; }
+    .ep-open-limit b { font-size: 13px; }
+    .ep-open-limit-label { font-size: 10px; }
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
     /* Strike Sold $/Strike Bought $'s 3-column row (see the base-tier
        rule) tightened to match this tier's narrower modal width -- same
-       proportional shrink every other field in this modal gets here. */
+       proportional shrink every other field in this modal gets here.
+       Stepper still not overridden -- stays the modal-wide 48px/22px
+       (unchanged at this tier, see above) like every other field. */
     #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 56px 1fr; }
     #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
-    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 16px; padding-left: 10px; padding-right: 32px; }
-    #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 28px; }
-    #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 15px; }
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 15px; padding-left: 8px; padding-right: 55px; }
     .cd-strike-close-pl b { font-size: 13px; }
+    .cd-strike-close-pl-target { font-size: 10px; }
   }
 
   @media (max-width: 345px) {
@@ -3317,7 +3372,13 @@
        "always centered and not cut in low res phones") for the full
        reasoning. */
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 40px; }
-    #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { padding: 0 40px; }
+    #entryPriceModal .ep-strike-close-row { grid-template-columns: 1fr 44px 1fr; }
+    #entryPriceModal .ep-strike-close-row #epClosedStrikeSold,
+    #entryPriceModal .ep-strike-close-row #epClosedStrikeBought,
+    #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
+    #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 11px; padding-left: 6px; padding-right: 61px; }
+    .ep-open-limit b { font-size: 11px; }
+    .ep-open-limit-label { font-size: 9px; }
     /* Save/Edit modal at this width -- live-tested and found clipping
        "1000"/"33.33"/"1250.50" that were clean at the 700px tier, since
        #sdLimit/#sdPt have no ID-scoped padding-right/font of their own
@@ -3385,10 +3446,9 @@
        700px tier just above. */
     #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 44px 1fr; }
     #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
-    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 13px; padding-left: 8px; padding-right: 26px; }
-    #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 22px; }
-    #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 12px; }
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 11px; padding-left: 6px; padding-right: 40px; }
     .cd-strike-close-pl b { font-size: 11px; }
+    .cd-strike-close-pl-target { font-size: 9px; }
   }
 
   /* ============================== GOOGLE SYNC UI (buttons, conflict dialog, deleted-deals colors) ============================== */
@@ -4330,9 +4390,13 @@
       <!-- Live Profit/Loss preview, no label -- see updateCdProfitLoss().
            Strike Bought $ - Strike Sold $ = Profit Taker $, then
            Limit $ - Profit Taker $ = Profit/Loss -- computed straight
-           from these 2 fields as they're typed, not from Profit Taker %/$. -->
+           from these 2 fields as they're typed, not from Profit Taker %/$.
+           Grey line below is the TARGET this should align with -- the
+           deal's Profit Taker %/$-derived figure (same fifthValue the
+           Portfolio's own P/L cell shows), unaffected by these 2 fields. -->
       <div class="cd-strike-close-pl">
         <b id="cdStrikeClosePl">&mdash;</b>
+        <small id="cdStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
       </div>
       <div class="form-row">
         <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4387,8 +4451,8 @@
      open. Steppers reuse the already-generic stepDecimalField(). -->
 <div id="entryPriceModal" class="modal-backdrop hidden">
   <form class="modal-panel" onsubmit="submitEntryPrice(event)">
-    <h2>Stock Price</h2>
-    <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price, for reference only (doesn't affect any calculation).</p>
+    <h2 id="epModalTitle">New Deal Prices</h2>
+    <p class="modal-sub"><b id="epDealName">—</b> &mdash; Entry/close stock price is for reference only; Strike Sold $/Strike Bought $ below feed live calculations.</p>
     <!-- Same date-pair pattern/helpers as Close Deal's Close Date
          (applyDateToPair/composeDateMD); shown only when closed,
          same gate as the Closed Price field below. -->
@@ -4427,12 +4491,54 @@
         </div>
       </div>
     </div>
+    <!-- Open Strike Pricing -- a 3rd editable entry point for
+         deal.longStrike/shortStrike (the OPEN-time leg premiums),
+         alongside Edit Deal's own sd-strike-grid. NOTE the same legacy
+         naming Edit Deal has: deal.longStrike is "Strike Sold"'s
+         premium, deal.shortStrike is "Strike Bought"'s (see
+         checkOpenStrikeMatch's own comment). Shown only while the deal
+         is still open -- hidden once closed, same gate (inverted) as
+         #epClosedStrikeRow below. Live Limit $ readout mirrors Edit
+         Deal's sd-computed-limit exactly: neutral by default, green
+         only once it matches the deal's SAVED Limit $ (no live Limit $
+         field exists in this modal to compare against instead), never
+         red -- see updateEpComputedLimit(). -->
+    <div class="form-grid-2 ep-strike-close-row" id="epOpenStrikeRow">
+      <div class="form-row">
+        <label for="epOpenStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
+        <div class="total-stepper-wrap">
+          <input id="epOpenStrikeSold" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Sold $" onclick="stepDecimalField('epOpenStrikeSold','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Sold $" onclick="stepDecimalField('epOpenStrikeSold','down',0.01,2)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="ep-open-limit">
+        <span class="ep-open-limit-label">Limit $</span>
+        <b id="epComputedLimit">&mdash;</b>
+      </div>
+      <div class="form-row">
+        <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
+        <div class="total-stepper-wrap">
+          <input id="epOpenStrikeBought" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought $" onclick="stepDecimalField('epOpenStrikeBought','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought $" onclick="stepDecimalField('epOpenStrikeBought','down',0.01,2)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Closed Strike Pricing -- same deal.closedStrikeSold/
          closedStrikeBought fields Close Deal's own new row writes, just
          a 2nd editable entry point. Hidden entirely (like #epDateRow/
          #epClosedRow) unless the deal being edited is already closed --
-         these don't exist yet for an open deal. -->
-    <div class="form-grid-2" id="epClosedStrikeRow">
+         these don't exist yet for an open deal. Same 3-column-with-live-
+         Profit/Loss design as Close Deal's own row (.cd-strike-close-pl
+         is a shared, unscoped class -- reused as-is here). Grey target
+         line reads the deal's ALREADY-SAVED Profit Taker %/$ (finalStats)
+         since this modal has no live PT% field of its own to derive from. -->
+    <div class="form-grid-2 ep-strike-close-row" id="epClosedStrikeRow">
       <div class="form-row">
         <label for="epClosedStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
         <div class="total-stepper-wrap">
@@ -4442,6 +4548,10 @@
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Sold $" onclick="stepDecimalField('epClosedStrikeSold','down',0.01,2)">&#8722;</button>
           </div>
         </div>
+      </div>
+      <div class="cd-strike-close-pl">
+        <b id="epStrikeClosePl">&mdash;</b>
+        <small id="epStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
       </div>
       <div class="form-row">
         <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4578,9 +4688,25 @@
   <div class="modal-panel income-summary-panel">
     <h2>Income Summary</h2>
     <div class="income-summary-list">
-      <div class="income-summary-row"><span class="income-summary-label">Gross Income</span><b id="incomeSummaryGross" class="income-summary-value">&mdash;</b></div>
-      <div class="income-summary-row"><span class="income-summary-label">After Commissions</span><b id="incomeSummaryAfterCommissions" class="income-summary-value">&mdash;</b></div>
-      <div class="income-summary-row"><span class="income-summary-label">Net Income</span><b id="incomeSummaryNet" class="income-summary-value">&mdash;</b></div>
+      <div class="income-summary-row">
+        <span class="income-summary-label">Gross Income</span>
+        <b id="incomeSummaryGross" class="income-summary-value">&mdash;</b>
+      </div>
+      <!-- Annotation is the CONTRACTS total across closed deals (not
+           deal count -- 1 deal can carry 20 contracts), matching what
+           commissionPerContract actually multiplies by. Deduction is
+           that commission total, shown in red as "what got subtracted",
+           so the calculation is visible without duplicating Gross. -->
+      <div class="income-summary-row">
+        <span class="income-summary-label">After Commissions <small id="incomeSummaryContracts" class="income-summary-annotation"></small></span>
+        <span id="incomeSummaryCommissionAmt" class="income-summary-deduction"></span>
+        <b id="incomeSummaryAfterCommissions" class="income-summary-value">&mdash;</b>
+      </div>
+      <div class="income-summary-row">
+        <span class="income-summary-label">Net Income <small id="incomeSummaryTaxPct" class="income-summary-annotation"></small></span>
+        <span id="incomeSummaryTaxAmt" class="income-summary-deduction"></span>
+        <b id="incomeSummaryNet" class="income-summary-value">&mdash;</b>
+      </div>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeIncomeSummaryModal()">Close</button>
@@ -6300,9 +6426,34 @@
   function openIncomeSummaryModal() {
     const s = computePortfolioIncomeSummary();
     const fmt = v => `${v < 0 ? '-' : ''}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`;
-    document.getElementById('incomeSummaryGross').textContent = fmt(s.gross);
-    document.getElementById('incomeSummaryAfterCommissions').textContent = fmt(s.afterCommissions);
-    document.getElementById('incomeSummaryNet').textContent = fmt(s.net);
+    // Deductions (commission/tax $) are shown plain -- the red color
+    // itself says "subtracted", no need for a duplicate sign.
+    const fmtDeduction = v => `$${Math.abs(Math.round(v)).toLocaleString('en-US')}`;
+    const setTotal = (id, v) => {
+      const el = document.getElementById(id);
+      el.textContent = fmt(v);
+      el.classList.toggle('green', v > 0);
+      el.classList.toggle('red', v < 0);
+    };
+    setTotal('incomeSummaryGross', s.gross);
+    setTotal('incomeSummaryAfterCommissions', s.afterCommissions);
+    setTotal('incomeSummaryNet', s.net);
+
+    // "(N)" is total CONTRACTS across closed deals, not deal count --
+    // matches what commissionPerContract actually multiplies by (see
+    // computePortfolioIncomeSummary).
+    document.getElementById('incomeSummaryContracts').textContent = `(${s.contractsTotal})`;
+    document.getElementById('incomeSummaryCommissionAmt').textContent = fmtDeduction(s.commissionTotal);
+
+    // Tax $ derived from the 2 totals rather than re-computed -- afterCommissions
+    // and net both already sum every deal's own exact figures, so their
+    // difference IS the exact aggregate tax amount (taxRatePct is one
+    // flat rate applied identically to every deal, so summing first and
+    // subtracting after is equivalent to the reverse, no rounding gap).
+    const taxAmount = s.afterCommissions - s.net;
+    document.getElementById('incomeSummaryTaxPct').textContent = `(-${truncate2(portfolioSettings.taxRatePct)}%)`;
+    document.getElementById('incomeSummaryTaxAmt').textContent = fmtDeduction(taxAmount);
+
     document.getElementById('incomeSummaryModal').classList.remove('hidden');
   }
 
@@ -6794,14 +6945,20 @@
   }
 
   // Same "closed deals only" scope as the existing P/L summary.
+  // contractsTotal/commissionTotal are CONTRACTS, not deals -- 1 deal
+  // can carry 20 contracts, and commissionPerContract scales by the
+  // former, not the latter (see the Income Summary popup, which shows
+  // this total as the "(N)" next to "After Commissions").
   function computePortfolioIncomeSummary() {
     const closedDeals = deals.filter(d => d.closed);
-    const totals = { gross: 0, afterCommissions: 0, net: 0 };
+    const totals = { gross: 0, afterCommissions: 0, net: 0, commissionTotal: 0, contractsTotal: 0 };
     closedDeals.forEach(d => {
       const inc = computeDealIncome(d);
       totals.gross += inc.gross;
       totals.afterCommissions += inc.afterCommissions;
       totals.net += inc.net;
+      totals.commissionTotal += inc.commission;
+      totals.contractsTotal += getContractsValue(d.contracts);
     });
     return totals;
   }
@@ -6946,7 +7103,6 @@
     // turned out to be the wrong call; reverted in favor of showing
     // Open + Closed Strike Pricing side by side in the PRICES cell
     // itself (see strikesPricingHtml below).
-    let strikeMatchClass = '';
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
       // Closed deals surface the REALIZED numbers (final PT%-derived
@@ -6957,8 +7113,6 @@
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
-      const closeMatch = checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct);
-      strikeMatchClass = closeMatch ? ` strike-match-${closeMatch}` : '';
       plCell = `<b class="deal-metric-cell deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</b>`;
     } else {
       // A deal saved without ever setting a Profit Taker % has ptMissing
@@ -6972,9 +7126,19 @@
       plCell = m.fifthMissing
         ? `<b class="deal-metric-cell missing">—</b>`
         : `<b class="deal-metric-cell deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</b>`;
-      const openMatch = checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
-      strikeMatchClass = openMatch ? ` strike-match-${openMatch}` : '';
     }
+    // Open and Closed Strike Pricing are 2 INDEPENDENT pairs (different
+    // fields, different formulas) -- each gets its OWN match check/frame,
+    // applied to its OWN block, not one shared verdict for the whole
+    // PRICES cell. Fixes a real bug: the old single cell-wide class was
+    // always the CLOSE check's result once a deal was closed, even while
+    // toggle mode was showing the OPEN block, or (side-by-side) painting
+    // both blocks the same color even when only one of them actually
+    // matched.
+    const openMatch = checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
+    const openMatchClass = openMatch ? ` strike-match-${openMatch}` : '';
+    const closeMatch = isClosed ? checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct) : null;
+    const closeMatchClass = closeMatch ? ` strike-match-${closeMatch}` : '';
 
     // PRICES cell -- 2 display methods (portfolioSettings.
     // desktopPricesDisplayMethod), only relevant once a deal is closed
@@ -6988,12 +7152,12 @@
     const hasClosedPricing = isClosed && deal.closedStrikeSold && deal.closedStrikeBought;
     const isToggleable = hasClosedPricing && portfolioSettings.desktopPricesDisplayMethod === 'toggle';
     const currentView = isToggleable ? getPricesView(deal.id) : 'open';
-    const openPricingHtml = `<div class="deal-strikes-block">
+    const openPricingHtml = `<div class="deal-strikes-block${openMatchClass}">
           <span title="Strike Sold = Short put = Premium">Sell</span> <b>$${escapeHtml(deal.longStrike || '—')}</b><br>
           <span title="Strike Bought = Long Put = Protective">Buy</span> <b>$${escapeHtml(deal.shortStrike || '—')}</b>
         </div>`;
     const closedPricingHtml = hasClosedPricing
-      ? `<div class="deal-strikes-block${isToggleable ? '' : ' deal-strikes-closed-block'}">
+      ? `<div class="deal-strikes-block${closeMatchClass}${isToggleable ? '' : ' deal-strikes-closed-block'}">
           <span title="Strike Sold = Short put = Premium">Sell</span> <b>$${escapeHtml(deal.closedStrikeSold)}</b><br>
           <span title="Strike Bought = Long Put = Protective">Buy</span> <b>$${escapeHtml(deal.closedStrikeBought)}</b>
         </div>`
@@ -7030,7 +7194,7 @@
         <b class="deal-metric-cell deal-cell-maxprofit green">${money0(m.maxProfit)}</b>
         <b class="deal-metric-cell deal-cell-ptpct">${ptPctCell}</b>
         <b class="deal-metric-cell deal-cell-ptvalue blue">${ptValueCell}</b>
-        <div class="deal-strikes-cell${strikeMatchClass}${strikesCellExtraClass}"${strikesCellOnClick}>${strikesPricingHtml}</div>
+        <div class="deal-strikes-cell${strikesCellExtraClass}"${strikesCellOnClick}>${strikesPricingHtml}</div>
         ${plCell}
         <div class="deal-actions-cell">
           <div class="deal-actions-row">
@@ -7097,14 +7261,11 @@
       ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
       : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
 
-    let strikeMatchClass = '';
     let ptPctCell, ptValueCell, plHtml;
     if (isClosed) {
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
-      const closeMatch = checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct);
-      strikeMatchClass = closeMatch ? ` strike-match-${closeMatch}` : '';
       plHtml = `<span class="deal-card-metric-value deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</span>`;
     } else {
       ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
@@ -7112,8 +7273,6 @@
       plHtml = m.fifthMissing
         ? `<span class="deal-card-metric-value missing">—</span>`
         : `<span class="deal-card-metric-value deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</span>`;
-      const openMatch = checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
-      strikeMatchClass = openMatch ? ` strike-match-${openMatch}` : '';
     }
     // Phone always uses click-to-toggle (no side-by-side option -- no
     // spare width for it). Tapping the Buy/Sell mesh cell flips between
@@ -7124,6 +7283,14 @@
     const phoneView = hasClosedPricingPhone ? getPricesView(deal.id) : 'open';
     const phoneSellVal = phoneView === 'closed' ? deal.closedStrikeSold : deal.longStrike;
     const phoneBuyVal = phoneView === 'closed' ? deal.closedStrikeBought : deal.shortStrike;
+    // Match check for WHICHEVER pair is actually showing -- phone only
+    // ever shows one pair at a time, so (unlike the old bug) this can
+    // never paint the visible Open numbers with the Closed pair's
+    // verdict or vice versa.
+    const phoneMatch = phoneView === 'closed'
+      ? checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct)
+      : checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
+    const strikeMatchClass = phoneMatch ? ` strike-match-${phoneMatch}` : '';
     const pricesToggleAttrs = hasClosedPricingPhone ? ` onclick="togglePricesView('${deal.id}')"` : '';
     const pricesToggleClass = hasClosedPricingPhone ? ' deal-card-metric-stacked-toggleable' : '';
     const priceViewToast = (hasClosedPricingPhone && deal.id === justToggledDealId)
@@ -7861,23 +8028,35 @@
   function updateCdProfitLoss() {
     const deal = deals.find(d => d.id === closingDealId);
     const el = document.getElementById('cdStrikeClosePl');
+    const targetEl = document.getElementById('cdStrikeClosePlTarget');
     if (!deal) return;
     const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
     const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
-      return;
+    } else {
+      const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
+      const contracts = getContractsValue(deal.contracts);
+      const closeDebitPerShare = bought - sold;
+      const profitPerShare = limitPerShare - closeDebitPerShare;
+      const profitDollars = Math.round(profitPerShare * 100) * contracts;
+      const isLoss = profitDollars < 0;
+      el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
+      el.classList.toggle('green', !isLoss);
+      el.classList.toggle('red', isLoss);
     }
-    const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
-    const contracts = getContractsValue(deal.contracts);
-    const closeDebitPerShare = bought - sold;
-    const profitPerShare = limitPerShare - closeDebitPerShare;
-    const profitDollars = Math.round(profitPerShare * 100) * contracts;
-    const isLoss = profitDollars < 0;
-    el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
-    el.classList.toggle('green', !isLoss);
-    el.classList.toggle('red', isLoss);
+    // Grey target line -- the deal's Profit Taker %/$-derived figure
+    // (same fifthValue/sideIsLoss the Portfolio's own P/L cell shows),
+    // what the live value above needs to align with. Untouched by the
+    // 2 price fields -- only Profit Taker %/$ move it.
+    const ptRaw = document.getElementById('cdPtPct').value;
+    if (String(ptRaw).trim() === '') {
+      targetEl.textContent = '—';
+    } else {
+      const m = computeMetrics(deal.total, deal.limit, ptRaw, deal.contracts);
+      targetEl.textContent = (m.sideIsLoss ? '-' : '') + '$' + Math.abs(m.fifthValue).toLocaleString('en-US');
+    }
   }
   ['cdClosedStrikeSold', 'cdClosedStrikeBought', 'cdPtPct', 'cdPtVal'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -7982,10 +8161,91 @@
    * (see the modal's own HTML comment for why it's hidden, not absent). */
   let entryPriceDealId = null;
 
+  // Red/green frame on Closed Deal Prices' 2 fields -- same
+  // checkCloseStrikeMatch() the Portfolio and Close Deal both use, fed
+  // the deal's ALREADY-SAVED closePtPct (this modal has no live PT%
+  // field of its own), so this can never disagree with either of them.
+  function updateEpStrikeMatch() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const result = checkCloseStrikeMatch(
+      document.getElementById('epClosedStrikeSold').value,
+      document.getElementById('epClosedStrikeBought').value,
+      deal,
+      deal.closePtPct
+    );
+    applyStrikeMatchClass(document.getElementById('epClosedStrikeSold'), result);
+    applyStrikeMatchClass(document.getElementById('epClosedStrikeBought'), result);
+  }
+
+  // Live Profit/Loss between Closed Deal Prices' 2 fields -- identical
+  // formula to updateCdProfitLoss() (Strike Bought $ - Strike Sold $ =
+  // Profit Taker $, Limit $ - that = Profit/Loss). Grey target line
+  // reuses finalStats() directly (the deal's SAVED Profit Taker %/$),
+  // since there's no live PT% input here to derive it from live.
+  function updateEpProfitLoss() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    const el = document.getElementById('epStrikeClosePl');
+    const targetEl = document.getElementById('epStrikeClosePlTarget');
+    if (!deal) return;
+    const sold = number(document.getElementById('epClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('epClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
+      el.textContent = '—';
+      el.classList.remove('green', 'red');
+    } else {
+      const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
+      const contracts = getContractsValue(deal.contracts);
+      const closeDebitPerShare = bought - sold;
+      const profitPerShare = limitPerShare - closeDebitPerShare;
+      const profitDollars = Math.round(profitPerShare * 100) * contracts;
+      const isLoss = profitDollars < 0;
+      el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
+      el.classList.toggle('green', !isLoss);
+      el.classList.toggle('red', isLoss);
+    }
+    const f = finalStats(deal);
+    targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
+  }
+  ['epClosedStrikeSold', 'epClosedStrikeBought'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      updateEpStrikeMatch();
+      updateEpProfitLoss();
+    });
+  });
+
+  // New Deal Prices' own Strike Sold $/Strike Bought $ (deal.longStrike/
+  // shortStrike -- see #epOpenStrikeRow's own HTML comment for the
+  // naming mapping). Identical math/coloring to Edit Deal's own
+  // updateSdComputedLimit(): neutral by default, green only once it
+  // matches the deal's Limit $, never red.
+  function updateEpComputedLimit() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    const el = document.getElementById('epComputedLimit');
+    if (!deal) return;
+    const soldRaw = document.getElementById('epOpenStrikeSold').value;
+    const boughtRaw = document.getElementById('epOpenStrikeBought').value;
+    const soldVal = parseFloat(soldRaw);
+    const boughtVal = parseFloat(boughtRaw);
+    if (!isFinite(soldVal) || !isFinite(boughtVal)) {
+      el.textContent = '—';
+      el.classList.remove('ep-open-limit-match');
+      return;
+    }
+    const implied = Math.abs(soldVal - boughtVal);
+    el.textContent = '$' + formatTruncated2(implied);
+    const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
+    el.classList.toggle('ep-open-limit-match', result === 'green');
+  }
+  ['epOpenStrikeSold', 'epOpenStrikeBought'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateEpComputedLimit);
+  });
+
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
     entryPriceDealId = id;
+    document.getElementById('epModalTitle').textContent = deal.closed ? 'Closed Deal Prices' : 'New Deal Prices';
     document.getElementById('epDealName').textContent = dealDisplayName(deal);
     document.getElementById('epEntryPrice').value = deal.entryStockPrice || '';
     document.getElementById('epClosedPrice').value = deal.closedStockPrice || '';
@@ -7995,7 +8255,13 @@
     document.getElementById('epClosedStrikeRow').hidden = !deal.closed;
     document.getElementById('epClosedStrikeSold').value = deal.closedStrikeSold || '';
     document.getElementById('epClosedStrikeBought').value = deal.closedStrikeBought || '';
+    document.getElementById('epOpenStrikeRow').hidden = !!deal.closed;
+    document.getElementById('epOpenStrikeSold').value = deal.longStrike || '';
+    document.getElementById('epOpenStrikeBought').value = deal.shortStrike || '';
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
+    updateEpStrikeMatch();
+    updateEpProfitLoss();
+    updateEpComputedLimit();
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
 
@@ -8009,6 +8275,10 @@
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
     deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
+    if (!deal.closed) {
+      deal.longStrike = document.getElementById('epOpenStrikeSold').value.trim();
+      deal.shortStrike = document.getElementById('epOpenStrikeBought').value.trim();
+    }
     if (deal.closed) {
       deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
