@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="color-scheme" content="dark" />
-<title>Options v4.4 - Golan</title>
+<title>Options v4.5 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 
@@ -1743,7 +1743,7 @@
   #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
 
   .mid-price-live-spacer { flex: 0 0 105px; }
-  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); }
+  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 17px; font-weight: 800; color: var(--muted); }
   .mid-price-live-value.has-value { color: var(--green); }
 
   .date-pair { display: flex; align-items: center; gap: 6px; }
@@ -2376,7 +2376,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v4.4 By Golan</div>
+    <div class="footer">Options v4.5 By Golan</div>
     </main>
   </div>
 </div>
@@ -3295,7 +3295,7 @@
     const bid = getLimitValueRaw(bidRaw);
     const avg = (ask + bid) / 2;
 
-    el.textContent = '-' + Math.abs(avg).toFixed(2);
+    el.textContent = '- ' + Math.abs(avg).toFixed(2);
     el.classList.add('has-value');
   }
 

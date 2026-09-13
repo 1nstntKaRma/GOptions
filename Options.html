@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="color-scheme" content="dark" />
-<title>Options v4.4 - Golan</title>
+<title>Options v4.5 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ============================== GLOBAL / BASE ============================== */
@@ -3141,7 +3141,7 @@
      landing the value under the SAME column the fields themselves sit
      in, not the row's full width. */
   .mid-price-live-spacer { flex: 0 0 105px; }
-  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); }
+  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 17px; font-weight: 800; color: var(--muted); }
   .mid-price-live-value.has-value { color: var(--green); }
 
 
@@ -4217,7 +4217,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v4.4 By Golan</div>
+    <div class="footer">Options v4.5 By Golan</div>
     </main>
   </div>
 </div>
@@ -5517,8 +5517,9 @@
     const avg = (ask + bid) / 2;
     // No "$" -- and always shown negative, matching Limit $ itself
     // (always negative by rule, see getLimitValueRaw) rather than a
-    // plain magnitude.
-    el.textContent = '-' + Math.abs(avg).toFixed(2);
+    // plain magnitude. Space after the "-" (not tight against the
+    // digits) per explicit request.
+    el.textContent = '- ' + Math.abs(avg).toFixed(2);
     el.classList.add('has-value');
   }
 
