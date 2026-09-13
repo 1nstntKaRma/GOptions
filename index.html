@@ -750,6 +750,23 @@
     align-self: center;
   }
 
+  .deal-card-metric-stacked-toggleable { cursor: pointer; }
+  .deal-card-metric-stacked-toggleable:active { filter: brightness(1.3); }
+
+  @keyframes dealCardPricesToastFade {
+    0% { opacity: 0; transform: translate(-50%, 4px) scale(.92); }
+    15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .deal-card-prices-toast {
+    position: absolute; top: -14px; left: 50%;
+    background: var(--panel); border: 1px solid var(--blue); border-radius: 8px;
+    padding: 5px 12px; font-size: 12px; font-weight: 800; color: var(--text);
+    white-space: nowrap; z-index: 5; pointer-events: none;
+    animation: dealCardPricesToastFade 1.8s ease forwards;
+  }
+
   .deal-card-metric-stacked-value { text-align: left; color: var(--text); align-self: center; }
 
   .deal-metric-cell { font-size: 16px; font-weight: 700; text-align: center; white-space: nowrap; }
@@ -939,6 +956,8 @@
   .deal-grid { margin-top: var(--portfolio-deals-desktop-y); overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   .deal-grid.has-closed-deals { margin-top: var(--portfolio-dealsClosed-desktop-y); }
+
+  .deal-grid.prices-sidebyside .portfolio-row { grid-template-columns: 120px 96px 82px 56px 60px 64px 66px 50px 62px 190px 68px 116px; }
 
   .portfolio-row {
     display: grid;
@@ -1222,9 +1241,17 @@
 
   .deal-dte-label { font-size: 11px; color: var(--legend-dte-color); opacity: .85; letter-spacing: .3px; }
 
-  .deal-strikes-cell { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
+  .deal-strikes-cell { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; display: flex; align-items: center; justify-content: center; }
 
   .deal-strikes-cell b { color: var(--text); font-weight: 700; }
+
+  .deal-strikes-cell-closed { gap: 10px; }
+  .deal-strikes-block { flex: 1; }
+  .deal-strikes-closed-block { border-left: 1px solid var(--border); padding-left: 10px; }
+
+  .deal-strikes-toggleable { flex-direction: column; gap: 2px; cursor: pointer; }
+  .deal-strikes-toggleable:hover { filter: brightness(1.3); }
+  .deal-strikes-view-badge { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--muted); text-transform: uppercase; }
 
   .deal-actions-cell { display: flex; align-items: center; justify-content: center; }
 
@@ -1439,6 +1466,15 @@
 
   .sd-strike-grid .form-row { margin-bottom: 0; }
 
+  .strike-label-sold.strike-label-sold { color: var(--red); font-weight: 800; }
+  .strike-label-bought.strike-label-bought { color: var(--blue); font-weight: 800; }
+
+  .strike-match-green { background: transparent !important; border: 2px solid var(--green) !important; border-radius: 8px !important; }
+  .strike-match-red { background: transparent !important; border: 2px solid var(--red) !important; border-radius: 8px !important; }
+
+  .deal-card-metric-stacked.strike-match-green,
+  .deal-card-metric-stacked.strike-match-red { background: var(--bg) !important; }
+
   .sd-strike-grid input {
     border-radius: 9px; border: 1px solid rgba(4,126,187,.35);
     background: #050708; color: var(--text); font-size: 16px;
@@ -1482,6 +1518,11 @@
   #saveDealModal .sd-strike-grid .sd-price-input { font-size: 12px; }
 
   .sd-price-input:focus ~ .sd-dollar-prefix { opacity: 0; }
+
+  .sd-computed-limit { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .sd-computed-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+  .sd-computed-limit b { font-size: 15px; color: var(--muted); }
+  .sd-computed-limit b.sd-computed-limit-match { color: var(--green); }
 
   #saveDealModal .form-row label { text-align: center; text-transform: none; }
 
@@ -1531,6 +1572,17 @@
   #closeDealModal .cd-price-row .total-stepper-sm .total-stepper-btn { font-size: 22px; }
 
   #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 81px; padding-right: 61px; text-align: center; }
+
+  #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 68px 1fr; align-items: center; }
+  #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
+  #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { height: 79px; font-size: 20px; padding-left: 14px; padding-right: 40px; text-align: center; }
+  #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 34px; }
+  #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 18px; }
+
+  .cd-strike-close-pl { display: flex; align-items: center; justify-content: center; }
+  .cd-strike-close-pl b { font-size: 15px; font-weight: 800; }
+
+  #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { height: 79px; padding-left: 51px; padding-right: 61px; text-align: center; }
 
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
@@ -1600,6 +1652,29 @@
   }
 
   .order-arrow-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
+
+  .commissions-panel { width: min(360px, 92vw); }
+  .commissions-mode-label { margin: 16px 0 8px; }
+  .commissions-mode-list { display: flex; flex-direction: column; gap: 6px; }
+  .commissions-mode-btn {
+    height: 44px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--row); color: var(--text); font-size: 14px; font-weight: 600;
+    cursor: pointer; text-align: left; padding: 0 14px;
+  }
+  .commissions-mode-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(4,126,187,.15); }
+
+  @media (max-width: 700px) {
+
+    #pmPricesDisplayItem { display: none; }
+  }
+
+  .income-summary-panel { width: min(340px, 92vw); }
+  .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  .income-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+  .income-summary-label { font-size: 13px; color: var(--muted); }
+  .income-summary-value { font-size: 18px; }
+
+  .portfolio-summary-clickable { cursor: pointer; }
 
   .mid-price-panel { width: min(340px, 92vw); }
 
@@ -1737,13 +1812,22 @@
     #closeDealModal .total-stepper-sm .total-stepper-btn { font-size: 28px; }
 
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 46px; }
+    #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { padding: 0 46px; }
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
+
+    #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 56px 1fr; }
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 16px; padding-left: 10px; padding-right: 32px; }
+    #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 28px; }
+    #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 15px; }
+    .cd-strike-close-pl b { font-size: 13px; }
   }
 
   @media (max-width: 345px) {
 
     #entryPriceModal #epEntryPrice, #entryPriceModal #epClosedPrice { padding: 0 40px; }
+    #entryPriceModal #epClosedStrikeSold, #entryPriceModal #epClosedStrikeBought { padding: 0 40px; }
 
     #saveDealModal #sdTotal { font-size: 14px; padding-right: 38px; }
     #saveDealModal #sdLimit, #saveDealModal #sdPt { font-size: 14px; padding-right: 38px; }
@@ -1768,6 +1852,13 @@
 
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 40px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding: 0 40px; }
+
+    #closeDealModal .cd-strike-close-row { grid-template-columns: 1fr 44px 1fr; }
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeSold,
+    #closeDealModal .cd-strike-close-row #cdClosedStrikeBought { font-size: 13px; padding-left: 8px; padding-right: 26px; }
+    #closeDealModal .cd-strike-close-row .total-stepper-sm { width: 22px; }
+    #closeDealModal .cd-strike-close-row .total-stepper-sm .total-stepper-btn { font-size: 12px; }
+    .cd-strike-close-pl b { font-size: 11px; }
   }
 
   #googleSyncBtn {
@@ -2186,7 +2277,10 @@
         <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
         <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
 
+        <button type="button" class="hamburger-item" id="pmPricesDisplayItem" onclick="toggleDesktopPricesDisplayMethod()"></button>
+
         <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128188;&#129518;  Order Deals By</button>
+        <button type="button" class="hamburger-item" onclick="openCommissionsModal(); closePortfolioMenu();">&#128176;&#129518;  Commissions + Taxes</button>
 
         <button type="button" class="hamburger-item" onclick="openDeletedDealsModal(); closePortfolioMenu();">&#128465;&#65039;&#10060;  Deleted Deals</button>
       </div>
@@ -2194,11 +2288,11 @@
         <div class="top-row-left">
           <div class="portfolio-title-block">
 
-            <div class="portfolio-pl-summary" id="dealPLSummary"></div>
-            <div class="portfolio-count" id="dealCount"></div>
+            <div class="portfolio-pl-summary portfolio-summary-clickable" id="dealPLSummary" onclick="openIncomeSummaryModal()"></div>
+            <div class="portfolio-count portfolio-summary-clickable" id="dealCount" onclick="openIncomeSummaryModal()"></div>
 
-            <div class="portfolio-winloss" id="dealWinLoss"></div>
-            <div class="portfolio-winratio" id="dealWinRatio"></div>
+            <div class="portfolio-winloss portfolio-summary-clickable" id="dealWinLoss" onclick="openIncomeSummaryModal()"></div>
+            <div class="portfolio-winratio portfolio-summary-clickable" id="dealWinRatio" onclick="openIncomeSummaryModal()"></div>
           </div>
         </div>
         <div class="top-row-right">
@@ -2343,35 +2437,12 @@
         <div class="sd-card-title"><span class="sd-card-icon" id="sdStrikesCardIcon">&#129461;</span> Strikes</div>
         <div class="sd-strike-grid">
           <div class="form-row">
-            <label for="sdStrikeBuy">Buy Strike</label>
-            <div class="total-stepper-wrap">
-              <input id="sdStrikeBuy" type="text" inputmode="decimal" />
-              <div class="total-stepper total-stepper-sm">
-                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Buy Strike" onclick="stepDecimalField('sdStrikeBuy','up',1,0)">+</button>
-                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Buy Strike" onclick="stepDecimalField('sdStrikeBuy','down',1,0)">&#8722;</button>
-              </div>
-            </div>
-          </div>
-          <div class="form-row">
-            <label for="sdShort" class="sd-hidden-label">Buy Price</label>
-            <div class="sd-price-wrap">
-              <div class="total-stepper-wrap">
-                <input id="sdShort" type="text" inputmode="decimal" class="sd-price-input" />
-                <span class="sd-dollar-prefix" aria-hidden="true">$</span>
-                <div class="total-stepper total-stepper-sm">
-                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Buy Price" onclick="stepDecimalField('sdShort','up',0.01,2)">+</button>
-                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Buy Price" onclick="stepDecimalField('sdShort','down',0.01,2)">&#8722;</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="form-row">
-            <label for="sdStrikeSell">Sell Strike</label>
+            <label for="sdStrikeSell" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold</label>
             <div class="total-stepper-wrap">
               <input id="sdStrikeSell" type="text" inputmode="decimal" />
               <div class="total-stepper total-stepper-sm">
-                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Sell Strike" onclick="stepDecimalField('sdStrikeSell','up',1,0)">+</button>
-                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Sell Strike" onclick="stepDecimalField('sdStrikeSell','down',1,0)">&#8722;</button>
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Sold" onclick="stepDecimalField('sdStrikeSell','up',1,0)">+</button>
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Sold" onclick="stepDecimalField('sdStrikeSell','down',1,0)">&#8722;</button>
               </div>
             </div>
           </div>
@@ -2384,6 +2455,34 @@
                 <div class="total-stepper total-stepper-sm">
                   <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Sell Price" onclick="stepDecimalField('sdLong','up',0.01,2)">+</button>
                   <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Sell Price" onclick="stepDecimalField('sdLong','down',0.01,2)">&#8722;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sd-computed-limit">
+            <span class="sd-computed-limit-label">Limit $</span>
+            <b id="sdComputedLimit">&mdash;</b>
+          </div>
+          <div class="form-row">
+            <label for="sdStrikeBuy" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought</label>
+            <div class="total-stepper-wrap">
+              <input id="sdStrikeBuy" type="text" inputmode="decimal" />
+              <div class="total-stepper total-stepper-sm">
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought" onclick="stepDecimalField('sdStrikeBuy','up',1,0)">+</button>
+                <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought" onclick="stepDecimalField('sdStrikeBuy','down',1,0)">&#8722;</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="sdShort" class="sd-hidden-label">Buy Price</label>
+            <div class="sd-price-wrap">
+              <div class="total-stepper-wrap">
+                <input id="sdShort" type="text" inputmode="decimal" class="sd-price-input" />
+                <span class="sd-dollar-prefix" aria-hidden="true">$</span>
+                <div class="total-stepper total-stepper-sm">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Buy Price" onclick="stepDecimalField('sdShort','up',0.01,2)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Buy Price" onclick="stepDecimalField('sdShort','down',0.01,2)">&#8722;</button>
                 </div>
               </div>
             </div>
@@ -2434,6 +2533,33 @@
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Profit Taker $" onclick="stepCdPtVal('up')">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Profit Taker $" onclick="stepCdPtVal('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-grid-2 cd-strike-close-row">
+      <div class="form-row">
+        <label for="cdClosedStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedStrikeSold" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Sold $" onclick="stepDecimalField('cdClosedStrikeSold','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Sold $" onclick="stepDecimalField('cdClosedStrikeSold','down',0.01,2)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cd-strike-close-pl">
+        <b id="cdStrikeClosePl">&mdash;</b>
+      </div>
+      <div class="form-row">
+        <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedStrikeBought" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','down',0.01,2)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -2507,6 +2633,29 @@
         </div>
       </div>
     </div>
+
+    <div class="form-grid-2" id="epClosedStrikeRow">
+      <div class="form-row">
+        <label for="epClosedStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
+        <div class="total-stepper-wrap">
+          <input id="epClosedStrikeSold" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Sold $" onclick="stepDecimalField('epClosedStrikeSold','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Sold $" onclick="stepDecimalField('epClosedStrikeSold','down',0.01,2)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
+        <div class="total-stepper-wrap">
+          <input id="epClosedStrikeBought" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought $" onclick="stepDecimalField('epClosedStrikeBought','up',0.01,2)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought $" onclick="stepDecimalField('epClosedStrikeBought','down',0.01,2)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeEntryPriceModal()">Cancel</button>
       <button type="submit" class="btn btn-primary">Save</button>
@@ -2568,6 +2717,60 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="clearPortfolioSort()">Reset</button>
       <button type="button" class="btn btn-primary" onclick="closeOrderModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="commissionsModal" class="modal-backdrop hidden">
+  <div class="modal-panel commissions-panel">
+    <h2>Commissions + Taxes</h2>
+    <p class="modal-sub">Applies to every closed deal's income figures.</p>
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label for="commissionFeeInput">Commission Fee</label>
+        <div class="total-stepper-wrap">
+          <input id="commissionFeeInput" type="text" inputmode="decimal" class="sd-price-input" onblur="commitCommissionFee()" />
+          <span class="sd-dollar-prefix" aria-hidden="true">$</span>
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Commission Fee" onclick="stepCommissionFee('up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Commission Fee" onclick="stepCommissionFee('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="taxRateInput">Tax Fee %</label>
+        <div class="total-stepper-wrap">
+          <input id="taxRateInput" type="text" inputmode="decimal" onblur="commitTaxRate()" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Tax Fee" onclick="stepTaxRate('up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Tax Fee" onclick="stepTaxRate('down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="modal-sub commissions-mode-label">Portfolio summary shows:</p>
+    <div class="commissions-mode-list">
+      <button type="button" class="commissions-mode-btn" data-mode="gross" onclick="setSummaryMode('gross')">Gross Income</button>
+      <button type="button" class="commissions-mode-btn" data-mode="afterCommissions" onclick="setSummaryMode('afterCommissions')">After Commissions</button>
+      <button type="button" class="commissions-mode-btn" data-mode="net" onclick="setSummaryMode('net')">Net Income</button>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" onclick="closeCommissionsModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="incomeSummaryModal" class="modal-backdrop hidden">
+  <div class="modal-panel income-summary-panel">
+    <h2>Income Summary</h2>
+    <div class="income-summary-list">
+      <div class="income-summary-row"><span class="income-summary-label">Gross Income</span><b id="incomeSummaryGross" class="income-summary-value">&mdash;</b></div>
+      <div class="income-summary-row"><span class="income-summary-label">After Commissions</span><b id="incomeSummaryAfterCommissions" class="income-summary-value">&mdash;</b></div>
+      <div class="income-summary-row"><span class="income-summary-label">Net Income</span><b id="incomeSummaryNet" class="income-summary-value">&mdash;</b></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closeIncomeSummaryModal()">Close</button>
+      <button type="button" class="btn btn-primary" onclick="closeIncomeSummaryModal(); openCommissionsModal();">&#9881;&#65039; Settings</button>
     </div>
   </div>
 </div>
@@ -3635,13 +3838,22 @@
     const hideClosedItem = document.getElementById('pmHideClosedItem');
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
+    const pricesDisplayItem = document.getElementById('pmPricesDisplayItem');
     if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}\u{1F648}  Hide Closed Deals' : '\u{1F512}\u{1F440}  Show Closed Deals';
     if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{2714}\u{FE0F}\u{1F648}  Hide Active Deals' : '\u{2714}\u{FE0F}\u{1F440}  Show Active Deals';
     if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}\u{1F648}  Hide Entry Price' : '\u{1F3F7}\u{FE0F}\u{1F440}  Show Entry Price';
+    if (pricesDisplayItem) pricesDisplayItem.textContent = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide' ? '\u{1F4B0}\u{2194}\u{FE0F}  Prices Display: Side by Side' : '\u{1F4B0}\u{1F446}  Prices Display: Click to Toggle';
   }
 
   function togglePortfolioSetting(key) {
     portfolioSettings[key] = !portfolioSettings[key];
+    savePortfolioSettings();
+    updatePortfolioMenuLabels();
+    renderPortfolio();
+  }
+
+  function toggleDesktopPricesDisplayMethod() {
+    portfolioSettings.desktopPricesDisplayMethod = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide' ? 'toggle' : 'sideBySide';
     savePortfolioSettings();
     updatePortfolioMenuLabels();
     renderPortfolio();
@@ -3654,6 +3866,75 @@
 
   function closeOrderModal() {
     document.getElementById('orderDealsModal').classList.add('hidden');
+  }
+
+  function updateCommissionsModeButtons() {
+    document.querySelectorAll('.commissions-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === portfolioSettings.summaryMode);
+    });
+  }
+
+  function openCommissionsModal() {
+    document.getElementById('commissionFeeInput').value = portfolioSettings.commissionPerContract;
+    document.getElementById('taxRateInput').value = portfolioSettings.taxRatePct;
+    updateCommissionsModeButtons();
+    document.getElementById('commissionsModal').classList.remove('hidden');
+  }
+
+  function closeCommissionsModal() {
+    document.getElementById('commissionsModal').classList.add('hidden');
+  }
+
+  function commitCommissionFee() {
+    const el = document.getElementById('commissionFeeInput');
+    const val = Math.max(0, number(el.value, portfolioSettings.commissionPerContract));
+    el.value = val;
+    portfolioSettings.commissionPerContract = val;
+    savePortfolioSettings();
+    renderPortfolio();
+  }
+
+  function stepCommissionFee(direction) {
+    const el = document.getElementById('commissionFeeInput');
+    const current = number(el.value, portfolioSettings.commissionPerContract);
+    el.value = Math.max(0, direction === 'up' ? current + 1 : current - 1);
+    commitCommissionFee();
+  }
+
+  function commitTaxRate() {
+    const el = document.getElementById('taxRateInput');
+    const val = clamp(number(el.value, portfolioSettings.taxRatePct), 0, 100);
+    el.value = val;
+    portfolioSettings.taxRatePct = val;
+    savePortfolioSettings();
+    renderPortfolio();
+  }
+
+  function stepTaxRate(direction) {
+    const el = document.getElementById('taxRateInput');
+    const current = number(el.value, portfolioSettings.taxRatePct);
+    el.value = clamp(direction === 'up' ? current + 1 : current - 1, 0, 100);
+    commitTaxRate();
+  }
+
+  function setSummaryMode(mode) {
+    portfolioSettings.summaryMode = mode;
+    savePortfolioSettings();
+    updateCommissionsModeButtons();
+    renderPortfolio();
+  }
+
+  function openIncomeSummaryModal() {
+    const s = computePortfolioIncomeSummary();
+    const fmt = v => `${v < 0 ? '-' : ''}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`;
+    document.getElementById('incomeSummaryGross').textContent = fmt(s.gross);
+    document.getElementById('incomeSummaryAfterCommissions').textContent = fmt(s.afterCommissions);
+    document.getElementById('incomeSummaryNet').textContent = fmt(s.net);
+    document.getElementById('incomeSummaryModal').classList.remove('hidden');
+  }
+
+  function closeIncomeSummaryModal() {
+    document.getElementById('incomeSummaryModal').classList.add('hidden');
   }
 
   function setPortfolioSort(field, dir) {
@@ -3693,6 +3974,12 @@
 
     sortField: 'status',   
     sortDir: 'asc',   
+
+    commissionPerContract: 8,
+    taxRatePct: 25,
+    summaryMode: 'gross',   
+
+    desktopPricesDisplayMethod: 'toggle',
     updatedAt: 0
   };
 
@@ -3899,6 +4186,77 @@
     return { finalPtPct, finalProfitTakerVal, finalAmount, finalSideLoss: finalPtPct < 0, maxProfit: m.maxProfit };
   }
 
+  function checkOpenStrikeMatch(shortStrikeRaw, longStrikeRaw, limitRaw) {
+    const boughtV = String(shortStrikeRaw || '').trim();
+    const soldV = String(longStrikeRaw || '').trim();
+    if (!boughtV || !soldV) return null;
+    const bought = number(boughtV, NaN);
+    const sold = number(soldV, NaN);
+    if (!Number.isFinite(bought) || !Number.isFinite(sold)) return null;
+    const limit = Math.abs(getLimitValueRaw(limitRaw));
+    const credit = sold - bought;
+    return Math.abs(credit - limit) < 0.01 ? 'green' : 'red';
+  }
+
+  function checkCloseStrikeMatch(closedSoldRaw, closedBoughtRaw, deal, ptPctValue) {
+    const soldV = String(closedSoldRaw || '').trim();
+    const boughtV = String(closedBoughtRaw || '').trim();
+    if (!soldV || !boughtV) return null;
+    const sold = number(soldV, NaN);
+    const bought = number(boughtV, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) return null;
+
+    const m = computeMetrics(deal.total, deal.limit, ptPctValue, deal.contracts);
+    const profitTakerPerShare = Math.abs(m.profitTaker / m.contracts);
+    const closeDebit = bought - sold;
+    const ptMatches = Math.abs(closeDebit - profitTakerPerShare) < 0.01;
+
+    const limitPerShare = Math.abs(m.limit);
+    const profitFromFormulaPerShare = limitPerShare - profitTakerPerShare;
+    const fifthValuePerShare = m.fifthValue / (100 * m.contracts);
+    const profitMatches = Math.abs(profitFromFormulaPerShare - fifthValuePerShare) < 0.02;
+
+    return (ptMatches && profitMatches) ? 'green' : 'red';
+  }
+
+  function applyStrikeMatchClass(el, result) {
+    el.classList.toggle('strike-match-green', result === 'green');
+    el.classList.toggle('strike-match-red', result === 'red');
+  }
+
+  let dealPricesView = {};
+  function getPricesView(dealId) {
+    return dealPricesView[dealId] || 'open';
+  }
+
+  let justToggledDealId = null;
+  function togglePricesView(dealId) {
+    dealPricesView[dealId] = getPricesView(dealId) === 'open' ? 'closed' : 'open';
+    justToggledDealId = dealId;
+    renderPortfolio();
+  }
+
+  function computeDealIncome(deal) {
+    const f = finalStats(deal);
+    const gross = f.finalSideLoss ? -Math.abs(f.finalAmount) : Math.abs(f.finalAmount);
+    const commission = portfolioSettings.commissionPerContract * getContractsValue(deal.contracts);
+    const afterCommissions = gross - commission;
+    const net = afterCommissions * (1 - portfolioSettings.taxRatePct / 100);
+    return { gross, commission, afterCommissions, net };
+  }
+
+  function computePortfolioIncomeSummary() {
+    const closedDeals = deals.filter(d => d.closed);
+    const totals = { gross: 0, afterCommissions: 0, net: 0 };
+    closedDeals.forEach(d => {
+      const inc = computeDealIncome(d);
+      totals.gross += inc.gross;
+      totals.afterCommissions += inc.afterCommissions;
+      totals.net += inc.net;
+    });
+    return totals;
+  }
+
   const PORTFOLIO_COLUMNS = ['TICKER', 'STRIKES', 'STATUS', 'DTE', 'RATIO', 'MAX\nLOSS', 'MAX\nPROFIT',
                              'PT\n%', 'PT\nVALUE', 'PRICES', 'PROFIT\nLOSS', 'ACTIONS'];
 
@@ -3957,12 +4315,15 @@
 
     const dteCellClass = isClosed ? (dealDtePriceStacked(deal) ? ' closed stacked' : ' closed icon-only') : '';
 
+    let strikeMatchClass = '';
     let ptPctCell, ptValueCell, plCell;
     if (isClosed) {
 
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
+      const closeMatch = checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct);
+      strikeMatchClass = closeMatch ? ` strike-match-${closeMatch}` : '';
       plCell = `<b class="deal-metric-cell deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</b>`;
     } else {
 
@@ -3971,6 +4332,35 @@
       plCell = m.fifthMissing
         ? `<b class="deal-metric-cell missing">—</b>`
         : `<b class="deal-metric-cell deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</b>`;
+      const openMatch = checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
+      strikeMatchClass = openMatch ? ` strike-match-${openMatch}` : '';
+    }
+
+    const hasClosedPricing = isClosed && deal.closedStrikeSold && deal.closedStrikeBought;
+    const isToggleable = hasClosedPricing && portfolioSettings.desktopPricesDisplayMethod === 'toggle';
+    const currentView = isToggleable ? getPricesView(deal.id) : 'open';
+    const openPricingHtml = `<div class="deal-strikes-block">
+          <span title="Strike Sold = Short put = Premium">Sell</span> <b>$${escapeHtml(deal.longStrike || '—')}</b><br>
+          <span title="Strike Bought = Long Put = Protective">Buy</span> <b>$${escapeHtml(deal.shortStrike || '—')}</b>
+        </div>`;
+    const closedPricingHtml = hasClosedPricing
+      ? `<div class="deal-strikes-block${isToggleable ? '' : ' deal-strikes-closed-block'}">
+          <span title="Strike Sold = Short put = Premium">Sell</span> <b>$${escapeHtml(deal.closedStrikeSold)}</b><br>
+          <span title="Strike Bought = Long Put = Protective">Buy</span> <b>$${escapeHtml(deal.closedStrikeBought)}</b>
+        </div>`
+      : '';
+    let strikesPricingHtml, strikesCellExtraClass, strikesCellOnClick;
+    if (isToggleable) {
+      const badge = currentView === 'closed'
+        ? '<div class="deal-strikes-view-badge">&#128274; Closed</div>'
+        : '<div class="deal-strikes-view-badge">&#128276; Opened</div>';
+      strikesPricingHtml = badge + (currentView === 'closed' ? closedPricingHtml : openPricingHtml);
+      strikesCellExtraClass = ' deal-strikes-toggleable';
+      strikesCellOnClick = ` onclick="togglePricesView('${deal.id}')"`;
+    } else {
+      strikesPricingHtml = openPricingHtml + closedPricingHtml;
+      strikesCellExtraClass = hasClosedPricing ? ' deal-strikes-cell-closed' : '';
+      strikesCellOnClick = '';
     }
 
     return `
@@ -3991,10 +4381,7 @@
         <b class="deal-metric-cell deal-cell-maxprofit green">${money0(m.maxProfit)}</b>
         <b class="deal-metric-cell deal-cell-ptpct">${ptPctCell}</b>
         <b class="deal-metric-cell deal-cell-ptvalue blue">${ptValueCell}</b>
-        <div class="deal-strikes-cell">
-          Buy <b>$${escapeHtml(deal.shortStrike || '—')}</b><br>
-          Sell <b>$${escapeHtml(deal.longStrike || '—')}</b>
-        </div>
+        <div class="deal-strikes-cell${strikeMatchClass}${strikesCellExtraClass}"${strikesCellOnClick}>${strikesPricingHtml}</div>
         ${plCell}
         <div class="deal-actions-cell">
           <div class="deal-actions-row">
@@ -4034,11 +4421,14 @@
       ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
       : `<button type="button" class="deal-icon-btn close" onclick="openCloseModal('${deal.id}')" title="Close Deal">${dealIconGlyph('dealClose')}</button>`;
 
+    let strikeMatchClass = '';
     let ptPctCell, ptValueCell, plHtml;
     if (isClosed) {
       const f = finalStats(deal);
       ptPctCell = `${truncate2(f.finalPtPct)}%`;
       ptValueCell = formatTruncated2(f.finalProfitTakerVal);
+      const closeMatch = checkCloseStrikeMatch(deal.closedStrikeSold, deal.closedStrikeBought, deal, deal.closePtPct);
+      strikeMatchClass = closeMatch ? ` strike-match-${closeMatch}` : '';
       plHtml = `<span class="deal-card-metric-value deal-cell-pl ${f.finalSideLoss ? 'red' : 'green'}">${f.finalSideLoss ? '-' : ''}$${Math.abs(f.finalAmount).toLocaleString('en-US')}</span>`;
     } else {
       ptPctCell = m.ptMissing ? '—' : `${truncate2(m.ptPct)}%`;
@@ -4046,11 +4436,24 @@
       plHtml = m.fifthMissing
         ? `<span class="deal-card-metric-value missing">—</span>`
         : `<span class="deal-card-metric-value deal-cell-pl ${m.sideIsLoss ? 'red' : 'green'}">${m.sideIsLoss ? '-' : ''}$${Math.abs(m.fifthValue).toLocaleString('en-US')}</span>`;
+      const openMatch = checkOpenStrikeMatch(deal.shortStrike, deal.longStrike, deal.limit);
+      strikeMatchClass = openMatch ? ` strike-match-${openMatch}` : '';
     }
+
+    const hasClosedPricingPhone = isClosed && deal.closedStrikeSold && deal.closedStrikeBought;
+    const phoneView = hasClosedPricingPhone ? getPricesView(deal.id) : 'open';
+    const phoneSellVal = phoneView === 'closed' ? deal.closedStrikeSold : deal.longStrike;
+    const phoneBuyVal = phoneView === 'closed' ? deal.closedStrikeBought : deal.shortStrike;
+    const pricesToggleAttrs = hasClosedPricingPhone ? ` onclick="togglePricesView('${deal.id}')"` : '';
+    const pricesToggleClass = hasClosedPricingPhone ? ' deal-card-metric-stacked-toggleable' : '';
+    const priceViewToast = (hasClosedPricingPhone && deal.id === justToggledDealId)
+      ? `<div class="deal-card-prices-toast">${phoneView === 'closed' ? '&#128274; Deal Closed Prices' : '&#128276; Deal Opened Prices'}</div>`
+      : '';
 
     return `
       <div class="deal-card ${isClosed ? 'closed' : 'open'}">
         ${borderBadge}
+        ${priceViewToast}
         <div class="deal-card-header">
           <div class="deal-card-title-block">
             <div class="deal-name">${tickerHtml} <span class="deal-card-strikes">${strikesCell}</span></div>
@@ -4080,9 +4483,9 @@
             <span class="deal-card-metric-label">Start</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.startDate) || '—')}</span>
             <span class="deal-card-metric-label">Expiry</span><span class="deal-card-metric-stacked-value">${escapeHtml(formatDateDisplay(deal.expiryDate) || '—')}</span>
           </div>
-          <div class="deal-card-metric deal-card-metric-stacked">
-            <span class="deal-card-metric-label">Buy</span><span class="deal-card-metric-stacked-value">$${escapeHtml(deal.shortStrike || '—')}</span>
-            <span class="deal-card-metric-label">Sell</span><span class="deal-card-metric-stacked-value">$${escapeHtml(deal.longStrike || '—')}</span>
+          <div class="deal-card-metric deal-card-metric-stacked${strikeMatchClass}${pricesToggleClass}"${pricesToggleAttrs}>
+            <span class="deal-card-metric-label" title="Strike Sold = Short put = Premium">Sell</span><span class="deal-card-metric-stacked-value">$${escapeHtml(phoneSellVal || '—')}</span>
+            <span class="deal-card-metric-label" title="Strike Bought = Long Put = Protective">Buy</span><span class="deal-card-metric-stacked-value">$${escapeHtml(phoneBuyVal || '—')}</span>
           </div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">P/L</span>${plHtml}</div>
           <div class="deal-card-metric"><span class="deal-card-metric-label">PT Value</span><span class="deal-card-metric-value deal-cell-ptvalue blue">${ptValueCell}</span></div>
@@ -4171,6 +4574,7 @@
 
     grid.classList.toggle('has-closed-deals', closedDeals.length > 0);
     cards.classList.toggle('has-closed-deals', closedDeals.length > 0);
+    grid.classList.toggle('prices-sidebyside', portfolioSettings.desktopPricesDisplayMethod === 'sideBySide');
     if (closedDeals.length === 0) {
       plSummary.textContent = '';
       count.textContent = '';
@@ -4178,7 +4582,10 @@
       winRatioEl.textContent = '';
     } else {
       const closedStats = closedDeals.map(finalStats);
-      const totalPL = closedStats.reduce((sum, f) => sum + (f.finalSideLoss ? -Math.abs(f.finalAmount) : Math.abs(f.finalAmount)), 0);
+
+      const incomeSummary = computePortfolioIncomeSummary();
+
+      const totalPL = Math.round(incomeSummary[portfolioSettings.summaryMode] ?? incomeSummary.gross);
       const isLoss = totalPL < 0;
       plSummary.textContent = `${isLoss ? '-' : ''}$${Math.abs(totalPL).toLocaleString('en-US')}`;
       plSummary.classList.toggle('red', isLoss);
@@ -4227,6 +4634,7 @@
       cards.style.display = '';
       grid.innerHTML = '';
       cards.innerHTML = sorted.map(dealCardHtml).join('');
+      justToggledDealId = null;
     } else {
       cards.style.display = 'none';
       grid.style.display = '';
@@ -4309,6 +4717,39 @@
     if (currentMode === 'portfolio') renderPortfolio();
   }
 
+  function updateSdStrikeMatch() {
+    const result = checkOpenStrikeMatch(
+      document.getElementById('sdShort').value,
+      document.getElementById('sdLong').value,
+      document.getElementById('sdLimit').value
+    );
+    applyStrikeMatchClass(document.getElementById('sdShort'), result);
+    applyStrikeMatchClass(document.getElementById('sdLong'), result);
+  }
+
+  function updateSdComputedLimit() {
+    const shortRaw = document.getElementById('sdShort').value;
+    const longRaw = document.getElementById('sdLong').value;
+    const el = document.getElementById('sdComputedLimit');
+    const shortVal = parseFloat(shortRaw);
+    const longVal = parseFloat(longRaw);
+    if (!isFinite(shortVal) || !isFinite(longVal)) {
+      el.textContent = '—';
+      el.classList.remove('sd-computed-limit-match');
+      return;
+    }
+    const implied = Math.abs(shortVal - longVal);
+    el.textContent = '$' + formatTruncated2(implied);
+    const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
+    el.classList.toggle('sd-computed-limit-match', result === 'green');
+  }
+  ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      updateSdStrikeMatch();
+      updateSdComputedLimit();
+    });
+  });
+
   function openSaveModal() {
     editingDealId = null;
     document.getElementById('modalTitle').textContent = 'Save Deal';
@@ -4328,6 +4769,8 @@
     applyDateToPair('sdStartMonth', 'sdStartDay', 'sdStartYear', start);
     applyDateToPair('sdExpiryMonth', 'sdExpiryDay', 'sdExpiryYear', addDaysStr(start, 30));
     refreshRangeAndDte();
+    updateSdStrikeMatch();
+    updateSdComputedLimit();
 
     document.getElementById('saveDealModal').classList.remove('hidden');
 
@@ -4356,6 +4799,8 @@
 
     normalizeSdLimitOnBlur();
     document.getElementById('sdPt').value = deal.ptPct || '';
+    updateSdStrikeMatch();
+    updateSdComputedLimit();
 
     document.getElementById('saveDealModal').classList.remove('hidden');
   }
@@ -4458,8 +4903,75 @@
     el.dispatchEvent(new Event('blur'));
   }
 
+  function cdLiveSyncFromPct() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const raw = document.getElementById('cdPtPct').value;
+    if (raw.trim() === '' || raw === '-' || raw === '.' || raw === '-.' || raw === '+.') return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    const pct = sanitizePtPct(raw);
+    const perShare = truncate2(limit * (1 - pct / 100));
+    document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
+  }
+
+  function cdLiveSyncFromVal() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const raw = document.getElementById('cdPtVal').value;
+    if (raw.trim() === '' || raw === '-' || raw === '.' || raw === '-.') return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    const enteredVal = number(raw, 0);
+    const perShare = truncate2(enteredVal / contracts);
+    document.getElementById('cdPtPct').value = String(truncate2(derivePtPctFromProfitTaker(limit, perShare)));
+  }
+
+  document.getElementById('cdPtPct').addEventListener('input', cdLiveSyncFromPct);
+  document.getElementById('cdPtVal').addEventListener('input', cdLiveSyncFromVal);
   document.getElementById('cdPtPct').addEventListener('blur', cdSyncFromPct);
   document.getElementById('cdPtVal').addEventListener('blur', cdSyncFromVal);
+
+  function updateCdStrikeMatch() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const result = checkCloseStrikeMatch(
+      document.getElementById('cdClosedStrikeSold').value,
+      document.getElementById('cdClosedStrikeBought').value,
+      deal,
+      document.getElementById('cdPtPct').value
+    );
+    applyStrikeMatchClass(document.getElementById('cdClosedStrikeSold'), result);
+    applyStrikeMatchClass(document.getElementById('cdClosedStrikeBought'), result);
+  }
+
+  function updateCdProfitLoss() {
+    const deal = deals.find(d => d.id === closingDealId);
+    const el = document.getElementById('cdStrikeClosePl');
+    if (!deal) return;
+    const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
+      el.textContent = '—';
+      el.classList.remove('green', 'red');
+      return;
+    }
+    const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
+    const contracts = getContractsValue(deal.contracts);
+    const closeDebitPerShare = bought - sold;
+    const profitPerShare = limitPerShare - closeDebitPerShare;
+    const profitDollars = Math.round(profitPerShare * 100) * contracts;
+    const isLoss = profitDollars < 0;
+    el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
+    el.classList.toggle('green', !isLoss);
+    el.classList.toggle('red', isLoss);
+  }
+  ['cdClosedStrikeSold', 'cdClosedStrikeBought', 'cdPtPct', 'cdPtVal'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      updateCdStrikeMatch();
+      updateCdProfitLoss();
+    });
+  });
 
   function openCloseModal(id) {
     const deal = deals.find(d => d.id === id);
@@ -4477,6 +4989,11 @@
 
     document.getElementById('cdEntryPrice').value = deal.entryStockPrice || '';
     document.getElementById('cdClosedPrice').value = deal.closedStockPrice || '';
+
+    document.getElementById('cdClosedStrikeSold').value = deal.closedStrikeSold || '';
+    document.getElementById('cdClosedStrikeBought').value = deal.closedStrikeBought || '';
+    updateCdStrikeMatch();
+    updateCdProfitLoss();
     document.getElementById('closeDealModal').classList.remove('hidden');
 
   }
@@ -4496,6 +5013,8 @@
     deal.closePtPct = String(sanitizePtPct(document.getElementById('cdPtPct').value));
     deal.entryStockPrice = document.getElementById('cdEntryPrice').value.trim();
     deal.closedStockPrice = document.getElementById('cdClosedPrice').value.trim();
+    deal.closedStrikeSold = document.getElementById('cdClosedStrikeSold').value.trim();
+    deal.closedStrikeBought = document.getElementById('cdClosedStrikeBought').value.trim();
     deal.updatedTs = Date.now();
     delete deal.exitValue;
     clearResolved(deal.id);
@@ -4540,6 +5059,9 @@
     document.getElementById('epDateRow').hidden = !deal.closed;
     document.getElementById('epClosedRow').hidden = !deal.closed;
     document.getElementById('epPriceRow').classList.toggle('single', !deal.closed);
+    document.getElementById('epClosedStrikeRow').hidden = !deal.closed;
+    document.getElementById('epClosedStrikeSold').value = deal.closedStrikeSold || '';
+    document.getElementById('epClosedStrikeBought').value = deal.closedStrikeBought || '';
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
@@ -4557,6 +5079,8 @@
     if (deal.closed) {
       deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
+      deal.closedStrikeSold = document.getElementById('epClosedStrikeSold').value.trim();
+      deal.closedStrikeBought = document.getElementById('epClosedStrikeBought').value.trim();
     }
     deal.updatedTs = Date.now();
     closeEntryPriceModal();
