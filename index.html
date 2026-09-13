@@ -1528,7 +1528,7 @@
   .sd-price-input:focus ~ .sd-dollar-prefix { opacity: 0; }
 
   .sd-computed-limit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
-  .sd-computed-limit-inner { grid-column: 2; display: flex; align-items: center; justify-content: center; }
+  .sd-computed-limit-inner { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .sd-computed-limit-inner b { font-size: 15px; font-weight: 800; color: var(--muted); }
   .sd-computed-limit-inner b.green { color: var(--green); }
   .sd-computed-limit-inner b.red { color: var(--red); }
@@ -1566,6 +1566,8 @@
   }
 
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .form-grid-2[hidden] { display: none; }
 
   .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
@@ -2530,6 +2532,8 @@
           <div class="sd-computed-limit">
             <div class="sd-computed-limit-inner">
               <b id="sdComputedLimit">&mdash;</b>
+
+              <button type="button" id="sdSwapBtn" class="strike-close-apply-btn needs-apply" onclick="swapSdStrikeValues()" title="Swap Strike Sold $ and Strike Bought $" hidden>&#x267B;&#xFE0F;</button>
             </div>
           </div>
           <div class="form-row">
@@ -4909,11 +4913,13 @@
     const shortRaw = document.getElementById('sdShort').value;
     const longRaw = document.getElementById('sdLong').value;
     const el = document.getElementById('sdComputedLimit');
+    const swapBtn = document.getElementById('sdSwapBtn');
     const shortVal = parseFloat(shortRaw);
     const longVal = parseFloat(longRaw);
     if (!isFinite(shortVal) || !isFinite(longVal)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      swapBtn.hidden = true;
       return;
     }
     const implied = Math.abs(shortVal - longVal);
@@ -4921,6 +4927,8 @@
     const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
     el.classList.toggle('green', result === 'green');
     el.classList.toggle('red', result === 'red');
+
+    swapBtn.hidden = longVal >= shortVal;
   }
   ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -4928,6 +4936,16 @@
       updateSdComputedLimit();
     });
   });
+
+  function swapSdStrikeValues() {
+    const longEl = document.getElementById('sdLong');
+    const shortEl = document.getElementById('sdShort');
+    const tmp = longEl.value;
+    longEl.value = shortEl.value;
+    shortEl.value = tmp;
+    updateSdStrikeMatch();
+    updateSdComputedLimit();
+  }
 
   function openSaveModal() {
     if (!requirePermission()) return;
@@ -5165,8 +5183,18 @@
       el.classList.toggle('red', result === 'red');
 
       applyBtn.hidden = false;
-      applyBtn.classList.toggle('needs-apply', result === 'red');
-      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+
+      if (bought < sold) {
+        applyBtn.textContent = '♻️';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.onclick = swapCdStrikeValues;
+        applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else {
+        applyBtn.textContent = '✔️';
+        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.onclick = applyCdLiveToTarget;
+        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+      }
     }
 
     const ptRaw = document.getElementById('cdPtPct').value;
@@ -5194,6 +5222,16 @@
     const impliedProfitTakerPerShare = truncate2(sold - bought);
     document.getElementById('cdPtPct').value = String(truncate2(derivePtPctFromProfitTaker(limit, impliedProfitTakerPerShare)));
     cdComputeValFromPct();
+    updateCdStrikeMatch();
+    updateCdProfitLoss();
+  }
+
+  function swapCdStrikeValues() {
+    const soldEl = document.getElementById('cdClosedStrikeSold');
+    const boughtEl = document.getElementById('cdClosedStrikeBought');
+    const tmp = soldEl.value;
+    soldEl.value = boughtEl.value;
+    boughtEl.value = tmp;
     updateCdStrikeMatch();
     updateCdProfitLoss();
   }
@@ -5313,10 +5351,20 @@
       const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, deal.closePtPct);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-
       applyBtn.hidden = false;
-      applyBtn.classList.toggle('needs-apply', result === 'red');
-      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+
+      if (bought < sold) {
+        applyBtn.textContent = '♻️';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.onclick = swapEpClosedStrikeValues;
+        applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else {
+
+        applyBtn.textContent = '✔️';
+        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.onclick = applyEpCloseLiveToTarget;
+        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+      }
     }
     const f = finalStats(deal);
     targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
@@ -5343,6 +5391,16 @@
     updateEpProfitLoss();
     renderPortfolio();
     pushToDriveDebounced();
+  }
+
+  function swapEpClosedStrikeValues() {
+    const soldEl = document.getElementById('epClosedStrikeSold');
+    const boughtEl = document.getElementById('epClosedStrikeBought');
+    const tmp = soldEl.value;
+    soldEl.value = boughtEl.value;
+    boughtEl.value = tmp;
+    updateEpStrikeMatch();
+    updateEpProfitLoss();
   }
 
   function updateEpOpenStrikeMatch() {
@@ -5377,10 +5435,20 @@
       const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-
       applyBtn.hidden = false;
-      applyBtn.classList.toggle('needs-apply', result === 'red');
-      applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
+
+      if (soldVal < boughtVal) {
+        applyBtn.textContent = '♻️';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.onclick = swapEpOpenStrikeValues;
+        applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else {
+
+        applyBtn.textContent = '✔️';
+        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.onclick = applyEpOpenLiveToTarget;
+        applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
+      }
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
@@ -5405,6 +5473,16 @@
     updateEpComputedLimit();
     renderPortfolio();
     pushToDriveDebounced();
+  }
+
+  function swapEpOpenStrikeValues() {
+    const soldEl = document.getElementById('epOpenStrikeSold');
+    const boughtEl = document.getElementById('epOpenStrikeBought');
+    const tmp = soldEl.value;
+    soldEl.value = boughtEl.value;
+    boughtEl.value = tmp;
+    updateEpOpenStrikeMatch();
+    updateEpComputedLimit();
   }
 
   function openEntryPriceModal(id) {
