@@ -1256,6 +1256,9 @@
 
   .deal-strikes-toggleable { flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; }
   .deal-strikes-toggleable:hover { filter: brightness(1.3); }
+
+  .deal-strikes-clickable { cursor: pointer; }
+  .deal-strikes-clickable:hover { filter: brightness(1.3); }
   .deal-strikes-view-badge { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--muted); text-transform: uppercase; }
 
   .deal-actions-cell { display: flex; align-items: center; justify-content: center; }
@@ -1602,10 +1605,15 @@
   .strike-close-apply-btn {
     display: flex; align-items: center; justify-content: center;
     width: 18px; height: 18px; border-radius: 50%; padding: 0; margin-top: 1px;
-    border: 1px solid var(--green); background: transparent; color: var(--green);
-    font-size: 10px; line-height: 1; cursor: pointer;
+    border: 1px solid transparent; background: transparent; color: var(--green);
+    font-size: 12px; line-height: 1; cursor: pointer;
   }
-  .strike-close-apply-btn:hover { background: rgba(3,136,0,.15); }
+  .strike-close-apply-btn.needs-apply {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid var(--green); background: transparent;
+    font-size: 10px;
+  }
+  .strike-close-apply-btn.needs-apply:hover { background: rgba(3,136,0,.15); }
 
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
@@ -1733,6 +1741,10 @@
 
   #mpAskPrice:placeholder-shown ~ .mid-price-sign,
   #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
+
+  .mid-price-live-spacer { flex: 0 0 105px; }
+  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); }
+  .mid-price-live-value.has-value { color: var(--green); }
 
   .date-pair { display: flex; align-items: center; gap: 6px; }
 
@@ -2902,9 +2914,14 @@
         <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
                onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
-               oninput="updateMidPriceButtonState()" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
       </div>
+    </div>
+
+    <div class="form-row mid-price-row mid-price-live">
+      <span class="mid-price-live-spacer" aria-hidden="true"></span>
+      <b id="mpLiveLimit" class="mid-price-live-value">&mdash;</b>
     </div>
     <div class="form-row mid-price-row mid-price-bid">
       <label for="mpBidPrice">Bid Price</label>
@@ -2912,7 +2929,7 @@
         <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
                onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
-               oninput="updateMidPriceButtonState()" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
       </div>
     </div>
@@ -3265,10 +3282,28 @@
     document.getElementById('mpSetLimitBtn').disabled = !ask || !bid;
   }
 
+  function updateMidPriceLive() {
+    const askRaw = document.getElementById('mpAskPrice').value;
+    const bidRaw = document.getElementById('mpBidPrice').value;
+    const el = document.getElementById('mpLiveLimit');
+    if (askRaw.trim() === '' || bidRaw.trim() === '') {
+      el.textContent = '—';
+      el.classList.remove('has-value');
+      return;
+    }
+    const ask = getLimitValueRaw(askRaw);
+    const bid = getLimitValueRaw(bidRaw);
+    const avg = (ask + bid) / 2;
+
+    el.textContent = '-' + Math.abs(avg).toFixed(2);
+    el.classList.add('has-value');
+  }
+
   function openMidPriceModal() {
     document.getElementById('mpAskPrice').value = '';
     document.getElementById('mpBidPrice').value = '';
     updateMidPriceButtonState();
+    updateMidPriceLive();
     document.getElementById('midPriceModal').classList.remove('hidden');
     const askEl = document.getElementById('mpAskPrice');
     askEl.focus();
@@ -4499,8 +4534,10 @@
       strikesCellOnClick = ` onclick="togglePricesView('${deal.id}')"`;
     } else {
       strikesPricingHtml = openPricingHtml + closedPricingHtml;
-      strikesCellExtraClass = hasClosedPricing ? ' deal-strikes-cell-closed' : '';
-      strikesCellOnClick = '';
+
+      const sideBySideClickable = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide';
+      strikesCellExtraClass = (hasClosedPricing ? ' deal-strikes-cell-closed' : '') + (sideBySideClickable ? ' deal-strikes-clickable' : '');
+      strikesCellOnClick = sideBySideClickable ? ` onclick="openEntryPriceModal('${deal.id}')"` : '';
     }
 
     return `
@@ -5127,7 +5164,9 @@
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
 
-      applyBtn.hidden = result !== 'red';
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
     }
 
     const ptRaw = document.getElementById('cdPtPct').value;
@@ -5274,7 +5313,10 @@
       const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, deal.closePtPct);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-      applyBtn.hidden = result !== 'red';
+
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
     }
     const f = finalStats(deal);
     targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
@@ -5335,7 +5377,10 @@
       const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-      applyBtn.hidden = result !== 'red';
+
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }

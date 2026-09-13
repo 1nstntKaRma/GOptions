@@ -2141,6 +2141,12 @@
      frame regardless of direction. */
   .deal-strikes-toggleable { flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; }
   .deal-strikes-toggleable:hover { filter: brightness(1.3); }
+
+  /* Side-by-side mode's own Prices cell click (opens New/Closed Deal
+     Prices -- see dealRowHtml()'s own comment) -- same hover affordance
+     as the toggleable cell above, its closest sibling behavior. */
+  .deal-strikes-clickable { cursor: pointer; }
+  .deal-strikes-clickable:hover { filter: brightness(1.3); }
   .deal-strikes-view-badge { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--muted); text-transform: uppercase; }
 
 
@@ -2881,23 +2887,32 @@
   .ep-open-limit b.red { color: var(--red); }
   .ep-open-limit-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
-  /* "Apply live value to the static target" button -- shared by all 3
-     spots (Close Deal, Closed Deal Prices, New Deal Prices), hidden by
-     default (see each's own applyXxxLiveToTarget()/update function --
-     only shown once both fields have a value AND the check is red).
-     A 3rd flex child stacked below the value/target pair -- the shared
-     column's own flex-direction:column + align-items:center already
-     centers it independently of whether 2 or 3 children are present,
-     no extra layout work needed for that. Small enough (18px) to still
-     fit this column's narrowest tier (44px) alongside the value/target
-     text above it. */
+  /* "Apply live value to the static target" checkmark -- shared by all
+     3 spots (Close Deal, Closed Deal Prices, New Deal Prices), hidden
+     entirely while either field is still empty (see each's own
+     applyXxxLiveToTarget()/update function). Once both fields have a
+     value it's ALWAYS shown, in one of 2 looks: bare/frameless (base
+     rule below) when already green -- a plain confirmation, nothing to
+     press -- or a proper round-framed button (.needs-apply) when red,
+     since that one actually does something on click. A 3rd flex child
+     stacked below the value/target pair -- the shared column's own
+     flex-direction:column + align-items:center already centers it
+     independently of whether 2 or 3 children are present, no extra
+     layout work needed for that. Small enough (18px) to still fit this
+     column's narrowest tier (44px) alongside the value/target text
+     above it. */
   .strike-close-apply-btn {
     display: flex; align-items: center; justify-content: center;
     width: 18px; height: 18px; border-radius: 50%; padding: 0; margin-top: 1px;
-    border: 1px solid var(--green); background: transparent; color: var(--green);
-    font-size: 10px; line-height: 1; cursor: pointer;
+    border: 1px solid transparent; background: transparent; color: var(--green);
+    font-size: 12px; line-height: 1; cursor: pointer;
   }
-  .strike-close-apply-btn:hover { background: rgba(3,136,0,.15); }
+  .strike-close-apply-btn.needs-apply {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid var(--green); background: transparent;
+    font-size: 10px;
+  }
+  .strike-close-apply-btn.needs-apply:hover { background: rgba(3,136,0,.15); }
 
   /* every label in both modals, plus the pre-existing Profit Taker %/$ labels
      in Close Deal which were never centered in an earlier round (only their
@@ -3119,6 +3134,15 @@
      empty) -- was also hidden on :focus before. */
   #mpAskPrice:placeholder-shown ~ .mid-price-sign,
   #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
+
+  /* Live (Ask+Bid)/2 preview row, between the 2 fields -- spacer matches
+     the other rows' own label width (105px) so this row's total width
+     (and its centering within the panel) is identical to theirs,
+     landing the value under the SAME column the fields themselves sit
+     in, not the row's full width. */
+  .mid-price-live-spacer { flex: 0 0 105px; }
+  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); }
+  .mid-price-live-value.has-value { color: var(--green); }
 
 
   /* ---------- month/day date picker (no year field) ---------- */
@@ -4859,9 +4883,19 @@
         <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
                onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
-               oninput="updateMidPriceButtonState()" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
       </div>
+    </div>
+    <!-- Live (Ask+Bid)/2 preview -- same formula applyMidPrice() itself
+         uses, just not yet committed to Limit $. No label, per request
+         -- .mid-price-live-spacer is an invisible flex-child the exact
+         same fixed width as the OTHER rows' own label (105px), so this
+         row's value lands centered under the FIELD column specifically
+         (not the row's full width, which would include the label). -->
+    <div class="form-row mid-price-row mid-price-live">
+      <span class="mid-price-live-spacer" aria-hidden="true"></span>
+      <b id="mpLiveLimit" class="mid-price-live-value">&mdash;</b>
     </div>
     <div class="form-row mid-price-row mid-price-bid">
       <label for="mpBidPrice">Bid Price</label>
@@ -4869,7 +4903,7 @@
         <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
                onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
-               oninput="updateMidPriceButtonState()" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
       </div>
     </div>
@@ -5465,10 +5499,34 @@
     document.getElementById('mpSetLimitBtn').disabled = !ask || !bid;
   }
 
+  // Live (Ask+Bid)/2 preview -- identical formula to applyMidPrice()
+  // itself, just not committed to Limit $ yet. Dash/muted until both
+  // fields have a value, matching every other live-preview field in
+  // this file.
+  function updateMidPriceLive() {
+    const askRaw = document.getElementById('mpAskPrice').value;
+    const bidRaw = document.getElementById('mpBidPrice').value;
+    const el = document.getElementById('mpLiveLimit');
+    if (askRaw.trim() === '' || bidRaw.trim() === '') {
+      el.textContent = '—';
+      el.classList.remove('has-value');
+      return;
+    }
+    const ask = getLimitValueRaw(askRaw);
+    const bid = getLimitValueRaw(bidRaw);
+    const avg = (ask + bid) / 2;
+    // No "$" -- and always shown negative, matching Limit $ itself
+    // (always negative by rule, see getLimitValueRaw) rather than a
+    // plain magnitude.
+    el.textContent = '-' + Math.abs(avg).toFixed(2);
+    el.classList.add('has-value');
+  }
+
   function openMidPriceModal() {
     document.getElementById('mpAskPrice').value = '';
     document.getElementById('mpBidPrice').value = '';
     updateMidPriceButtonState();
+    updateMidPriceLive();
     document.getElementById('midPriceModal').classList.remove('hidden');
     const askEl = document.getElementById('mpAskPrice');
     askEl.focus();
@@ -7319,8 +7377,16 @@
       strikesCellOnClick = ` onclick="togglePricesView('${deal.id}')"`;
     } else {
       strikesPricingHtml = openPricingHtml + closedPricingHtml;
-      strikesCellExtraClass = hasClosedPricing ? ' deal-strikes-cell-closed' : '';
-      strikesCellOnClick = '';
+      // Side-by-side mode only -- deliberately NOT extended to toggle
+      // mode's own non-qualifying cells (open deal, or closed but
+      // missing a field), so this never competes with
+      // togglePricesView()'s own click handling on the SAME cell.
+      // openEntryPriceModal() already titles itself "New Deal Prices"/
+      // "Closed Deal Prices" from deal.closed on its own, nothing extra
+      // needed here to pick the right one.
+      const sideBySideClickable = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide';
+      strikesCellExtraClass = (hasClosedPricing ? ' deal-strikes-cell-closed' : '') + (sideBySideClickable ? ' deal-strikes-clickable' : '');
+      strikesCellOnClick = sideBySideClickable ? ` onclick="openEntryPriceModal('${deal.id}')"` : '';
     }
 
     return `
@@ -8232,9 +8298,14 @@
       const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, document.getElementById('cdPtPct').value);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-      // Apply button only for a genuine red (both fields present AND
-      // mismatched) -- never for green (nothing to apply).
-      applyBtn.hidden = result !== 'red';
+      // Shown whenever both fields have a value, regardless of match --
+      // red gets the framed, actionable button (applies the fix); green
+      // gets a bare frameless checkmark (nothing to apply, just a
+      // confirmation) via .needs-apply's absence. Never shown with a
+      // field still empty (the branch above handles that).
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
     }
     // Grey target line -- the deal's Profit Taker %/$-derived figure
     // (same fifthValue/sideIsLoss the Portfolio's own P/L cell shows),
@@ -8426,7 +8497,11 @@
       const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, deal.closePtPct);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-      applyBtn.hidden = result !== 'red';
+      // Shown whenever both fields have a value -- framed/actionable
+      // for red, bare frameless checkmark for green (nothing to apply).
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
     }
     const f = finalStats(deal);
     targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
@@ -8501,7 +8576,11 @@
       const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
-      applyBtn.hidden = result !== 'red';
+      // Shown whenever both fields have a value -- framed/actionable
+      // for red, bare frameless checkmark for green (nothing to apply).
+      applyBtn.hidden = false;
+      applyBtn.classList.toggle('needs-apply', result === 'red');
+      applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
