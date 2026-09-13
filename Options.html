@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="color-scheme" content="dark" />
-<title>Options v4.5 - Golan</title>
+<title>Options v5.0 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ============================== GLOBAL / BASE ============================== */
@@ -258,8 +258,12 @@
     .btn-secondary:hover { border-color: var(--hover-accent); }
     .conflict-choice-btn:hover { border-color: var(--hover-accent); }
     /* .badge's border is already 1px solid currentColor, so overriding
-       just `color` recolors border + "OPEN" text together. */
+       just `color` recolors border + "Active" text together. */
     button.badge-open:hover { color: var(--hover-accent); }
+    /* CLOSED gets its own blue hover, not the standard purple
+       hover-accent every other button here uses -- deliberate, so it
+       doesn't read as "the same purple as while editing a deal." */
+    button.badge-closed:hover { color: var(--blue); }
   }
 
 
@@ -1963,14 +1967,11 @@
 
   .badge-open { color: var(--blue); }
 
-  /* Only .badge-open is ever a real <button> now (see
-     dealRowHtml/dealCardHtml) -- .badge-closed stays a <span>, "no longer
-     function[ing] as a button" is automatic since it was never made into one,
-     not something toggled on/off per deal.
-  */
-  button.badge-open { cursor: pointer; }
+  /* Both badges are real <button>s now (see dealRowHtml/dealCardHtml) --
+     CLOSED opens the deal in Calculator Mode same as Active does. */
+  button.badge-open, button.badge-closed { cursor: pointer; }
 
-  .badge-closed { color: var(--muted); }
+  .badge-closed { color: var(--purple-dark); }
 
   /* Reopen used to stack here too (above CLOSED) -- moved into
      .deal-actions-cell (replaces Close there once closed), per "remove
@@ -4240,7 +4241,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v4.5 By Golan</div>
+    <div class="footer">Options v5.0 By Golan</div>
     </main>
   </div>
 </div>
@@ -7089,7 +7090,16 @@
     if (!Number.isFinite(bought) || !Number.isFinite(sold)) return null;
     const limit = Math.abs(getLimitValueRaw(limitRaw));
     const credit = sold - bought;
-    return Math.abs(credit - limit) < 0.01 ? 'green' : 'red';
+    // Integer-cents comparison, not a raw-float epsilon -- a plain
+    // subtraction here can land a hair off a clean cent (e.g. 28.78 -
+    // 24.00 = 4.780000000000001), and a genuine 1-cent mismatch is
+    // exactly the case a `< 0.01` tolerance can flip to the wrong side
+    // of, since the float noise (~1e-13) and the tolerance are both
+    // sitting right at the cent boundary. Rounding both sides to whole
+    // cents first makes the comparison exact.
+    const creditCents = Math.round(credit * 100);
+    const limitCents = Math.round(limit * 100);
+    return creditCents === limitCents ? 'green' : 'red';
   }
 
   // Closed Strike Pricing: is the LIVE profit/loss these 2 fields imply
@@ -7273,8 +7283,8 @@
     // Closed line ("Desktop Portfolio - below 'CLOSED' label 'Date
     // Closed'...").
     const badge = isClosed
-      ? `<span class="badge badge-closed">CLOSED</span><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
-      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+      ? `<button type="button" class="badge badge-closed" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">CLOSED</button><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
+      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">Active</button>`;
     // Same slot in .deal-actions-cell, icon/handler/frame swap -- see .deal-
     // actions-cell .deal-icon-btn.reopen. Same trade-off note as the Phone
     // version: this removes this button's "Update Close" job for already-
@@ -7462,10 +7472,10 @@
     // Date sits to the right of the CLOSED label. .open/.closed
     // modifier picks its own --phone-badge-*-x knob (see CSS/root) for
     // horizontal position. Date is nested INSIDE the same .badge-closed
-    // span (one frame, "CLOSED  30.8"), not a separate pill.
+    // button (one frame, "CLOSED  30.8"), not a separate pill.
     const borderBadge = isClosed
-      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></span></div>`
-      : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
+      ? `<div class="deal-card-border-badge closed"><button type="button" class="badge badge-closed" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></button></div>`
+      : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">Active</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
     const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();

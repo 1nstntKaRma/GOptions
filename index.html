@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="color-scheme" content="dark" />
-<title>Options v4.5 - Golan</title>
+<title>Options v5.0 - Golan</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 
@@ -186,6 +186,8 @@
     .conflict-choice-btn:hover { border-color: var(--hover-accent); }
 
     button.badge-open:hover { color: var(--hover-accent); }
+
+    button.badge-closed:hover { color: var(--blue); }
   }
 
   :root {
@@ -1190,9 +1192,9 @@
 
   .badge-open { color: var(--blue); }
 
-  button.badge-open { cursor: pointer; }
+  button.badge-open, button.badge-closed { cursor: pointer; }
 
-  .badge-closed { color: var(--muted); }
+  .badge-closed { color: var(--purple-dark); }
 
   .deal-status-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 
@@ -2381,7 +2383,7 @@
       <div id="dealCardsMobile" class="deal-cards-mobile"></div>
     </div>
 
-    <div class="footer">Options v4.5 By Golan</div>
+    <div class="footer">Options v5.0 By Golan</div>
     </main>
   </div>
 </div>
@@ -4372,7 +4374,10 @@
     if (!Number.isFinite(bought) || !Number.isFinite(sold)) return null;
     const limit = Math.abs(getLimitValueRaw(limitRaw));
     const credit = sold - bought;
-    return Math.abs(credit - limit) < 0.01 ? 'green' : 'red';
+
+    const creditCents = Math.round(credit * 100);
+    const limitCents = Math.round(limit * 100);
+    return creditCents === limitCents ? 'green' : 'red';
   }
 
   function checkCloseStrikeMatch(closedSoldRaw, closedBoughtRaw, deal, ptPctValue) {
@@ -4468,8 +4473,8 @@
     const isClosed = !!deal.closed;
 
     const badge = isClosed
-      ? `<span class="badge badge-closed">CLOSED</span><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
-      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button>`;
+      ? `<button type="button" class="badge badge-closed" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">CLOSED</button><span class="deal-status-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span>`
+      : `<button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">Active</button>`;
 
     const closeOrReopenBtn = isClosed
       ? `<button type="button" class="deal-icon-btn reopen" onclick="reopenDeal('${deal.id}')" title="Reopen this deal">${dealIconGlyph('dealReopen')}</button>`
@@ -4580,8 +4585,8 @@
     const isClosed = !!deal.closed;
 
     const borderBadge = isClosed
-      ? `<div class="deal-card-border-badge closed"><span class="badge badge-closed">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></span></div>`
-      : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">OPEN</button></div>`;
+      ? `<div class="deal-card-border-badge closed"><button type="button" class="badge badge-closed" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">CLOSED<span class="deal-card-close-date">${escapeHtml(formatDateDisplay(deal.closeDate) || '—')}</span></button></div>`
+      : `<div class="deal-card-border-badge open"><button type="button" class="badge badge-open" onclick="openDealInCalculator('${deal.id}')" title="Open in Calculator Mode">Active</button></div>`;
     const tickerHtml = deal.ticker ? `<span class="deal-ticker">${escapeHtml(deal.ticker)}</span>` : '';
     const title = (deal.name || '').trim();
     const showTitle = title && title.toUpperCase() !== (deal.ticker || '').toUpperCase();
