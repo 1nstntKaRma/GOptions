@@ -1246,7 +1246,8 @@
   .deal-strikes-cell b { color: var(--text); font-weight: 700; }
 
   .deal-strikes-cell-closed { gap: 10px; }
-  .deal-strikes-block { flex: 1; }
+
+  .deal-strikes-block { flex: 1; padding: 5px 8px; }
   .deal-strikes-closed-block { border-left: 1px solid var(--border); padding-left: 10px; }
 
   .deal-strikes-toggleable { flex-direction: column; gap: 2px; cursor: pointer; }
@@ -1519,10 +1520,11 @@
 
   .sd-price-input:focus ~ .sd-dollar-prefix { opacity: 0; }
 
-  .sd-computed-limit { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .sd-computed-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-  .sd-computed-limit b { font-size: 15px; color: var(--muted); }
-  .sd-computed-limit b.sd-computed-limit-match { color: var(--green); }
+  .sd-computed-limit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .sd-computed-limit-inner { grid-column: 2; display: flex; align-items: center; justify-content: center; }
+  .sd-computed-limit-inner b { font-size: 15px; font-weight: 800; color: var(--muted); }
+  .sd-computed-limit-inner b.green { color: var(--green); }
+  .sd-computed-limit-inner b.red { color: var(--red); }
 
   #saveDealModal .form-row label { text-align: center; text-transform: none; }
 
@@ -1588,9 +1590,10 @@
   #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { height: 79px; font-size: 18px; padding-left: 12px; padding-right: 61px; text-align: center; }
 
   .ep-open-limit { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-  .ep-open-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-  .ep-open-limit b { font-size: 15px; color: var(--muted); }
-  .ep-open-limit b.ep-open-limit-match { color: var(--green); }
+  .ep-open-limit b { font-size: 15px; font-weight: 800; color: var(--muted); }
+  .ep-open-limit b.green { color: var(--green); }
+  .ep-open-limit b.red { color: var(--red); }
+  .ep-open-limit-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
@@ -1687,16 +1690,17 @@
 
   .income-summary-panel { width: min(340px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-  .income-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+
+  .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
   .income-summary-label { font-size: 13px; color: var(--muted); }
 
-  .income-summary-value { font-size: 18px; font-weight: 800; }
+  .income-summary-value { font-size: 18px; font-weight: 800; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .income-summary-value.green { color: var(--green); }
   .income-summary-value.red { color: var(--red); }
 
   .income-summary-annotation { color: var(--muted); font-weight: 400; }
 
-  .income-summary-deduction { font-size: 13px; color: var(--red); }
+  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .portfolio-summary-clickable { cursor: pointer; }
 
@@ -1800,6 +1804,9 @@
     #saveDealModal .sd-range-field .total-stepper-sm .total-stepper-btn { font-size: 20px; }
 
     #saveDealModal .sd-strike-grid { grid-template-columns: 58px 1fr 1.15fr; gap: 6px 6px; }
+
+    #saveDealModal .sd-computed-limit { grid-template-columns: 58px 1fr 1.15fr; gap: 6px 6px; }
+    #saveDealModal .sd-computed-limit-inner { grid-column: 3; }
     #saveDealModal .sd-strike-grid .form-row { display: contents; }
     #saveDealModal .sd-strike-grid .form-row > label {
       margin-bottom: 0; text-align: left; font-size: 12px; align-self: center;
@@ -1843,7 +1850,7 @@
     #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
     #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 15px; padding-left: 8px; padding-right: 61px; }
     .ep-open-limit b { font-size: 13px; }
-    .ep-open-limit-label { font-size: 10px; }
+    .ep-open-limit-target { font-size: 10px; }
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
 
@@ -1863,7 +1870,7 @@
     #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
     #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 11px; padding-left: 6px; padding-right: 61px; }
     .ep-open-limit b { font-size: 11px; }
-    .ep-open-limit-label { font-size: 9px; }
+    .ep-open-limit-target { font-size: 9px; }
 
     #saveDealModal #sdTotal { font-size: 14px; padding-right: 38px; }
     #saveDealModal #sdLimit, #saveDealModal #sdPt { font-size: 14px; padding-right: 38px; }
@@ -2496,8 +2503,9 @@
           </div>
 
           <div class="sd-computed-limit">
-            <span class="sd-computed-limit-label">Limit $</span>
-            <b id="sdComputedLimit">&mdash;</b>
+            <div class="sd-computed-limit-inner">
+              <b id="sdComputedLimit">&mdash;</b>
+            </div>
           </div>
           <div class="form-row">
             <label for="sdStrikeBuy" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought</label>
@@ -2682,8 +2690,8 @@
         </div>
       </div>
       <div class="ep-open-limit">
-        <span class="ep-open-limit-label">Limit $</span>
         <b id="epComputedLimit">&mdash;</b>
+        <small id="epComputedLimitTarget" class="ep-open-limit-target">&mdash;</small>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2831,19 +2839,21 @@
   <div class="modal-panel income-summary-panel">
     <h2>Income Summary</h2>
     <div class="income-summary-list">
+
       <div class="income-summary-row">
         <span class="income-summary-label">Gross Income</span>
+        <span class="income-summary-deduction"></span>
         <b id="incomeSummaryGross" class="income-summary-value">&mdash;</b>
       </div>
 
       <div class="income-summary-row">
-        <span class="income-summary-label">After Commissions <small id="incomeSummaryContracts" class="income-summary-annotation"></small></span>
-        <span id="incomeSummaryCommissionAmt" class="income-summary-deduction"></span>
+        <span class="income-summary-label">After Commissions</span>
+        <span class="income-summary-deduction"><small id="incomeSummaryContracts" class="income-summary-annotation"></small> <span id="incomeSummaryCommissionAmt"></span></span>
         <b id="incomeSummaryAfterCommissions" class="income-summary-value">&mdash;</b>
       </div>
       <div class="income-summary-row">
-        <span class="income-summary-label">Net Income <small id="incomeSummaryTaxPct" class="income-summary-annotation"></small></span>
-        <span id="incomeSummaryTaxAmt" class="income-summary-deduction"></span>
+        <span class="income-summary-label">Net Income</span>
+        <span class="income-summary-deduction"><small id="incomeSummaryTaxPct" class="income-summary-annotation"></small> <span id="incomeSummaryTaxAmt"></span></span>
         <b id="incomeSummaryNet" class="income-summary-value">&mdash;</b>
       </div>
     </div>
@@ -4832,13 +4842,14 @@
     const longVal = parseFloat(longRaw);
     if (!isFinite(shortVal) || !isFinite(longVal)) {
       el.textContent = '—';
-      el.classList.remove('sd-computed-limit-match');
+      el.classList.remove('green', 'red');
       return;
     }
     const implied = Math.abs(shortVal - longVal);
     el.textContent = '$' + formatTruncated2(implied);
     const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
-    el.classList.toggle('sd-computed-limit-match', result === 'green');
+    el.classList.toggle('green', result === 'green');
+    el.classList.toggle('red', result === 'red');
   }
   ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -5199,9 +5210,22 @@
     });
   });
 
+  function updateEpOpenStrikeMatch() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const result = checkOpenStrikeMatch(
+      document.getElementById('epOpenStrikeBought').value,
+      document.getElementById('epOpenStrikeSold').value,
+      deal.limit
+    );
+    applyStrikeMatchClass(document.getElementById('epOpenStrikeSold'), result);
+    applyStrikeMatchClass(document.getElementById('epOpenStrikeBought'), result);
+  }
+
   function updateEpComputedLimit() {
     const deal = deals.find(d => d.id === entryPriceDealId);
     const el = document.getElementById('epComputedLimit');
+    const targetEl = document.getElementById('epComputedLimitTarget');
     if (!deal) return;
     const soldRaw = document.getElementById('epOpenStrikeSold').value;
     const boughtRaw = document.getElementById('epOpenStrikeBought').value;
@@ -5209,16 +5233,21 @@
     const boughtVal = parseFloat(boughtRaw);
     if (!isFinite(soldVal) || !isFinite(boughtVal)) {
       el.textContent = '—';
-      el.classList.remove('ep-open-limit-match');
-      return;
+      el.classList.remove('green', 'red');
+    } else {
+      const implied = Math.abs(soldVal - boughtVal);
+      el.textContent = '$' + formatTruncated2(implied);
+      const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
     }
-    const implied = Math.abs(soldVal - boughtVal);
-    el.textContent = '$' + formatTruncated2(implied);
-    const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
-    el.classList.toggle('ep-open-limit-match', result === 'green');
+    targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
   ['epOpenStrikeSold', 'epOpenStrikeBought'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateEpComputedLimit);
+    document.getElementById(id).addEventListener('input', () => {
+      updateEpOpenStrikeMatch();
+      updateEpComputedLimit();
+    });
   });
 
   function openEntryPriceModal(id) {
@@ -5241,6 +5270,7 @@
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
     updateEpStrikeMatch();
     updateEpProfitLoss();
+    updateEpOpenStrikeMatch();
     updateEpComputedLimit();
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
