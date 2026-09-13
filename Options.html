@@ -171,6 +171,14 @@
 
   .btn-cancel:hover { filter: brightness(1.2); }
 
+  /* Permission-denied modal's "Login" action -- green frame, routes
+     straight into the existing 🔑 sign-in flow (see
+     permissionDeniedLogin()). Same 2px weight as .btn-primary (this
+     modal's own affirmative action), just green instead of blue. */
+  .btn-login { background: var(--panel); border: 2px solid var(--green); color: var(--green); }
+
+  .btn-login:hover { filter: brightness(1.2); }
+
   /* Phone Deal button, while editing: shrinks to match its Cancel
      sibling's 40x40 square (icon-only at that point). Explicit height
      needed -- without it this inherited height from an unrelated
@@ -2121,7 +2129,17 @@
      togglePricesView(), with a persistent badge (not animated -- desktop
      has room for an always-visible label, unlike phone's tap-and-glance
      toast) showing which side is current. */
-  .deal-strikes-toggleable { flex-direction: column; gap: 2px; cursor: pointer; }
+  /* align-items: stretch overrides .deal-strikes-cell's own
+     align-items:center for this cell only -- without it, switching to
+     flex-direction:column here makes .deal-strikes-block's `flex: 1`
+     apply along the now-vertical main axis instead of the horizontal
+     one, so the block shrinks to fit its own text (centered, shrink-
+     to-fit cross axis) instead of stretching to the column's full
+     width like every non-toggleable row's frame does -- the visibly
+     "smaller frame" that read as a UI glitch. Stretch makes both the
+     badge and the block span the same full width as any other row's
+     frame regardless of direction. */
+  .deal-strikes-toggleable { flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; }
   .deal-strikes-toggleable:hover { filter: brightness(1.3); }
   .deal-strikes-view-badge { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--muted); text-transform: uppercase; }
 
@@ -3986,7 +4004,11 @@
                   <button type="button" class="hamburger-item" id="hamburgerExportItem" onclick="exportDeals(); closeHamburgerMenu();"></button>
                   <label class="hamburger-item">
                     <span id="hamburgerImportLabel"></span>
-                    <input type="file" accept="application/json" onchange="importDealsFile(event); closeHamburgerMenu();" />
+                    <!-- onclick (not just onchange) so a Guest never even
+                         sees the native file picker -- returning false
+                         from requirePermission() stops the input's own
+                         default click behavior. -->
+                    <input type="file" accept="application/json" onclick="return requirePermission();" onchange="importDealsFile(event); closeHamburgerMenu();" />
                   </label>
                   </div>
                 </div>
@@ -4626,6 +4648,22 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeUpdateDealConfirm()">Cancel</button>
       <button type="button" class="btn btn-primary" onclick="confirmUpdateDeal()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shown whenever a Guest (not signed in via the existing 🔑 Google
+     Sign-In flow) tries a Registered-User-only action -- Portfolio
+     Mode, Save Deal, Export, Import -- see requirePermission() in the
+     script. Not real security (this is a client-side-only file), just
+     a clear "sign in to unlock this" prompt that routes straight into
+     the existing sign-in flow. -->
+<div id="permissionDeniedModal" class="modal-backdrop hidden">
+  <div class="modal-panel update-deal-confirm-panel">
+    <p class="update-deal-confirm-text">Only allowed users have permissions for this action.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-cancel" onclick="closePermissionDeniedModal()">Close</button>
+      <button type="button" class="btn btn-login" onclick="permissionDeniedLogin()">&#x1F511; Login</button>
     </div>
   </div>
 </div>
@@ -6178,6 +6216,10 @@
   }
 
   function setMode(mode) {
+    // Only the 'calculator' direction is always allowed -- switching
+    // TO Portfolio Mode is a Registered-User-only action (see
+    // requirePermission()). Guests keep full Calculator Mode.
+    if (mode === 'portfolio' && !requirePermission()) return;
     currentMode = mode;
     // #portfolioView is `display:none` by default in the stylesheet, so
     // clearing the inline style (style.display = '') falls back to that
@@ -7752,9 +7794,11 @@
   }
 
   /* ---------- save/edit deal modal (shared) ---------- */
-  // Red/green frame on the 2 price fields once both have a value --
-  // see checkOpenStrikeMatch(). Limit $ changing also re-checks, since
-  // the match is against Limit $, not just the 2 price fields.
+  // Red/green frame on the 2 price fields AND the original Limit $
+  // field itself once both price fields have a value -- see
+  // checkOpenStrikeMatch() (returns null, no frame, until both are
+  // set). Limit $ changing also re-checks, since the match is against
+  // Limit $, not just the 2 price fields.
   function updateSdStrikeMatch() {
     const result = checkOpenStrikeMatch(
       document.getElementById('sdShort').value,
@@ -7763,6 +7807,7 @@
     );
     applyStrikeMatchClass(document.getElementById('sdShort'), result);
     applyStrikeMatchClass(document.getElementById('sdLong'), result);
+    applyStrikeMatchClass(document.getElementById('sdLimit'), result);
   }
   // Implied Limit $ (|Sell Price - Buy Price|) shown between the 2 price
   // rows -- red/green by the SAME checkOpenStrikeMatch() result as the
@@ -7792,6 +7837,7 @@
   });
 
   function openSaveModal() {
+    if (!requirePermission()) return;
     editingDealId = null;
     document.getElementById('modalTitle').textContent = 'Save Deal';
     document.getElementById('sdSubmitBtn').textContent = `${BUTTON_EMOJIS.dealButtonIcon} Save Deal`;
@@ -7823,6 +7869,11 @@
   }
 
   function openEditModal(id) {
+    // Defense-in-depth -- Portfolio Mode is already gated, so a Guest
+    // can't normally reach this button, but this only runs from a
+    // deal row a Registered User actually rendered, so checking again
+    // here is cheap insurance against any other entry path.
+    if (!requirePermission()) return;
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
     editingDealId = id;
@@ -8369,6 +8420,7 @@
 
   /* ---------- import / export ---------- */
   function exportDeals() {
+    if (!requirePermission()) return;
     const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), deals }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -8381,6 +8433,10 @@
   }
 
   function importDealsFile(evt) {
+    // Belt-and-suspenders -- the input's own onclick (see its HTML)
+    // already stops a Guest from getting this far under normal use, but
+    // this catches any other path that fires a change event directly.
+    if (!requirePermission()) { evt.target.value = ''; return; }
     const file = evt.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -8472,6 +8528,43 @@
   let gUserEmail = null;
   let gSyncBusy = false;
   let gPushTimer = null;
+
+  /* ---------- Registered User / Guest permissions ----------
+     "Registered User" = successfully signed in via the existing 🔑
+     Google Sign-In flow above (ANY account -- no separate allow-list,
+     no new account system). Guests (not signed in) get full Calculator
+     Mode but are blocked from Portfolio Mode, Save Deal, Export, and
+     Import -- see each call site's own comment for why. This is a
+     client-side-only file, so it's a soft UX gate (anyone can read the
+     source), not real security. */
+  function isRegisteredUser() {
+    return !!gAccessToken;
+  }
+
+  // Call at the top of any Registered-User-only action. Returns true
+  // (does nothing) if allowed; otherwise shows the permission-denied
+  // modal and returns false so the caller bails out immediately.
+  function requirePermission() {
+    if (isRegisteredUser()) return true;
+    openPermissionDeniedModal();
+    return false;
+  }
+
+  function openPermissionDeniedModal() {
+    document.getElementById('permissionDeniedModal').classList.remove('hidden');
+  }
+
+  function closePermissionDeniedModal() {
+    document.getElementById('permissionDeniedModal').classList.add('hidden');
+  }
+
+  // "Login" button -- closes this modal and routes straight into the
+  // SAME sign-in flow the 🔑 topbar button already uses, rather than
+  // duplicating it.
+  function permissionDeniedLogin() {
+    closePermissionDeniedModal();
+    onSyncBtnClick();
+  }
 
   function syncConfigured() {
     return !!GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith('PASTE_');
