@@ -25,6 +25,7 @@
     --zoom-scale: 1;
     --hover-accent: #4c097f;
     --purple-dark: #45007a;
+    --yellow-dark: #9c7a00;
   }
 
   * { box-sizing: border-box; }
@@ -187,7 +188,8 @@
 
     button.badge-open:hover { color: var(--hover-accent); }
 
-    button.badge-closed:hover { color: var(--blue); }
+    button.badge-closed:hover { color: var(--hover-accent); }
+    .deal-card button.badge-closed:hover { color: var(--blue); }
   }
 
   :root {
@@ -1053,6 +1055,8 @@
 
   .deal-card .badge { background: var(--bg); }
 
+  .deal-card .badge-closed { color: var(--purple-dark); }
+
   .deal-card-close-date { font-size: 11px; color: var(--muted); margin-left: 8px; }
 
   .deal-card .deal-ticker { font-size: 26px; }
@@ -1194,7 +1198,7 @@
 
   button.badge-open, button.badge-closed { cursor: pointer; }
 
-  .badge-closed { color: var(--purple-dark); }
+  .badge-closed { color: var(--yellow-dark); }
 
   .deal-status-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 

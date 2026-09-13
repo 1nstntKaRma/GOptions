@@ -25,6 +25,7 @@
     --zoom-scale: 1;
     --hover-accent: #4c097f;
     --purple-dark: #45007a;
+    --yellow-dark: #9c7a00;
   }
 
 
@@ -260,10 +261,11 @@
     /* .badge's border is already 1px solid currentColor, so overriding
        just `color` recolors border + "Active" text together. */
     button.badge-open:hover { color: var(--hover-accent); }
-    /* CLOSED gets its own blue hover, not the standard purple
-       hover-accent every other button here uses -- deliberate, so it
-       doesn't read as "the same purple as while editing a deal." */
-    button.badge-closed:hover { color: var(--blue); }
+    /* Desktop CLOSED hover -- back to the standard purple hover-accent
+       every other button here uses. Phone gets its own blue override
+       just below (higher specificity, wins regardless of order). */
+    button.badge-closed:hover { color: var(--hover-accent); }
+    .deal-card button.badge-closed:hover { color: var(--blue); }
   }
 
 
@@ -1719,6 +1721,13 @@
 
   .deal-card .badge { background: var(--bg); }
 
+  /* Phone-only CLOSED color profile -- dark purple beats Desktop's dark
+     yellow here (kept separate per explicit request: "amazing for phone
+     portfolio mode, save this as a phone only color"). Higher
+     specificity than the plain .badge-closed rule above wins regardless
+     of source order. */
+  .deal-card .badge-closed { color: var(--purple-dark); }
+
   /* Nested inside .badge-closed now (see dealCardHtml()) -- its own
      background/ padding/border-radius from the previous "separate pill" round
      are gone, it just inherits .badge-closed's single frame; margin-left is
@@ -1971,7 +1980,7 @@
      CLOSED opens the deal in Calculator Mode same as Active does. */
   button.badge-open, button.badge-closed { cursor: pointer; }
 
-  .badge-closed { color: var(--purple-dark); }
+  .badge-closed { color: var(--yellow-dark); }
 
   /* Reopen used to stack here too (above CLOSED) -- moved into
      .deal-actions-cell (replaces Close there once closed), per "remove
