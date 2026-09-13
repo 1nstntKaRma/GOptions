@@ -2110,7 +2110,10 @@
      very next column. .deal-strikes-closed-block gets a divider so the
      2 blocks read as distinct groups, not one run-on line. */
   .deal-strikes-cell-closed { gap: 10px; }
-  .deal-strikes-block { flex: 1; }
+  /* Padding added -- the strike-match-green/-red frame (a 2px border,
+     see its own rule) was sitting flush against the "Sell $X / Buy $X"
+     text with zero clearance, reading as cramped. */
+  .deal-strikes-block { flex: 1; padding: 5px 8px; }
   .deal-strikes-closed-block { border-left: 1px solid var(--border); padding-left: 10px; }
 
   /* Click-to-toggle mode (portfolioSettings.desktopPricesDisplayMethod
@@ -2713,11 +2716,20 @@
      updateSdComputedLimit() in the script. Not a .form-row, so it isn't
      flattened by the mobile ".form-row { display: contents }" rule below
      -- grid-column spans every column at both breakpoints (2 on desktop,
-     3 on mobile) so it always sits full-width between the 2 rows. */
-  .sd-computed-limit { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .sd-computed-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-  .sd-computed-limit b { font-size: 15px; color: var(--muted); }
-  .sd-computed-limit b.sd-computed-limit-match { color: var(--green); }
+     3 on mobile), which is what makes the NEXT form-row (Strike Bought)
+     correctly start a fresh grid row afterward instead of sneaking into
+     this row's own empty cell.
+     The visible box lives in a NESTED grid (.sd-computed-limit-inner)
+     that mirrors the parent .sd-strike-grid's own column proportions/
+     gap exactly, so its 2nd column lines up pixel-for-pixel under
+     Sell/Buy Price (the parent's own column 2) -- centered on THEM
+     specifically, not on the whole row (which also includes the raw
+     Strike Sold/Bought LEVEL fields in column 1). */
+  .sd-computed-limit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .sd-computed-limit-inner { grid-column: 2; display: flex; align-items: center; justify-content: center; }
+  .sd-computed-limit-inner b { font-size: 15px; font-weight: 800; color: var(--muted); }
+  .sd-computed-limit-inner b.green { color: var(--green); }
+  .sd-computed-limit-inner b.red { color: var(--red); }
 
   /* field labels centered above their input boxes throughout this dialog,
      and shown in normal Title Case, not the rest of the app's ALL CAPS
@@ -2840,10 +2852,16 @@
   #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
   #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { height: 79px; font-size: 18px; padding-left: 12px; padding-right: 61px; text-align: center; }
 
+  /* No label -- matches Closed Deal Prices' own live/static
+     Profit-Loss block (.cd-strike-close-pl) directly, its closest
+     sibling in this same modal. Live value on top (bold, red/green by
+     checkOpenStrikeMatch), grey static target below (the deal's actual
+     saved Limit $ -- see updateEpComputedLimit()). */
   .ep-open-limit { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-  .ep-open-limit-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-  .ep-open-limit b { font-size: 15px; color: var(--muted); }
-  .ep-open-limit b.ep-open-limit-match { color: var(--green); }
+  .ep-open-limit b { font-size: 15px; font-weight: 800; color: var(--muted); }
+  .ep-open-limit b.green { color: var(--green); }
+  .ep-open-limit b.red { color: var(--red); }
+  .ep-open-limit-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
   /* every label in both modals, plus the pre-existing Profit Taker %/$ labels
      in Close Deal which were never centered in an earlier round (only their
@@ -2981,24 +2999,37 @@
   /* ---------- Income Summary popup ---------- */
   .income-summary-panel { width: min(340px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-  .income-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+  /* Grid, not flex -- 3 FIXED tracks (label | deduction | total) shared
+     identically by every row (each row is its own grid container, but
+     with the same column widths every time) so the deduction/total
+     columns land at the same x position across all 3 rows regardless
+     of label length -- an "invisible column" rather than each row's
+     middle item floating wherever justify-content:space-between put it.
+     Label gets the flexible 1fr share; deduction/total are fixed px,
+     sized to comfortably fit this modal's realistic worst case
+     ("-$12,345"-style totals, "(-100%) $1,234"-style deductions)
+     without the row ever needing to grow past this panel's own
+     min(340px, 92vw) cap on any screen size. */
+  .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
   .income-summary-label { font-size: 13px; color: var(--muted); }
   /* Bold + sign-colored -- a positive total reads Bold Green, a
      negative one Bold Red, same green/red convention every other P/L
      figure in this file already uses. */
-  .income-summary-value { font-size: 18px; font-weight: 800; }
+  .income-summary-value { font-size: 18px; font-weight: 800; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .income-summary-value.green { color: var(--green); }
   .income-summary-value.red { color: var(--red); }
 
-  /* Contracts-total / tax-rate annotation next to the row's own label
-     (e.g. "After Commissions (6)", "Net Income (-25%)") -- small and
-     muted, secondary to the label itself. */
+  /* Contracts-total / tax-rate annotation, now paired with its own $
+     amount inside the shared deduction cell (e.g. "(6) $48", "(-25%)
+     $116") -- small and muted, secondary to the $ amount beside it. */
   .income-summary-annotation { color: var(--muted); font-weight: 400; }
   /* The $ actually subtracted at this step (commission total / tax
      total) -- always red, since a deduction is a deduction regardless
      of the row's own final sign, shown so the calculation is visible
-     without duplicating Gross/After Commissions as separate rows. */
-  .income-summary-deduction { font-size: 13px; color: var(--red); }
+     without duplicating Gross/After Commissions as separate rows.
+     Centered in its own fixed column; Gross Income's cell is simply
+     empty, holding the track open so its total still lines up. */
+  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Portfolio's 4 top summary stats now open the Income Summary popup. */
   .portfolio-summary-clickable { cursor: pointer; }
@@ -3261,6 +3292,11 @@
        its old share left, and Strike had ~14px of spare margin to give
        up. Gap trimmed 8px -> 6px for a little extra shared room too. */
     #saveDealModal .sd-strike-grid { grid-template-columns: 58px 1fr 1.15fr; gap: 6px 6px; }
+    /* Nested grid mirrors the SAME 3-column proportions/gap at this
+       tier, so the live Limit $ box stays aligned under Sell/Buy Price
+       (column 3) instead of the desktop tier's column 2. */
+    #saveDealModal .sd-computed-limit { grid-template-columns: 58px 1fr 1.15fr; gap: 6px 6px; }
+    #saveDealModal .sd-computed-limit-inner { grid-column: 3; }
     #saveDealModal .sd-strike-grid .form-row { display: contents; }
     #saveDealModal .sd-strike-grid .form-row > label {
       margin-bottom: 0; text-align: left; font-size: 12px; align-self: center;
@@ -3351,7 +3387,7 @@
     #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
     #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 15px; padding-left: 8px; padding-right: 61px; }
     .ep-open-limit b { font-size: 13px; }
-    .ep-open-limit-label { font-size: 10px; }
+    .ep-open-limit-target { font-size: 10px; }
     #closeDealModal .cd-price-row .total-stepper-wrap input { padding-right: 55px; }
     #closeDealModal .cd-price-row #cdEntryPrice, #closeDealModal .cd-price-row #cdClosedPrice { padding-left: 25px; padding-right: 55px; }
     /* Strike Sold $/Strike Bought $'s 3-column row (see the base-tier
@@ -3378,7 +3414,7 @@
     #entryPriceModal .ep-strike-close-row #epOpenStrikeSold,
     #entryPriceModal .ep-strike-close-row #epOpenStrikeBought { font-size: 11px; padding-left: 6px; padding-right: 61px; }
     .ep-open-limit b { font-size: 11px; }
-    .ep-open-limit-label { font-size: 9px; }
+    .ep-open-limit-target { font-size: 9px; }
     /* Save/Edit modal at this width -- live-tested and found clipping
        "1000"/"33.33"/"1250.50" that were clean at the 700px tier, since
        #sdLimit/#sdPt have no ID-scoped padding-right/font of their own
@@ -4282,15 +4318,23 @@
           </div>
           <!-- Live "implied Limit $" -- |Sell Price - Buy Price|, i.e.
                what the credit WOULD be if these 2 premiums are correct.
-               Neutral by default; turns green only once it actually
-               matches the typed Limit $ field (see checkOpenStrikeMatch)
-               -- never red, so it doesn't duplicate the 2 price fields'
-               own red/green frames, just adds a positive confirmation.
-               Spans both columns so it sits centered in the gap between
-               the Sold and Bought rows. -->
+               No title -- just the bare value, matching every other
+               live indicator in this file (Close Deal/Closed Deal
+               Prices' own Profit-Loss blocks). Red/green by the SAME
+               checkOpenStrikeMatch() result as sdShort/sdLong's own
+               frame, so they can never disagree (see
+               updateSdComputedLimit()). This outer div still spans
+               both grid columns (needed so the NEXT form-row correctly
+               starts a new grid row -- see .sd-computed-limit's own
+               CSS), but the visible box inside is a nested grid
+               mirroring the parent's own column proportions, so it
+               lands centered under column 2 (Sell/Buy Price) only, not
+               centered across the whole row (which would include the
+               raw Strike Sold/Bought LEVEL fields in column 1). -->
           <div class="sd-computed-limit">
-            <span class="sd-computed-limit-label">Limit $</span>
-            <b id="sdComputedLimit">&mdash;</b>
+            <div class="sd-computed-limit-inner">
+              <b id="sdComputedLimit">&mdash;</b>
+            </div>
           </div>
           <div class="form-row">
             <label for="sdStrikeBuy" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought</label>
@@ -4498,11 +4542,13 @@
          premium, deal.shortStrike is "Strike Bought"'s (see
          checkOpenStrikeMatch's own comment). Shown only while the deal
          is still open -- hidden once closed, same gate (inverted) as
-         #epClosedStrikeRow below. Live Limit $ readout mirrors Edit
-         Deal's sd-computed-limit exactly: neutral by default, green
-         only once it matches the deal's SAVED Limit $ (no live Limit $
-         field exists in this modal to compare against instead), never
-         red -- see updateEpComputedLimit(). -->
+         #epClosedStrikeRow below. Frame + live/static Limit $ readout
+         mirror Close Deal Prices' own live/static Profit-Loss design
+         (see updateEpOpenStrikeMatch()/updateEpComputedLimit()): the 2
+         fields get the usual checkOpenStrikeMatch frame, and the live
+         computed value (bold, red/green by match) sits above a grey
+         static line showing the deal's actual SAVED Limit $ -- the
+         target the live value should match. -->
     <div class="form-grid-2 ep-strike-close-row" id="epOpenStrikeRow">
       <div class="form-row">
         <label for="epOpenStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
@@ -4515,8 +4561,8 @@
         </div>
       </div>
       <div class="ep-open-limit">
-        <span class="ep-open-limit-label">Limit $</span>
         <b id="epComputedLimit">&mdash;</b>
+        <small id="epComputedLimitTarget" class="ep-open-limit-target">&mdash;</small>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4688,8 +4734,15 @@
   <div class="modal-panel income-summary-panel">
     <h2>Income Summary</h2>
     <div class="income-summary-list">
+      <!-- Every row shares the same 3-cell grid (label | deduction |
+           total, see .income-summary-row) so the deduction/total
+           columns line up across all 3 rows regardless of label width
+           -- Gross's empty middle cell just holds the grid track open.
+           Annotation ("(6)", "(-25%)") sits INSIDE the deduction cell,
+           next to its own $ amount, not attached to the row label. -->
       <div class="income-summary-row">
         <span class="income-summary-label">Gross Income</span>
+        <span class="income-summary-deduction"></span>
         <b id="incomeSummaryGross" class="income-summary-value">&mdash;</b>
       </div>
       <!-- Annotation is the CONTRACTS total across closed deals (not
@@ -4698,13 +4751,13 @@
            that commission total, shown in red as "what got subtracted",
            so the calculation is visible without duplicating Gross. -->
       <div class="income-summary-row">
-        <span class="income-summary-label">After Commissions <small id="incomeSummaryContracts" class="income-summary-annotation"></small></span>
-        <span id="incomeSummaryCommissionAmt" class="income-summary-deduction"></span>
+        <span class="income-summary-label">After Commissions</span>
+        <span class="income-summary-deduction"><small id="incomeSummaryContracts" class="income-summary-annotation"></small> <span id="incomeSummaryCommissionAmt"></span></span>
         <b id="incomeSummaryAfterCommissions" class="income-summary-value">&mdash;</b>
       </div>
       <div class="income-summary-row">
-        <span class="income-summary-label">Net Income <small id="incomeSummaryTaxPct" class="income-summary-annotation"></small></span>
-        <span id="incomeSummaryTaxAmt" class="income-summary-deduction"></span>
+        <span class="income-summary-label">Net Income</span>
+        <span class="income-summary-deduction"><small id="incomeSummaryTaxPct" class="income-summary-annotation"></small> <span id="incomeSummaryTaxAmt"></span></span>
         <b id="incomeSummaryNet" class="income-summary-value">&mdash;</b>
       </div>
     </div>
@@ -7712,10 +7765,8 @@
     applyStrikeMatchClass(document.getElementById('sdLong'), result);
   }
   // Implied Limit $ (|Sell Price - Buy Price|) shown between the 2 price
-  // rows -- neutral by default, green only once it actually matches the
-  // typed Limit $ (reuses checkOpenStrikeMatch's own pass/fail so this
-  // can never disagree with the price fields' frames). Never turns red --
-  // a mismatch just stays neutral, since the frames already cover "wrong".
+  // rows -- red/green by the SAME checkOpenStrikeMatch() result as the
+  // price fields' own frame above, so they can never disagree.
   function updateSdComputedLimit() {
     const shortRaw = document.getElementById('sdShort').value;
     const longRaw = document.getElementById('sdLong').value;
@@ -7724,13 +7775,14 @@
     const longVal = parseFloat(longRaw);
     if (!isFinite(shortVal) || !isFinite(longVal)) {
       el.textContent = '—';
-      el.classList.remove('sd-computed-limit-match');
+      el.classList.remove('green', 'red');
       return;
     }
     const implied = Math.abs(shortVal - longVal);
     el.textContent = '$' + formatTruncated2(implied);
     const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
-    el.classList.toggle('sd-computed-limit-match', result === 'green');
+    el.classList.toggle('green', result === 'green');
+    el.classList.toggle('red', result === 'red');
   }
   ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -8214,14 +8266,32 @@
     });
   });
 
+  // Red/green frame on New Deal Prices' 2 fields -- same
+  // checkOpenStrikeMatch() Edit Deal's own updateSdStrikeMatch() uses,
+  // fed the deal's ALREADY-SAVED Limit $ (no live Limit $ field exists
+  // in this modal).
+  function updateEpOpenStrikeMatch() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const result = checkOpenStrikeMatch(
+      document.getElementById('epOpenStrikeBought').value,
+      document.getElementById('epOpenStrikeSold').value,
+      deal.limit
+    );
+    applyStrikeMatchClass(document.getElementById('epOpenStrikeSold'), result);
+    applyStrikeMatchClass(document.getElementById('epOpenStrikeBought'), result);
+  }
+
   // New Deal Prices' own Strike Sold $/Strike Bought $ (deal.longStrike/
   // shortStrike -- see #epOpenStrikeRow's own HTML comment for the
-  // naming mapping). Identical math/coloring to Edit Deal's own
-  // updateSdComputedLimit(): neutral by default, green only once it
-  // matches the deal's Limit $, never red.
+  // naming mapping). Live value colored red/green by the SAME
+  // checkOpenStrikeMatch() result as the 2 fields' own frame above, so
+  // they can never disagree. Grey static line below is the deal's
+  // actual SAVED Limit $ -- the target the live value should match.
   function updateEpComputedLimit() {
     const deal = deals.find(d => d.id === entryPriceDealId);
     const el = document.getElementById('epComputedLimit');
+    const targetEl = document.getElementById('epComputedLimitTarget');
     if (!deal) return;
     const soldRaw = document.getElementById('epOpenStrikeSold').value;
     const boughtRaw = document.getElementById('epOpenStrikeBought').value;
@@ -8229,16 +8299,21 @@
     const boughtVal = parseFloat(boughtRaw);
     if (!isFinite(soldVal) || !isFinite(boughtVal)) {
       el.textContent = '—';
-      el.classList.remove('ep-open-limit-match');
-      return;
+      el.classList.remove('green', 'red');
+    } else {
+      const implied = Math.abs(soldVal - boughtVal);
+      el.textContent = '$' + formatTruncated2(implied);
+      const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
     }
-    const implied = Math.abs(soldVal - boughtVal);
-    el.textContent = '$' + formatTruncated2(implied);
-    const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
-    el.classList.toggle('ep-open-limit-match', result === 'green');
+    targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
   ['epOpenStrikeSold', 'epOpenStrikeBought'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateEpComputedLimit);
+    document.getElementById(id).addEventListener('input', () => {
+      updateEpOpenStrikeMatch();
+      updateEpComputedLimit();
+    });
   });
 
   function openEntryPriceModal(id) {
@@ -8261,6 +8336,7 @@
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
     updateEpStrikeMatch();
     updateEpProfitLoss();
+    updateEpOpenStrikeMatch();
     updateEpComputedLimit();
     document.getElementById('entryPriceModal').classList.remove('hidden');
   }
