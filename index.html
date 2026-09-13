@@ -1599,6 +1599,14 @@
   .ep-open-limit b.red { color: var(--red); }
   .ep-open-limit-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
+  .strike-close-apply-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; padding: 0; margin-top: 1px;
+    border: 1px solid var(--green); background: transparent; color: var(--green);
+    font-size: 10px; line-height: 1; cursor: pointer;
+  }
+  .strike-close-apply-btn:hover { background: rgba(3,136,0,.15); }
+
   #entryPriceModal .form-row label,
   #closeDealModal .form-row label { text-align: center; }
 
@@ -2601,6 +2609,8 @@
       <div class="cd-strike-close-pl">
         <b id="cdStrikeClosePl">&mdash;</b>
         <small id="cdStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
+
+        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2697,6 +2707,8 @@
       <div class="ep-open-limit">
         <b id="epComputedLimit">&mdash;</b>
         <small id="epComputedLimitTarget" class="ep-open-limit-target">&mdash;</small>
+
+        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2724,6 +2736,8 @@
       <div class="cd-strike-close-pl">
         <b id="epStrikeClosePl">&mdash;</b>
         <small id="epStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
+
+        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4335,7 +4349,9 @@
 
     const limitPerShare = Math.abs(m.limit);
     const profitFromFormulaPerShare = limitPerShare - profitTakerPerShare;
-    const fifthValuePerShare = m.fifthValue / (100 * m.contracts);
+
+    const signedFifthValue = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
+    const fifthValuePerShare = signedFifthValue / (100 * m.contracts);
     const profitMatches = Math.abs(profitFromFormulaPerShare - fifthValuePerShare) < 0.02;
 
     return (ptMatches && profitMatches) ? 'green' : 'red';
@@ -4989,6 +5005,16 @@
     document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
   }
 
+  function cdComputeValFromPct() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    const pct = sanitizePtPct(document.getElementById('cdPtPct').value);
+    const perShare = truncate2(limit * (1 - pct / 100));
+    document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
+  }
+
   function cdSyncFromVal() {
     const deal = deals.find(d => d.id === closingDealId);
     if (!deal) return;
@@ -5079,11 +5105,15 @@
     const el = document.getElementById('cdStrikeClosePl');
     const targetEl = document.getElementById('cdStrikeClosePlTarget');
     if (!deal) return;
-    const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
-    const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
+    const soldRaw = document.getElementById('cdClosedStrikeSold').value;
+    const boughtRaw = document.getElementById('cdClosedStrikeBought').value;
+    const sold = number(soldRaw, NaN);
+    const bought = number(boughtRaw, NaN);
+    const applyBtn = document.getElementById('cdApplyLiveBtn');
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
       const contracts = getContractsValue(deal.contracts);
@@ -5092,8 +5122,12 @@
       const profitDollars = Math.round(profitPerShare * 100) * contracts;
       const isLoss = profitDollars < 0;
       el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
-      el.classList.toggle('green', !isLoss);
-      el.classList.toggle('red', isLoss);
+
+      const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, document.getElementById('cdPtPct').value);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
+
+      applyBtn.hidden = result !== 'red';
     }
 
     const ptRaw = document.getElementById('cdPtPct').value;
@@ -5111,6 +5145,20 @@
     });
   });
 
+  function applyCdLiveToTarget() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const impliedProfitTakerPerShare = truncate2(sold - bought);
+    document.getElementById('cdPtPct').value = String(truncate2(derivePtPctFromProfitTaker(limit, impliedProfitTakerPerShare)));
+    cdComputeValFromPct();
+    updateCdStrikeMatch();
+    updateCdProfitLoss();
+  }
+
   function openCloseModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -5123,7 +5171,7 @@
     document.getElementById('cdSellPrice').textContent = deal.longStrike ? `$${deal.longStrike}` : '—';
     applyDateToPair('cdDateMonth', 'cdDateDay', 'cdDateYear', deal.closeDate || todayStr());
     document.getElementById('cdPtPct').value = deal.closed ? deal.closePtPct : (deal.ptPct || '');
-    cdSyncFromPct();
+    cdComputeValFromPct();
 
     document.getElementById('cdEntryPrice').value = deal.entryStockPrice || '';
     document.getElementById('cdClosedPrice').value = deal.closedStockPrice || '';
@@ -5205,11 +5253,15 @@
     const el = document.getElementById('epStrikeClosePl');
     const targetEl = document.getElementById('epStrikeClosePlTarget');
     if (!deal) return;
-    const sold = number(document.getElementById('epClosedStrikeSold').value, NaN);
-    const bought = number(document.getElementById('epClosedStrikeBought').value, NaN);
+    const soldRaw = document.getElementById('epClosedStrikeSold').value;
+    const boughtRaw = document.getElementById('epClosedStrikeBought').value;
+    const sold = number(soldRaw, NaN);
+    const bought = number(boughtRaw, NaN);
+    const applyBtn = document.getElementById('epCloseApplyLiveBtn');
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
       const contracts = getContractsValue(deal.contracts);
@@ -5218,8 +5270,11 @@
       const profitDollars = Math.round(profitPerShare * 100) * contracts;
       const isLoss = profitDollars < 0;
       el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
-      el.classList.toggle('green', !isLoss);
-      el.classList.toggle('red', isLoss);
+
+      const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, deal.closePtPct);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
+      applyBtn.hidden = result !== 'red';
     }
     const f = finalStats(deal);
     targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
@@ -5230,6 +5285,23 @@
       updateEpProfitLoss();
     });
   });
+
+  function applyEpCloseLiveToTarget() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const sold = number(document.getElementById('epClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('epClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const impliedProfitTakerPerShare = truncate2(sold - bought);
+    deal.closePtPct = String(truncate2(derivePtPctFromProfitTaker(limit, impliedProfitTakerPerShare)));
+    deal.updatedTs = Date.now();
+    clearResolved(deal.id);
+    updateEpStrikeMatch();
+    updateEpProfitLoss();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
 
   function updateEpOpenStrikeMatch() {
     const deal = deals.find(d => d.id === entryPriceDealId);
@@ -5252,15 +5324,18 @@
     const boughtRaw = document.getElementById('epOpenStrikeBought').value;
     const soldVal = parseFloat(soldRaw);
     const boughtVal = parseFloat(boughtRaw);
+    const applyBtn = document.getElementById('epOpenApplyLiveBtn');
     if (!isFinite(soldVal) || !isFinite(boughtVal)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const implied = Math.abs(soldVal - boughtVal);
       el.textContent = '$' + formatTruncated2(implied);
       const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
+      applyBtn.hidden = result !== 'red';
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
@@ -5270,6 +5345,22 @@
       updateEpComputedLimit();
     });
   });
+
+  function applyEpOpenLiveToTarget() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const soldVal = parseFloat(document.getElementById('epOpenStrikeSold').value);
+    const boughtVal = parseFloat(document.getElementById('epOpenStrikeBought').value);
+    if (!isFinite(soldVal) || !isFinite(boughtVal)) return;
+    const implied = Math.abs(soldVal - boughtVal);
+    deal.limit = formatTruncated2(implied);
+    deal.updatedTs = Date.now();
+    clearResolved(deal.id);
+    updateEpOpenStrikeMatch();
+    updateEpComputedLimit();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
 
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);

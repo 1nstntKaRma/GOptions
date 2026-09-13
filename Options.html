@@ -2881,6 +2881,24 @@
   .ep-open-limit b.red { color: var(--red); }
   .ep-open-limit-target { font-size: 11px; font-weight: 600; color: var(--muted); }
 
+  /* "Apply live value to the static target" button -- shared by all 3
+     spots (Close Deal, Closed Deal Prices, New Deal Prices), hidden by
+     default (see each's own applyXxxLiveToTarget()/update function --
+     only shown once both fields have a value AND the check is red).
+     A 3rd flex child stacked below the value/target pair -- the shared
+     column's own flex-direction:column + align-items:center already
+     centers it independently of whether 2 or 3 children are present,
+     no extra layout work needed for that. Small enough (18px) to still
+     fit this column's narrowest tier (44px) alongside the value/target
+     text above it. */
+  .strike-close-apply-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; padding: 0; margin-top: 1px;
+    border: 1px solid var(--green); background: transparent; color: var(--green);
+    font-size: 10px; line-height: 1; cursor: pointer;
+  }
+  .strike-close-apply-btn:hover { background: rgba(3,136,0,.15); }
+
   /* every label in both modals, plus the pre-existing Profit Taker %/$ labels
      in Close Deal which were never centered in an earlier round (only their
      INPUT text was, see #closeDealModal #cdPtPct/#cdPtVal above). Same
@@ -4463,6 +4481,12 @@
       <div class="cd-strike-close-pl">
         <b id="cdStrikeClosePl">&mdash;</b>
         <small id="cdStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
+        <!-- Only shown once both fields have a value AND the check is
+             red (see updateCdProfitLoss()) -- applies the live value to
+             Profit Taker % itself (this field, not yet saved) instead
+             of making the user navigate away to work out and re-type
+             it by hand. Never shown once green -- nothing to apply. -->
+        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4585,6 +4609,13 @@
       <div class="ep-open-limit">
         <b id="epComputedLimit">&mdash;</b>
         <small id="epComputedLimitTarget" class="ep-open-limit-target">&mdash;</small>
+        <!-- No live Limit $ field exists in this modal either -- applies
+             straight to deal.limit and persists immediately (see
+             applyEpOpenLiveToTarget()). Deliberately full-effect: Max
+             Loss/Max Profit/Ratio all derive from Limit $ too, and
+             leaving them stale while the Prices frame goes green would
+             be its own inconsistency. -->
+        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -4620,6 +4651,14 @@
       <div class="cd-strike-close-pl">
         <b id="epStrikeClosePl">&mdash;</b>
         <small id="epStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
+        <!-- Unlike Close Deal's own copy, this modal has no live Profit
+             Taker % field to land the value in -- applies straight to
+             deal.closePtPct and persists immediately (see
+             applyEpCloseLiveToTarget()), same "instant apply, no
+             separate Save step" pattern already used elsewhere for
+             fields this modal's own Save button doesn't otherwise
+             govern. -->
+        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
       </div>
       <div class="form-row">
         <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -6992,7 +7031,20 @@
     // small and constant regardless of contract count.
     const limitPerShare = Math.abs(m.limit);
     const profitFromFormulaPerShare = limitPerShare - profitTakerPerShare;
-    const fifthValuePerShare = m.fifthValue / (100 * m.contracts);
+    // m.fifthValue is an UNSIGNED magnitude (every other caller applies
+    // m.sideIsLoss itself before displaying/using it -- see the Portfolio
+    // P/L cell, finalStats()'s own finalAmount/finalSideLoss pattern,
+    // etc.) -- missing that sign here made profitFromFormulaPerShare
+    // (which naturally goes NEGATIVE for a losing PT%, since Profit
+    // Taker $ grows past Limit $ once the multiplier (1 - ptPct/100)
+    // exceeds 1) get compared against an always-POSITIVE fifthValue,
+    // so a genuinely correct loss (matching magnitudes, opposite signs)
+    // failed this check and showed red -- a false "wrong" on a deal
+    // that was actually right, just not profitable. Right vs wrong and
+    // profit vs loss are different questions; this check only answers
+    // the first one.
+    const signedFifthValue = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
+    const fifthValuePerShare = signedFifthValue / (100 * m.contracts);
     const profitMatches = Math.abs(profitFromFormulaPerShare - fifthValuePerShare) < 0.02;
 
     return (ptMatches && profitMatches) ? 'green' : 'red';
@@ -7992,6 +8044,28 @@
     document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
   }
 
+  // Same $-from-% computation as cdSyncFromPct(), MINUS the
+  // commitPtPctValue() self-refine step -- used only when POPULATING
+  // the modal on open (openCloseModal()), not on a genuine user edit.
+  // The refine round-trip (%->$ truncated to cents->% again) isn't a
+  // true fixed point when Limit $ is small: re-running it on an
+  // ALREADY-refined/saved value keeps nudging PT% further every time
+  // the modal is simply reopened (confirmed live: -11.53% -> -11.15% ->
+  // -10.76% -> -10.38%, drifting ~0.38pt per open with a -$2.60 Limit),
+  // silently rewriting deal.closePtPct on every "Update"-without-editing
+  // and throwing off checkCloseStrikeMatch in the process. Refinement
+  // still happens exactly where a real edit occurs -- typing+blur and
+  // the +/- buttons both still call the full cdSyncFromPct() above.
+  function cdComputeValFromPct() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const contracts = getContractsValue(deal.contracts);
+    const pct = sanitizePtPct(document.getElementById('cdPtPct').value);
+    const perShare = truncate2(limit * (1 - pct / 100));
+    document.getElementById('cdPtVal').value = formatTruncated2(perShare * contracts);
+  }
+
   function cdSyncFromVal() {
     const deal = deals.find(d => d.id === closingDealId);
     if (!deal) return;
@@ -8133,11 +8207,15 @@
     const el = document.getElementById('cdStrikeClosePl');
     const targetEl = document.getElementById('cdStrikeClosePlTarget');
     if (!deal) return;
-    const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
-    const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
+    const soldRaw = document.getElementById('cdClosedStrikeSold').value;
+    const boughtRaw = document.getElementById('cdClosedStrikeBought').value;
+    const sold = number(soldRaw, NaN);
+    const bought = number(boughtRaw, NaN);
+    const applyBtn = document.getElementById('cdApplyLiveBtn');
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
       const contracts = getContractsValue(deal.contracts);
@@ -8146,8 +8224,17 @@
       const profitDollars = Math.round(profitPerShare * 100) * contracts;
       const isLoss = profitDollars < 0;
       el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
-      el.classList.toggle('green', !isLoss);
-      el.classList.toggle('red', isLoss);
+      // Colored by CORRECTNESS (does this reconcile with Profit Taker
+      // %/$), not by profit-vs-loss sign -- reuses the exact same
+      // checkCloseStrikeMatch() the 2 fields' own frame already shows,
+      // so this can never disagree with it. A correct loss reads
+      // green; an incorrect "profit" would read red.
+      const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, document.getElementById('cdPtPct').value);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
+      // Apply button only for a genuine red (both fields present AND
+      // mismatched) -- never for green (nothing to apply).
+      applyBtn.hidden = result !== 'red';
     }
     // Grey target line -- the deal's Profit Taker %/$-derived figure
     // (same fifthValue/sideIsLoss the Portfolio's own P/L cell shows),
@@ -8168,6 +8255,31 @@
     });
   });
 
+  // ✔️ button (only visible when red) -- derives the Profit Taker %
+  // that makes the 2 typed fields reconcile EXACTLY, and writes it
+  // straight into #cdPtPct/#cdPtVal (still just form fields here --
+  // Confirm Close/Save Update is still what actually commits it to the
+  // deal, same as if the user had worked the number out by hand and
+  // typed it in themselves). Exact inverse of the forward check in
+  // checkCloseStrikeMatch(): Strike Sold $ - Strike Bought $ (the
+  // NEGATION of the close debit) is the implied Profit Taker $ per
+  // share, fed through the SAME derivePtPctFromProfitTaker() every
+  // other %<->$ round-trip in this file already uses -- see
+  // cdSyncFromVal() just above for the identical pattern.
+  function applyCdLiveToTarget() {
+    const deal = deals.find(d => d.id === closingDealId);
+    if (!deal) return;
+    const sold = number(document.getElementById('cdClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('cdClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const impliedProfitTakerPerShare = truncate2(sold - bought);
+    document.getElementById('cdPtPct').value = String(truncate2(derivePtPctFromProfitTaker(limit, impliedProfitTakerPerShare)));
+    cdComputeValFromPct();
+    updateCdStrikeMatch();
+    updateCdProfitLoss();
+  }
+
   function openCloseModal(id) {
     const deal = deals.find(d => d.id === id);
     if (!deal) return;
@@ -8180,7 +8292,7 @@
     document.getElementById('cdSellPrice').textContent = deal.longStrike ? `$${deal.longStrike}` : '—';
     applyDateToPair('cdDateMonth', 'cdDateDay', 'cdDateYear', deal.closeDate || todayStr());
     document.getElementById('cdPtPct').value = deal.closed ? deal.closePtPct : (deal.ptPct || '');
-    cdSyncFromPct();
+    cdComputeValFromPct();
     // New this round -- Entry/Closed Price fields added to Close Deal,
     // same underlying deal.entryStockPrice/closedStockPrice the Stock
     // Price modal (#entryPriceModal) already reads/writes.
@@ -8291,11 +8403,15 @@
     const el = document.getElementById('epStrikeClosePl');
     const targetEl = document.getElementById('epStrikeClosePlTarget');
     if (!deal) return;
-    const sold = number(document.getElementById('epClosedStrikeSold').value, NaN);
-    const bought = number(document.getElementById('epClosedStrikeBought').value, NaN);
+    const soldRaw = document.getElementById('epClosedStrikeSold').value;
+    const boughtRaw = document.getElementById('epClosedStrikeBought').value;
+    const sold = number(soldRaw, NaN);
+    const bought = number(boughtRaw, NaN);
+    const applyBtn = document.getElementById('epCloseApplyLiveBtn');
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const limitPerShare = Math.abs(getLimitValueRaw(deal.limit));
       const contracts = getContractsValue(deal.contracts);
@@ -8304,8 +8420,13 @@
       const profitDollars = Math.round(profitPerShare * 100) * contracts;
       const isLoss = profitDollars < 0;
       el.textContent = (isLoss ? '-' : '') + '$' + Math.abs(profitDollars).toLocaleString('en-US');
-      el.classList.toggle('green', !isLoss);
-      el.classList.toggle('red', isLoss);
+      // Colored by CORRECTNESS, not profit-vs-loss sign -- same
+      // checkCloseStrikeMatch() the 2 fields' own frame uses (see
+      // updateEpStrikeMatch()), so they can never disagree.
+      const result = checkCloseStrikeMatch(soldRaw, boughtRaw, deal, deal.closePtPct);
+      el.classList.toggle('green', result === 'green');
+      el.classList.toggle('red', result === 'red');
+      applyBtn.hidden = result !== 'red';
     }
     const f = finalStats(deal);
     targetEl.textContent = (f.finalSideLoss ? '-' : '') + '$' + Math.abs(f.finalAmount).toLocaleString('en-US');
@@ -8316,6 +8437,27 @@
       updateEpProfitLoss();
     });
   });
+
+  // ✔️ button -- unlike Close Deal's own copy, this modal has no live
+  // Profit Taker % field to land the value in, so this writes straight
+  // to deal.closePtPct and persists immediately (same derivation as
+  // applyCdLiveToTarget(), see its own comment for the math).
+  function applyEpCloseLiveToTarget() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const sold = number(document.getElementById('epClosedStrikeSold').value, NaN);
+    const bought = number(document.getElementById('epClosedStrikeBought').value, NaN);
+    if (!Number.isFinite(sold) || !Number.isFinite(bought)) return;
+    const limit = getLimitValueRaw(deal.limit);
+    const impliedProfitTakerPerShare = truncate2(sold - bought);
+    deal.closePtPct = String(truncate2(derivePtPctFromProfitTaker(limit, impliedProfitTakerPerShare)));
+    deal.updatedTs = Date.now();
+    clearResolved(deal.id);
+    updateEpStrikeMatch();
+    updateEpProfitLoss();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
 
   // Red/green frame on New Deal Prices' 2 fields -- same
   // checkOpenStrikeMatch() Edit Deal's own updateSdStrikeMatch() uses,
@@ -8348,15 +8490,18 @@
     const boughtRaw = document.getElementById('epOpenStrikeBought').value;
     const soldVal = parseFloat(soldRaw);
     const boughtVal = parseFloat(boughtRaw);
+    const applyBtn = document.getElementById('epOpenApplyLiveBtn');
     if (!isFinite(soldVal) || !isFinite(boughtVal)) {
       el.textContent = '—';
       el.classList.remove('green', 'red');
+      applyBtn.hidden = true;
     } else {
       const implied = Math.abs(soldVal - boughtVal);
       el.textContent = '$' + formatTruncated2(implied);
       const result = checkOpenStrikeMatch(boughtRaw, soldRaw, deal.limit);
       el.classList.toggle('green', result === 'green');
       el.classList.toggle('red', result === 'red');
+      applyBtn.hidden = result !== 'red';
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
   }
@@ -8366,6 +8511,28 @@
       updateEpComputedLimit();
     });
   });
+
+  // ✔️ button -- no live Limit $ field exists in this modal either, so
+  // this applies straight to deal.limit (the implied credit from the 2
+  // typed premiums) and persists immediately. Deliberately full-effect:
+  // Max Loss/Max Profit/Ratio all derive from Limit $ too, so this is
+  // the SAME Limit $ every other part of the app will use from here on,
+  // not a display-only patch.
+  function applyEpOpenLiveToTarget() {
+    const deal = deals.find(d => d.id === entryPriceDealId);
+    if (!deal) return;
+    const soldVal = parseFloat(document.getElementById('epOpenStrikeSold').value);
+    const boughtVal = parseFloat(document.getElementById('epOpenStrikeBought').value);
+    if (!isFinite(soldVal) || !isFinite(boughtVal)) return;
+    const implied = Math.abs(soldVal - boughtVal);
+    deal.limit = formatTruncated2(implied);
+    deal.updatedTs = Date.now();
+    clearResolved(deal.id);
+    updateEpOpenStrikeMatch();
+    updateEpComputedLimit();
+    renderPortfolio();
+    pushToDriveDebounced();
+  }
 
   function openEntryPriceModal(id) {
     const deal = deals.find(d => d.id === id);
