@@ -1610,6 +1610,8 @@
     border: 1px solid transparent; background: transparent; color: var(--green);
     font-size: 12px; line-height: 1; cursor: pointer;
   }
+
+  .strike-close-apply-btn[hidden] { display: none; }
   .strike-close-apply-btn.needs-apply {
     width: 18px; height: 18px; border-radius: 50%;
     border: 1px solid var(--green); background: transparent;
@@ -1692,8 +1694,7 @@
 
   #commissionsModal .total-stepper-wrap { width: 84%; margin: 0 auto; }
   #commissionsModal .total-stepper-wrap input { height: 72px; font-size: 20px; text-align: center; padding-right: 52px; }
-  #commissionsModal #commissionFeeInput { padding-left: 30px; }
-  #commissionsModal #taxRateInput { padding-left: 14px; }
+  #commissionsModal #commissionFeeInput, #commissionsModal #taxRateInput { padding-left: 14px; }
   #commissionsModal .total-stepper-sm { width: 46px; }
   #commissionsModal .total-stepper-sm .total-stepper-btn { font-size: 24px; }
 
@@ -1716,7 +1717,7 @@
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
 
   .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
-  .income-summary-label { font-size: 13px; color: var(--muted); }
+  .income-summary-label { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .income-summary-value { font-size: 18px; font-weight: 800; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .income-summary-value.green { color: var(--green); }
@@ -1724,7 +1725,7 @@
 
   .income-summary-annotation { color: var(--muted); font-weight: 400; }
 
-  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .income-summary-deduction { font-size: 12px; color: var(--red); text-align: center; padding-left: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .portfolio-summary-clickable { cursor: pointer; }
 
@@ -2651,7 +2652,7 @@
         <b id="cdStrikeClosePl">&mdash;</b>
         <small id="cdStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
 
-        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="cdApplyLiveBtn" class="strike-close-apply-btn" onclick="applyCdLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="cdClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2726,7 +2727,7 @@
         <b id="epComputedLimit">&mdash;</b>
         <small id="epComputedLimitTarget" class="ep-open-limit-target">&mdash;</small>
 
-        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="epOpenApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpOpenLiveToTarget()" title="Apply this value to Limit $" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="epOpenStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2755,7 +2756,7 @@
         <b id="epStrikeClosePl">&mdash;</b>
         <small id="epStrikeClosePlTarget" class="cd-strike-close-pl-target">&mdash;</small>
 
-        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0F;</button>
+        <button type="button" id="epCloseApplyLiveBtn" class="strike-close-apply-btn" onclick="applyEpCloseLiveToTarget()" title="Apply this value to Profit Taker %" hidden>&#x2714;&#xFE0E;</button>
       </div>
       <div class="form-row">
         <label for="epClosedStrikeBought" class="strike-label-bought" title="Strike Bought = Long Put = Protective">Strike Bought $</label>
@@ -2849,10 +2850,9 @@
     <p class="modal-sub">Applies to every closed deal's income figures.</p>
     <div class="form-grid-2">
       <div class="form-row">
-        <label for="commissionFeeInput">Commission Fee</label>
+        <label for="commissionFeeInput">&#x1F91D; Commission Fee $</label>
         <div class="total-stepper-wrap">
           <input id="commissionFeeInput" type="text" inputmode="decimal" class="sd-price-input" onblur="commitCommissionFee()" />
-          <span class="sd-dollar-prefix" aria-hidden="true">$</span>
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Commission Fee" onclick="stepCommissionFee('up')">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Commission Fee" onclick="stepCommissionFee('down')">&#8722;</button>
@@ -2860,7 +2860,7 @@
         </div>
       </div>
       <div class="form-row">
-        <label for="taxRateInput">Tax Fee %</label>
+        <label for="taxRateInput">&#x1F9FE; Tax Fee %</label>
         <div class="total-stepper-wrap">
           <input id="taxRateInput" type="text" inputmode="decimal" onblur="commitTaxRate()" />
           <div class="total-stepper total-stepper-sm">
@@ -4156,7 +4156,7 @@
     taxRatePct: 25,
     summaryMode: 'gross',   
 
-    desktopPricesDisplayMethod: 'toggle',
+    desktopPricesDisplayMethod: 'sideBySide',
     updatedAt: 0
   };
 
@@ -4936,7 +4936,7 @@
     } else if (result === 'green') {
 
       swapBtn.hidden = false;
-      swapBtn.textContent = '✔️';
+      swapBtn.textContent = '✔︎';
       swapBtn.classList.remove('needs-apply');
       swapBtn.classList.add('info-only');
       swapBtn.onclick = null;
@@ -5203,13 +5203,22 @@
       if (bought < sold) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapCdStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyCdLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+        applyBtn.title = 'Apply this value to Profit Taker %';
       }
     }
 
@@ -5372,14 +5381,23 @@
       if (bought < sold) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapEpClosedStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
 
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyEpCloseLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Profit Taker %' : 'Already correct';
+        applyBtn.title = 'Apply this value to Profit Taker %';
       }
     }
     const f = finalStats(deal);
@@ -5456,14 +5474,23 @@
       if (soldVal < boughtVal) {
         applyBtn.textContent = '♻️';
         applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = swapEpOpenStrikeValues;
         applyBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+      } else if (result === 'green') {
+
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.remove('needs-apply');
+        applyBtn.classList.add('info-only');
+        applyBtn.onclick = null;
+        applyBtn.title = 'Already correct';
       } else {
 
-        applyBtn.textContent = '✔️';
-        applyBtn.classList.toggle('needs-apply', result === 'red');
+        applyBtn.textContent = '✔︎';
+        applyBtn.classList.add('needs-apply');
+        applyBtn.classList.remove('info-only');
         applyBtn.onclick = applyEpOpenLiveToTarget;
-        applyBtn.title = result === 'red' ? 'Apply this value to Limit $' : 'Already correct';
+        applyBtn.title = 'Apply this value to Limit $';
       }
     }
     targetEl.textContent = '$' + formatTruncated2(Math.abs(getLimitValueRaw(deal.limit)));
