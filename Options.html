@@ -2922,6 +2922,11 @@
     border: 1px solid var(--green); background: transparent;
     font-size: 10px;
   }
+  /* Edit Deal's own "already correct, nothing to fix" state -- a plain
+     confirmation, not a button (see updateSdComputedLimit()), so it
+     doesn't invite a click that would just swap 2 already-correct
+     values back into the wrong order. */
+  .strike-close-apply-btn.info-only { cursor: default; }
   .strike-close-apply-btn.needs-apply:hover { background: rgba(3,136,0,.15); }
 
   /* every label in both modals, plus the pre-existing Profit Taker %/$ labels
@@ -4498,6 +4503,36 @@
       </div>
     </div>
 
+    <!-- Writes to the SAME deal.entryStockPrice/closedStockPrice
+         fields the Stock Price modal (#entryPriceModal) does, so
+         editing from either stays in sync. Always both visible (unlike
+         #epPriceRow's .single collapse) -- submitting this form always
+         results in closed:true. Moved ABOVE Strike Sold/Bought
+         (explicit reorder request) -- new order is Profit Taker %/$,
+         Entry/Closed Price, Strike Sold/Bought last. -->
+    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
+      <div class="form-row">
+        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdEntryPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="cdClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Closed Strike Pricing -- the actual fill prices for each leg at
          CLOSE time, distinct from the open-time Strike Sold $/Strike
          Bought $ (Edit Deal's shortStrike/longStrike, shown read-only
@@ -4539,34 +4574,6 @@
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','up',0.01,2)">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','down',0.01,2)">&#8722;</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Writes to the SAME deal.entryStockPrice/closedStockPrice
-         fields the Stock Price modal (#entryPriceModal) does, so
-         editing from either stays in sync. Always both visible (unlike
-         #epPriceRow's .single collapse) -- submitting this form always
-         results in closed:true. -->
-    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
-      <div class="form-row">
-        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
-        <div class="total-stepper-wrap">
-          <input id="cdEntryPrice" type="text" inputmode="decimal" />
-          <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
-          </div>
-        </div>
-      </div>
-      <div class="form-row">
-        <label for="cdClosedPrice">&#128176; Closed Price</label>
-        <div class="total-stepper-wrap">
-          <input id="cdClosedPrice" type="text" inputmode="decimal" />
-          <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -7078,14 +7085,24 @@
     return Math.abs(credit - limit) < 0.01 ? 'green' : 'red';
   }
 
-  // Closed Strike Pricing: Strike Bought price - Strike Sold price (the
-  // reverse direction from the open check -- buying back what was sold,
-  // selling what was bought) should equal Profit Taker $, AND
-  // Limit $ - Profit Taker $ (a per-share figure) converted to real
-  // dollars should equal the deal's realized Profit. `ptPctValue` is
+  // Closed Strike Pricing: is the LIVE profit/loss these 2 fields imply
+  // (Limit $ - (Strike Bought $ - Strike Sold $), the exact same formula
+  // updateCdProfitLoss()/updateEpProfitLoss() display) equal to the
+  // deal's TARGET profit/loss (Profit Taker %'s own fifthValue, the
+  // exact same formula the grey target line displays)? `ptPctValue` is
   // passed in explicitly rather than always reading `deal.closePtPct`,
   // so the same function serves both a live Close Deal modal (not
   // saved yet) and an already-saved Portfolio row.
+  //
+  // Previously this compared 2 INTERMEDIATE per-share figures (a
+  // cent-truncated Profit Taker $ vs a whole-dollar-rounded fifthValue)
+  // instead of what's actually shown on screen -- 2 independently
+  // rounded numbers that could disagree by real dollars even when the
+  // live value and target VISUALLY displayed the exact same whole-
+  // dollar figure (confirmed live: both showing "$216" and still
+  // returning 'red'). Comparing the 2 DISPLAYED dollar amounts directly
+  // means this can never again disagree with what the user is actually
+  // looking at.
   function checkCloseStrikeMatch(closedSoldRaw, closedBoughtRaw, deal, ptPctValue) {
     const soldV = String(closedSoldRaw || '').trim();
     const boughtV = String(closedBoughtRaw || '').trim();
@@ -7095,38 +7112,13 @@
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) return null;
 
     const m = computeMetrics(deal.total, deal.limit, ptPctValue, deal.contracts);
-    const profitTakerPerShare = Math.abs(m.profitTaker / m.contracts);
-    const closeDebit = bought - sold;
-    const ptMatches = Math.abs(closeDebit - profitTakerPerShare) < 0.01;
-
-    // Compared per-share (not in dollars) on purpose: profitTakerPerShare
-    // is cent-truncated and fifthValue is whole-dollar-rounded, two
-    // independent roundings that compound into a dollar-scale gap of up
-    // to ~$1 PER CONTRACT even for genuinely consistent data (verified
-    // by hand: total=1000/limit=3.33/pt=65% truncates PT$ to -1.16 vs the
-    // exact -1.1655, a gap that's invisible per-share but would multiply
-    // out to $1+ in dollar terms, and scale with contracts). Dividing
-    // fifthValue back down to a per-share figure keeps the tolerance
-    // small and constant regardless of contract count.
     const limitPerShare = Math.abs(m.limit);
-    const profitFromFormulaPerShare = limitPerShare - profitTakerPerShare;
-    // m.fifthValue is an UNSIGNED magnitude (every other caller applies
-    // m.sideIsLoss itself before displaying/using it -- see the Portfolio
-    // P/L cell, finalStats()'s own finalAmount/finalSideLoss pattern,
-    // etc.) -- missing that sign here made profitFromFormulaPerShare
-    // (which naturally goes NEGATIVE for a losing PT%, since Profit
-    // Taker $ grows past Limit $ once the multiplier (1 - ptPct/100)
-    // exceeds 1) get compared against an always-POSITIVE fifthValue,
-    // so a genuinely correct loss (matching magnitudes, opposite signs)
-    // failed this check and showed red -- a false "wrong" on a deal
-    // that was actually right, just not profitable. Right vs wrong and
-    // profit vs loss are different questions; this check only answers
-    // the first one.
-    const signedFifthValue = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
-    const fifthValuePerShare = signedFifthValue / (100 * m.contracts);
-    const profitMatches = Math.abs(profitFromFormulaPerShare - fifthValuePerShare) < 0.02;
+    const closeDebitPerShare = bought - sold;
+    const profitPerShare = limitPerShare - closeDebitPerShare;
+    const liveProfitDollars = Math.round(profitPerShare * 100) * m.contracts;
+    const targetProfitDollars = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
 
-    return (ptMatches && profitMatches) ? 'green' : 'red';
+    return liveProfitDollars === targetProfitDollars ? 'green' : 'red';
   }
 
   function applyStrikeMatchClass(el, result) {
@@ -7969,11 +7961,33 @@
     const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
     el.classList.toggle('green', result === 'green');
     el.classList.toggle('red', result === 'red');
-    // Strike Sold $ (Sell Price/longVal) must be the higher of the 2 --
-    // if it's actually the smaller one, that's very likely the 2
-    // premiums typed into each other's fields, not a real amount
-    // error, so this offers a direct swap instead of just reading red.
-    swapBtn.hidden = longVal >= shortVal;
+    const reversed = longVal < shortVal;
+    if (reversed) {
+      // Strike Sold $ (Sell Price/longVal) must be the higher of the 2
+      // -- if it's actually the smaller one, that's very likely the 2
+      // premiums typed into each other's fields, not a real amount
+      // error, so this offers a direct swap instead of just reading red.
+      swapBtn.hidden = false;
+      swapBtn.textContent = '♻️';
+      swapBtn.classList.add('needs-apply');
+      swapBtn.classList.remove('info-only');
+      swapBtn.onclick = swapSdStrikeValues;
+      swapBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+    } else if (result === 'green') {
+      // Order is correct and it already matches Limit $ -- a plain,
+      // non-clickable confirmation (nothing to fix), not a button.
+      swapBtn.hidden = false;
+      swapBtn.textContent = '✔️';
+      swapBtn.classList.remove('needs-apply');
+      swapBtn.classList.add('info-only');
+      swapBtn.onclick = null;
+      swapBtn.title = 'Already correct';
+    } else {
+      // Correct order, wrong magnitude -- the field frame already says
+      // "wrong"; Limit $ is directly editable right here, so there's
+      // nothing else for this button to usefully offer.
+      swapBtn.hidden = true;
+    }
   }
   ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -8747,7 +8761,15 @@
     document.getElementById('epClosedStrikeRow').hidden = !deal.closed;
     document.getElementById('epClosedStrikeSold').value = deal.closedStrikeSold || '';
     document.getElementById('epClosedStrikeBought').value = deal.closedStrikeBought || '';
-    document.getElementById('epOpenStrikeRow').hidden = !!deal.closed;
+    // New Deal Prices' own Strike Sold $/Strike Bought $ (the OPEN-time
+    // premiums) are ALWAYS shown now, open or closed -- an open deal
+    // shows ONLY these (Closed Deal Prices' own fields don't exist yet,
+    // see #epClosedStrikeRow's own hidden toggle above), while a closed
+    // deal shows BOTH this row and the Closed one together (the
+    // original open-time premiums for reference, alongside the actual
+    // close-time ones) -- explicit request, not the old strictly
+    // either/or toggle.
+    document.getElementById('epOpenStrikeRow').hidden = false;
     document.getElementById('epOpenStrikeSold').value = deal.longStrike || '';
     document.getElementById('epOpenStrikeBought').value = deal.shortStrike || '';
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
@@ -8768,10 +8790,10 @@
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
     deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
-    if (!deal.closed) {
-      deal.longStrike = document.getElementById('epOpenStrikeSold').value.trim();
-      deal.shortStrike = document.getElementById('epOpenStrikeBought').value.trim();
-    }
+    // Always saved now -- #epOpenStrikeRow is visible (and editable)
+    // regardless of open/closed state, see openEntryPriceModal().
+    deal.longStrike = document.getElementById('epOpenStrikeSold').value.trim();
+    deal.shortStrike = document.getElementById('epOpenStrikeBought').value.trim();
     if (deal.closed) {
       deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));

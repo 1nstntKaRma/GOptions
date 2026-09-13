@@ -1615,6 +1615,8 @@
     border: 1px solid var(--green); background: transparent;
     font-size: 10px;
   }
+
+  .strike-close-apply-btn.info-only { cursor: default; }
   .strike-close-apply-btn.needs-apply:hover { background: rgba(3,136,0,.15); }
 
   #entryPriceModal .form-row label,
@@ -2610,6 +2612,29 @@
       </div>
     </div>
 
+    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
+      <div class="form-row">
+        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdEntryPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="cdClosedPrice">&#128176; Closed Price</label>
+        <div class="total-stepper-wrap">
+          <input id="cdClosedPrice" type="text" inputmode="decimal" />
+          <div class="total-stepper total-stepper-sm">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-grid-2 cd-strike-close-row">
       <div class="form-row">
         <label for="cdClosedStrikeSold" class="strike-label-sold" title="Strike Sold = Short put = Premium">Strike Sold $</label>
@@ -2635,29 +2660,6 @@
           <div class="total-stepper total-stepper-sm">
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','up',0.01,2)">+</button>
             <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Strike Bought $" onclick="stepDecimalField('cdClosedStrikeBought','down',0.01,2)">&#8722;</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-grid-2 cd-price-row" id="cdPriceRow">
-      <div class="form-row">
-        <label for="cdEntryPrice">&#127991;&#65039; Entry Price</label>
-        <div class="total-stepper-wrap">
-          <input id="cdEntryPrice" type="text" inputmode="decimal" />
-          <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Entry Stock Price" onclick="stepDecimalField('cdEntryPrice','down',0.01,2,0)">&#8722;</button>
-          </div>
-        </div>
-      </div>
-      <div class="form-row">
-        <label for="cdClosedPrice">&#128176; Closed Price</label>
-        <div class="total-stepper-wrap">
-          <input id="cdClosedPrice" type="text" inputmode="decimal" />
-          <div class="total-stepper total-stepper-sm">
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','up',0.01,2,0)">+</button>
-            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Closed Stock Price" onclick="stepDecimalField('cdClosedPrice','down',0.01,2,0)">&#8722;</button>
           </div>
         </div>
       </div>
@@ -4382,18 +4384,13 @@
     if (!Number.isFinite(sold) || !Number.isFinite(bought)) return null;
 
     const m = computeMetrics(deal.total, deal.limit, ptPctValue, deal.contracts);
-    const profitTakerPerShare = Math.abs(m.profitTaker / m.contracts);
-    const closeDebit = bought - sold;
-    const ptMatches = Math.abs(closeDebit - profitTakerPerShare) < 0.01;
-
     const limitPerShare = Math.abs(m.limit);
-    const profitFromFormulaPerShare = limitPerShare - profitTakerPerShare;
+    const closeDebitPerShare = bought - sold;
+    const profitPerShare = limitPerShare - closeDebitPerShare;
+    const liveProfitDollars = Math.round(profitPerShare * 100) * m.contracts;
+    const targetProfitDollars = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
 
-    const signedFifthValue = m.sideIsLoss ? -m.fifthValue : m.fifthValue;
-    const fifthValuePerShare = signedFifthValue / (100 * m.contracts);
-    const profitMatches = Math.abs(profitFromFormulaPerShare - fifthValuePerShare) < 0.02;
-
-    return (ptMatches && profitMatches) ? 'green' : 'red';
+    return liveProfitDollars === targetProfitDollars ? 'green' : 'red';
   }
 
   function applyStrikeMatchClass(el, result) {
@@ -4927,8 +4924,27 @@
     const result = checkOpenStrikeMatch(shortRaw, longRaw, document.getElementById('sdLimit').value);
     el.classList.toggle('green', result === 'green');
     el.classList.toggle('red', result === 'red');
+    const reversed = longVal < shortVal;
+    if (reversed) {
 
-    swapBtn.hidden = longVal >= shortVal;
+      swapBtn.hidden = false;
+      swapBtn.textContent = '♻️';
+      swapBtn.classList.add('needs-apply');
+      swapBtn.classList.remove('info-only');
+      swapBtn.onclick = swapSdStrikeValues;
+      swapBtn.title = 'Swap Strike Sold $ and Strike Bought $';
+    } else if (result === 'green') {
+
+      swapBtn.hidden = false;
+      swapBtn.textContent = '✔️';
+      swapBtn.classList.remove('needs-apply');
+      swapBtn.classList.add('info-only');
+      swapBtn.onclick = null;
+      swapBtn.title = 'Already correct';
+    } else {
+
+      swapBtn.hidden = true;
+    }
   }
   ['sdShort', 'sdLong', 'sdLimit'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -5499,7 +5515,8 @@
     document.getElementById('epClosedStrikeRow').hidden = !deal.closed;
     document.getElementById('epClosedStrikeSold').value = deal.closedStrikeSold || '';
     document.getElementById('epClosedStrikeBought').value = deal.closedStrikeBought || '';
-    document.getElementById('epOpenStrikeRow').hidden = !!deal.closed;
+
+    document.getElementById('epOpenStrikeRow').hidden = false;
     document.getElementById('epOpenStrikeSold').value = deal.longStrike || '';
     document.getElementById('epOpenStrikeBought').value = deal.shortStrike || '';
     if (deal.closed) applyDateToPair('epDateMonth', 'epDateDay', 'epDateYear', deal.closeDate || todayStr());
@@ -5520,10 +5537,9 @@
     const deal = deals.find(d => d.id === entryPriceDealId);
     if (!deal) return;
     deal.entryStockPrice = document.getElementById('epEntryPrice').value.trim();
-    if (!deal.closed) {
-      deal.longStrike = document.getElementById('epOpenStrikeSold').value.trim();
-      deal.shortStrike = document.getElementById('epOpenStrikeBought').value.trim();
-    }
+
+    deal.longStrike = document.getElementById('epOpenStrikeSold').value.trim();
+    deal.shortStrike = document.getElementById('epOpenStrikeBought').value.trim();
     if (deal.closed) {
       deal.closedStockPrice = document.getElementById('epClosedPrice').value.trim();
       deal.closeDate = composeDateMD(document.getElementById('epDateMonth'), document.getElementById('epDateDay'), document.getElementById('epDateYear'));
