@@ -3828,7 +3828,7 @@
   .pm-menu-icon {
     flex: none; width: 34px; height: 34px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+    font-size: 20px;
   }
   .pm-icon-gold { background: rgba(245,166,35,.16); }
   .pm-icon-green { background: rgba(3,136,0,.16); }
@@ -3841,6 +3841,16 @@
   .pm-menu-desc { font-size: 13px; color: var(--muted); }
   .pm-menu-chevron { flex: none; font-size: 22px; color: var(--muted); line-height: 1; }
   #portfolioMenu h2, #hamburgerMenu h2 { font-size: 23px; }
+  /* Desktop reads a bit bigger than Phone across the board (icon emoji
+     size is shared/unscoped above -- same on both). Must come AFTER the
+     base rules above -- identical specificity (id+class/id+element), so
+     source order alone decides which wins once both match. */
+  @media (min-width: 701px) {
+    #portfolioMenu .pm-menu-title, #hamburgerMenu .pm-menu-title { font-size: 18px; }
+    #portfolioMenu .pm-menu-desc, #hamburgerMenu .pm-menu-desc { font-size: 14px; }
+    #portfolioMenu .pm-menu-chevron, #hamburgerMenu .pm-menu-chevron { font-size: 24px; }
+    #portfolioMenu h2, #hamburgerMenu h2 { font-size: 25px; }
+  }
 
   /* Checkbox-driven switch -- input stays in the DOM (for
      updatePortfolioMenuLabels()'s own .checked reads/writes) but is
@@ -5850,7 +5860,7 @@
     // field's own blur firing first) can never clobber what they're
     // mid-typing.
     if (!stopValue.isContentEditable) {
-      stopValue.classList.toggle('editable', !state.limitMissing && !sideIsLoss);
+      stopValue.classList.toggle('editable', !state.limitMissing);
 
       if (state.fifthMissing) {
         stopTitle.textContent = '';
@@ -6358,7 +6368,7 @@
 
   stopValueEl.addEventListener('click', () => {
     if (stopValueEl.isContentEditable) return; // already editing
-    if (!stopValueEl.classList.contains('editable')) return; // Loss / no Limit $ set
+    if (!stopValueEl.classList.contains('editable')) return; // no Limit $ set
     stopValueEl.classList.remove('missing');
     stopValueEl.contentEditable = 'true';
     stopValueEl.textContent = '';
@@ -6378,15 +6388,19 @@
   // Keystroke allow-list instead of post-hoc stripping -- for a
   // contenteditable div (unlike an <input>) there's no simple "set
   // .value then fix the caret" correction, so blocking anything that
-  // isn't a digit (or a navigation/editing key) AT THE SOURCE avoids ever
-  // needing to touch textContent/selection ourselves. Explicit spec:
-  // "must be whole number, no '.'" -- no digit grouping, decimal point,
-  // or minus sign is ever allowed through.
+  // isn't a digit/leading-minus (or a navigation/editing key) AT THE
+  // SOURCE avoids ever needing to touch textContent/selection ourselves.
+  // Explicit spec: whole number, optional leading '-' to target a loss
+  // instead of a profit -- no digit grouping or decimal point.
   stopValueEl.addEventListener('keydown', e => {
     if (!stopValueEl.isContentEditable) return;
     if (e.key === 'Enter') { e.preventDefault(); stopValueEl.blur(); return; }
     const navKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
     if (navKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (e.key === '-') {
+      if (stopValueEl.textContent.includes('-')) e.preventDefault(); // only one, ever
+      return;
+    }
     if (!/^[0-9]$/.test(e.key)) { e.preventDefault(); return; }
     const digitsSoFar = stopValueEl.textContent.replace(/\D/g, '').length;
     if (digitsSoFar >= PROFIT_TILE_MAX_DIGITS) e.preventDefault();
@@ -6395,9 +6409,12 @@
   stopValueEl.addEventListener('paste', e => {
     if (!stopValueEl.isContentEditable) return;
     e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    const raw = (e.clipboardData || window.clipboardData).getData('text').trim();
+    const negative = raw.startsWith('-') && !stopValueEl.textContent.includes('-');
+    const pastedDigits = raw.replace(/\D/g, '');
     const room = PROFIT_TILE_MAX_DIGITS - stopValueEl.textContent.replace(/\D/g, '').length;
-    document.execCommand('insertText', false, pasted.slice(0, Math.max(0, room)));
+    const text = (negative ? '-' : '') + pastedDigits.slice(0, Math.max(0, room));
+    document.execCommand('insertText', false, text);
   });
 
   stopValueEl.addEventListener('blur', () => {
@@ -6407,10 +6424,12 @@
       window.visualViewport.removeEventListener('resize', stopValueViewportListener);
       stopValueViewportListener = null;
     }
-    const digits = stopValueEl.textContent.replace(/\D/g, '');
+    const raw = stopValueEl.textContent.trim();
+    const digits = raw.replace(/\D/g, '');
     const target = Number(digits);
     if (digits !== '' && target > 0) {
-      const solved = ptPctFromProfitTarget(target, limitEl.value, contractsEl.value);
+      const signedTarget = raw.startsWith('-') ? -target : target;
+      const solved = ptPctFromProfitTarget(signedTarget, limitEl.value, contractsEl.value);
       if (solved !== null) ptPctEl.value = String(solved);
     }
     calculate();
