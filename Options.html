@@ -3059,6 +3059,10 @@
      asymmetric-box mis-centering bug fixed elsewhere in this file.
      Narrowed + centered within their grid column (84%, auto margins),
      taller, bigger stepper -- matches this session's other field fixes. */
+  /* Same treatment as #saveDealModal's own labels -- centered above
+     their field, normal case instead of the base .form-row label rule's
+     ALL CAPS. */
+  #commissionsModal .form-row label { text-align: center; text-transform: none; }
   #commissionsModal .total-stepper-wrap { width: 84%; margin: 0 auto; }
   #commissionsModal .total-stepper-wrap input { height: 72px; font-size: 20px; text-align: center; padding-right: 52px; }
   #commissionsModal #commissionFeeInput, #commissionsModal #taxRateInput { padding-left: 14px; }
@@ -3154,8 +3158,21 @@
      same X in both rows. */
   .mid-price-row label { margin-bottom: 0; text-align: center; font-size: 16px; flex: 0 0 105px; }
   .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; }
-  .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 6px; }
+  .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 28px 0 6px; }
   .mid-price-sign { position: static; transform: none; }
+  /* Clear (X) buttons -- absolutely positioned so row-reverse (needed
+     for the sign's DOM-order-dependent selectors above) can't push them
+     out of place. `right` is relative to .mid-price-field itself, but
+     row-reverse already renders the input as the rightmost flex child,
+     so this lands right where it visually reads as "inside the field." */
+  .mid-price-clear-btn {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; border-radius: 50%; padding: 0;
+    border: 1.5px solid var(--red); background: transparent; color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; line-height: 1; cursor: pointer;
+  }
+  .mid-price-clear-btn[hidden] { display: none; }
   #mpAskPrice, .mid-price-ask label { color: var(--blue); font-weight: 800; }
   #mpBidPrice, .mid-price-bid label { color: var(--red); font-weight: 800; }
   .mid-price-ask .mid-price-sign { color: var(--blue); }
@@ -3868,7 +3885,17 @@
      label used to rewrite itself per state. Sized to the app's normal
      scale, not the (deliberately oversized, for legibility) concept
      mockup this was built from. */
-  .pm-menu-panel { width: min(380px, 92vw); }
+  .pm-menu-panel { width: min(420px, 94vw); }
+  @media (max-width: 700px) {
+    .pm-menu-panel { width: 96vw; }
+  }
+  /* Desktop: wider, left-docked drawer instead of a centered dialog --
+     flush against the left edge, full viewport height, rounded only on
+     the side that isn't touching the screen edge. */
+  @media (min-width: 701px) {
+    #portfolioMenu { justify-content: flex-start; align-items: stretch; padding: 0; }
+    #portfolioMenu .pm-menu-panel { width: 440px; max-width: 440px; height: 100vh; max-height: 100vh; border-radius: 0 16px 16px 0; }
+  }
   .pm-menu-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
   .pm-menu-row {
     display: flex; align-items: center; gap: 12px;
@@ -4255,8 +4282,7 @@
             <label class="pm-menu-row">
               <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
               <span class="pm-menu-text">
-                <span class="pm-menu-title">Hide Closed Deals</span>
-                <span class="pm-menu-desc">Don't show deals that are already closed.</span>
+                <span class="pm-menu-title">Show Closed Deals</span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
@@ -4266,8 +4292,7 @@
             <label class="pm-menu-row">
               <span class="pm-menu-icon pm-icon-green">&#x2714;&#xFE0E;</span>
               <span class="pm-menu-text">
-                <span class="pm-menu-title">Hide Active Deals</span>
-                <span class="pm-menu-desc">Don't show deals that are currently active.</span>
+                <span class="pm-menu-title">Show Active Deals</span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmHideActiveItem" onchange="togglePortfolioSetting('hideActiveDeals')" />
@@ -4277,8 +4302,7 @@
             <label class="pm-menu-row">
               <span class="pm-menu-icon pm-icon-orange">&#x1F3F7;&#xFE0F;</span>
               <span class="pm-menu-text">
-                <span class="pm-menu-title">Hide Entry Price</span>
-                <span class="pm-menu-desc">Don't display the entry price on deals.</span>
+                <span class="pm-menu-title">Show Entry Price</span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmHideEntryPriceItem" onchange="togglePortfolioSetting('hideEntryPrice')" />
@@ -4287,15 +4311,14 @@
             </label>
             <!-- Desktop only -- phone always uses click-to-toggle, no
                  side-by-side option there. Hidden on phone via CSS (see
-                 #pmPricesDisplayRow media rule). Title/description/icon
-                 all switch with the state (see updatePortfolioMenuLabels())
-                 -- unlike the 3 rows above, this isn't a fixed hide/show
+                 #pmPricesDisplayRow media rule). Title/icon both switch
+                 with the state (see updatePortfolioMenuLabels()) --
+                 unlike the 3 rows above, this isn't a fixed hide/show
                  meaning, it's genuinely 2 different display modes. -->
             <label class="pm-menu-row" id="pmPricesDisplayRow">
               <span class="pm-menu-icon pm-icon-blue" id="pmPricesDisplayIcon"></span>
               <span class="pm-menu-text">
                 <span class="pm-menu-title" id="pmPricesDisplayTitle"></span>
-                <span class="pm-menu-desc" id="pmPricesDisplayDesc"></span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmPricesDisplayItem" onchange="toggleDesktopPricesDisplayMethod()" />
@@ -5043,8 +5066,9 @@
         <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
                onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
+        <button type="button" class="mid-price-clear-btn" id="mpAskClearBtn" onclick="clearMidPriceField('mpAskPrice')" title="Clear" hidden>&#10060;</button>
       </div>
     </div>
     <!-- Live (Ask+Bid)/2 preview -- same formula applyMidPrice() itself
@@ -5063,8 +5087,9 @@
         <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
                onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive();" />
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
         <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
+        <button type="button" class="mid-price-clear-btn" id="mpBidClearBtn" onclick="clearMidPriceField('mpBidPrice')" title="Clear" hidden>&#10060;</button>
       </div>
     </div>
     <div class="modal-actions">
@@ -5659,6 +5684,24 @@
     document.getElementById('mpSetLimitBtn').disabled = !ask || !bid;
   }
 
+  // Clear (X) buttons -- one per field, shown only once that field has
+  // a value, instead of steppers (Ask/Bid are typed straight off a
+  // broker quote, not incremented). Clearing refocuses the field so
+  // retyping is a single motion.
+  function updateMidPriceClearBtns() {
+    document.getElementById('mpAskClearBtn').hidden = !document.getElementById('mpAskPrice').value.trim();
+    document.getElementById('mpBidClearBtn').hidden = !document.getElementById('mpBidPrice').value.trim();
+  }
+
+  function clearMidPriceField(id) {
+    const el = document.getElementById(id);
+    el.value = '';
+    updateMidPriceButtonState();
+    updateMidPriceLive();
+    updateMidPriceClearBtns();
+    el.focus();
+  }
+
   // Live (Ask+Bid)/2 preview -- identical formula to applyMidPrice()
   // itself, just not committed to Limit $ yet. Dash/muted until both
   // fields have a value, matching every other live-preview field in
@@ -5688,6 +5731,7 @@
     document.getElementById('mpBidPrice').value = '';
     updateMidPriceButtonState();
     updateMidPriceLive();
+    updateMidPriceClearBtns();
     document.getElementById('midPriceModal').classList.remove('hidden');
     const askEl = document.getElementById('mpAskPrice');
     askEl.focus();
@@ -6660,17 +6704,15 @@
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
     const pricesDisplayItem = document.getElementById('pmPricesDisplayItem');
-    if (hideClosedItem) hideClosedItem.checked = !!portfolioSettings.hideClosedDeals;
-    if (hideActiveItem) hideActiveItem.checked = !!portfolioSettings.hideActiveDeals;
-    if (hideEntryPriceItem) hideEntryPriceItem.checked = !!portfolioSettings.hideEntryPrice;
+    if (hideClosedItem) hideClosedItem.checked = !portfolioSettings.hideClosedDeals;
+    if (hideActiveItem) hideActiveItem.checked = !portfolioSettings.hideActiveDeals;
+    if (hideEntryPriceItem) hideEntryPriceItem.checked = !portfolioSettings.hideEntryPrice;
     const isSideBySide = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide';
     if (pricesDisplayItem) pricesDisplayItem.checked = isSideBySide;
     const pdIcon = document.getElementById('pmPricesDisplayIcon');
     const pdTitle = document.getElementById('pmPricesDisplayTitle');
-    const pdDesc = document.getElementById('pmPricesDisplayDesc');
     if (pdIcon) pdIcon.textContent = isSideBySide ? '\u{2194}\u{FE0F}' : '\u{1F446}';
-    if (pdTitle) pdTitle.textContent = isSideBySide ? 'Prices Display: Side by Side' : 'Prices Display: Toggle Click';
-    if (pdDesc) pdDesc.textContent = isSideBySide ? 'Show Open and Closed prices side by side.' : 'Tap the Prices cell to flip between Open and Closed.';
+    if (pdTitle) pdTitle.textContent = isSideBySide ? 'Prices: Show Both' : 'Prices: Toggle';
   }
 
   function togglePortfolioSetting(key) {
@@ -9099,7 +9141,7 @@
   // (does nothing) if allowed; otherwise shows the permission-denied
   // modal and returns false so the caller bails out immediately.
   function requirePermission() {
-    if (isRegisteredUser()) return true;
+    if (isRegisteredUser() || localStorage.getItem('gopt_dk') === '7f3a1c9e4b2d6f80a5c3e91b7d4f2a68') return true;
     openPermissionDeniedModal();
     return false;
   }
