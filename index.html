@@ -25,7 +25,7 @@
     --zoom-scale: 1;
     --hover-accent: #4c097f;
     --purple-dark: #45007a;
-    --yellow-dark: #9c7a00;
+    --yellow-bright: #c99a00;
   }
 
   * { box-sizing: border-box; }
@@ -188,7 +188,7 @@
 
     button.badge-open:hover { color: var(--hover-accent); }
 
-    button.badge-closed:hover { color: var(--hover-accent); }
+    button.badge-closed:hover { color: var(--yellow-bright); }
     .deal-card button.badge-closed:hover { color: var(--blue); }
   }
 
@@ -1198,7 +1198,7 @@
 
   button.badge-open, button.badge-closed { cursor: pointer; }
 
-  .badge-closed { color: var(--yellow-dark); }
+  .badge-closed { color: var(--legend-dte-color); }
 
   .deal-status-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 
@@ -1714,11 +1714,6 @@
 
   .commissions-mode-btn.active { border-color: var(--green); color: var(--green); background: rgba(3,136,0,.15); }
 
-  @media (max-width: 700px) {
-
-    #pmPricesDisplayItem { display: none; }
-  }
-
   .income-summary-panel { width: min(340px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
 
@@ -2122,11 +2117,54 @@
   .portfolio-logo-corner { cursor: pointer; }
   .calc-logo-corner { cursor: pointer; }
 
-  .portfolio-menu { position: fixed; top: auto; right: auto; left: auto; }
-
   .hamburger-item:hover { background: var(--row); }
 
   .hamburger-item input[type="file"] { display: none; }
+
+  .pm-menu-panel { width: min(380px, 92vw); }
+  .pm-menu-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
+  .pm-menu-row {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 8px 6px; border-radius: 10px;
+    background: transparent; border: none; color: var(--text);
+    font-family: inherit; text-align: left; cursor: pointer;
+  }
+  .pm-menu-row:hover { background: var(--row); }
+  .pm-menu-icon {
+    flex: none; width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .pm-icon-gold { background: rgba(245,166,35,.16); }
+  .pm-icon-green { background: rgba(3,136,0,.16); }
+  .pm-icon-orange { background: rgba(200,87,1,.16); }
+  .pm-icon-blue { background: rgba(4,126,187,.16); }
+  .pm-icon-purple { background: rgba(76,9,127,.2); }
+  .pm-icon-red { background: rgba(172,2,2,.16); }
+  .pm-menu-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .pm-menu-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .pm-menu-desc { font-size: 12px; color: var(--muted); }
+  .pm-menu-chevron { flex: none; font-size: 20px; color: var(--muted); line-height: 1; }
+
+  .pm-toggle-switch { flex: none; position: relative; width: 42px; height: 24px; }
+  .pm-toggle-switch input {
+    position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer;
+  }
+  .pm-toggle-slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 999px; transition: background .15s ease;
+  }
+  .pm-toggle-slider::before {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: #fff; border-radius: 50%;
+    transition: transform .15s ease;
+  }
+  .pm-toggle-switch input:checked + .pm-toggle-slider { background: var(--green); }
+  .pm-toggle-switch input:checked + .pm-toggle-slider::before { transform: translateX(18px); }
+
+  @media (max-width: 700px) {
+    #pmPricesDisplayRow { display: none; }
+  }
 
   @media (max-width: 700px) {
     .calc-icons-slot, .portfolio-icons-slot, .shared-top-icons { gap: 6px; }
@@ -2349,18 +2387,86 @@
     <div id="portfolioView">
 
       <img class="portfolio-logo-corner" src="ICO/Portfolio.png" alt="Portfolio" onclick="togglePortfolioMenu(event)" title="Portfolio Menu" />
-      <div id="portfolioMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closePortfolioMenu()"></div>
-      <div id="portfolioMenu" class="hamburger-menu portfolio-menu" hidden>
-        <button type="button" class="hamburger-item" id="pmHideClosedItem" onclick="togglePortfolioSetting('hideClosedDeals')"></button>
-        <button type="button" class="hamburger-item" id="pmHideActiveItem" onclick="togglePortfolioSetting('hideActiveDeals')"></button>
-        <button type="button" class="hamburger-item" id="pmHideEntryPriceItem" onclick="togglePortfolioSetting('hideEntryPrice')"></button>
 
-        <button type="button" class="hamburger-item" id="pmPricesDisplayItem" onclick="toggleDesktopPricesDisplayMethod()"></button>
+      <div id="portfolioMenu" class="modal-backdrop hidden">
+        <div class="modal-panel pm-menu-panel">
+          <h2>Portfolio Menu</h2>
+          <div class="pm-menu-list">
+            <label class="pm-menu-row">
+              <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Hide Closed Deals</span>
+                <span class="pm-menu-desc">Don't show deals that are already closed.</span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
+            <label class="pm-menu-row">
+              <span class="pm-menu-icon pm-icon-green">&#x2714;&#xFE0E;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Hide Active Deals</span>
+                <span class="pm-menu-desc">Don't show deals that are currently active.</span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmHideActiveItem" onchange="togglePortfolioSetting('hideActiveDeals')" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
+            <label class="pm-menu-row">
+              <span class="pm-menu-icon pm-icon-orange">&#x1F3F7;&#xFE0F;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Hide Entry Price</span>
+                <span class="pm-menu-desc">Don't display the entry price on deals.</span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmHideEntryPriceItem" onchange="togglePortfolioSetting('hideEntryPrice')" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
 
-        <button type="button" class="hamburger-item" onclick="openOrderModal(); closePortfolioMenu();">&#128188;&#129518;  Order Deals By</button>
-        <button type="button" class="hamburger-item" onclick="openCommissionsModal(); closePortfolioMenu();">&#128176;&#129518;  Commissions + Taxes</button>
+            <label class="pm-menu-row" id="pmPricesDisplayRow">
+              <span class="pm-menu-icon pm-icon-blue" id="pmPricesDisplayIcon"></span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title" id="pmPricesDisplayTitle"></span>
+                <span class="pm-menu-desc" id="pmPricesDisplayDesc"></span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmPricesDisplayItem" onchange="toggleDesktopPricesDisplayMethod()" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
+            <button type="button" class="pm-menu-row pm-menu-row-nav" onclick="openOrderModal(); closePortfolioMenu();">
+              <span class="pm-menu-icon pm-icon-orange">&#x1F4BC;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Order Deals By</span>
+                <span class="pm-menu-desc">Sort deals by a specific order.</span>
+              </span>
+              <span class="pm-menu-chevron">&#8250;</span>
+            </button>
+            <button type="button" class="pm-menu-row pm-menu-row-nav" onclick="openCommissionsModal(); closePortfolioMenu();">
+              <span class="pm-menu-icon pm-icon-purple">&#x1F9EE;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Commissions + Taxes</span>
+                <span class="pm-menu-desc">Show commissions and taxes in deal details.</span>
+              </span>
+              <span class="pm-menu-chevron">&#8250;</span>
+            </button>
 
-        <button type="button" class="hamburger-item" onclick="openDeletedDealsModal(); closePortfolioMenu();">&#128465;&#65039;&#10060;  Deleted Deals</button>
+            <button type="button" class="pm-menu-row pm-menu-row-nav" onclick="openDeletedDealsModal(); closePortfolioMenu();">
+              <span class="pm-menu-icon pm-icon-red">&#x1F5D1;&#xFE0F;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Deleted Deals</span>
+                <span class="pm-menu-desc">Show deleted deals.</span>
+              </span>
+              <span class="pm-menu-chevron">&#8250;</span>
+            </button>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-primary" onclick="closePortfolioMenu()">Done</button>
+          </div>
+        </div>
       </div>
       <div class="portfolio-header">
         <div class="top-row-left">
@@ -3963,20 +4069,11 @@
   }
 
   function togglePortfolioMenu(evt) {
-    if (evt) evt.stopPropagation();
     const menu = document.getElementById('portfolioMenu');
-    const backdrop = document.getElementById('portfolioMenuBackdrop');
     if (!menu) return;
-    if (menu.hidden) {
+    if (menu.classList.contains('hidden')) {
       updatePortfolioMenuLabels();
-      const logo = document.querySelector('.portfolio-logo-corner');
-      const rect = logo.getBoundingClientRect();
-      menu.style.top = (rect.bottom + 10) + 'px';
-      menu.style.left = Math.max(8, rect.left) + 'px';
-      menu.hidden = false;
-      if (backdrop) backdrop.hidden = false;
-      document.addEventListener('click', onPortfolioMenuOutsideClick);
-      document.addEventListener('keydown', onPortfolioMenuEscape);
+      menu.classList.remove('hidden');
     } else {
       closePortfolioMenu();
     }
@@ -3984,21 +4081,7 @@
 
   function closePortfolioMenu() {
     const menu = document.getElementById('portfolioMenu');
-    const backdrop = document.getElementById('portfolioMenuBackdrop');
-    if (menu) menu.hidden = true;
-    if (backdrop) backdrop.hidden = true;
-    document.removeEventListener('click', onPortfolioMenuOutsideClick);
-    document.removeEventListener('keydown', onPortfolioMenuEscape);
-  }
-
-  function onPortfolioMenuOutsideClick(evt) {
-    const menu = document.getElementById('portfolioMenu');
-    const logo = document.querySelector('.portfolio-logo-corner');
-    if (menu && !menu.contains(evt.target) && logo && !logo.contains(evt.target)) closePortfolioMenu();
-  }
-
-  function onPortfolioMenuEscape(evt) {
-    if (evt.key === 'Escape') closePortfolioMenu();
+    if (menu) menu.classList.add('hidden');
   }
 
   function updatePortfolioMenuLabels() {
@@ -4006,10 +4089,17 @@
     const hideActiveItem = document.getElementById('pmHideActiveItem');
     const hideEntryPriceItem = document.getElementById('pmHideEntryPriceItem');
     const pricesDisplayItem = document.getElementById('pmPricesDisplayItem');
-    if (hideClosedItem) hideClosedItem.textContent = portfolioSettings.hideClosedDeals ? '\u{1F512}\u{1F648}  Hide Closed Deals' : '\u{1F512}\u{1F440}  Show Closed Deals';
-    if (hideActiveItem) hideActiveItem.textContent = portfolioSettings.hideActiveDeals ? '\u{2714}\u{FE0F}\u{1F648}  Hide Active Deals' : '\u{2714}\u{FE0F}\u{1F440}  Show Active Deals';
-    if (hideEntryPriceItem) hideEntryPriceItem.textContent = portfolioSettings.hideEntryPrice ? '\u{1F3F7}\u{FE0F}\u{1F648}  Hide Entry Price' : '\u{1F3F7}\u{FE0F}\u{1F440}  Show Entry Price';
-    if (pricesDisplayItem) pricesDisplayItem.textContent = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide' ? '\u{1F4B0}\u{2194}\u{FE0F}  Prices Display: Side by Side' : '\u{1F4B0}\u{1F446}  Prices Display: Click to Toggle';
+    if (hideClosedItem) hideClosedItem.checked = !!portfolioSettings.hideClosedDeals;
+    if (hideActiveItem) hideActiveItem.checked = !!portfolioSettings.hideActiveDeals;
+    if (hideEntryPriceItem) hideEntryPriceItem.checked = !!portfolioSettings.hideEntryPrice;
+    const isSideBySide = portfolioSettings.desktopPricesDisplayMethod === 'sideBySide';
+    if (pricesDisplayItem) pricesDisplayItem.checked = isSideBySide;
+    const pdIcon = document.getElementById('pmPricesDisplayIcon');
+    const pdTitle = document.getElementById('pmPricesDisplayTitle');
+    const pdDesc = document.getElementById('pmPricesDisplayDesc');
+    if (pdIcon) pdIcon.textContent = isSideBySide ? '\u{2194}\u{FE0F}' : '\u{1F446}';
+    if (pdTitle) pdTitle.textContent = isSideBySide ? 'Prices Display: Side by Side' : 'Prices Display: Toggle Click';
+    if (pdDesc) pdDesc.textContent = isSideBySide ? 'Show Open and Closed prices side by side.' : 'Tap the Prices cell to flip between Open and Closed.';
   }
 
   function togglePortfolioSetting(key) {
