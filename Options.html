@@ -7941,7 +7941,13 @@
     contractsEl.value = String(getContractsValue(deal.contracts));
     totalEl.value = deal.total || '';
     limitEl.value = deal.limit || '';
-    ptPctEl.value = deal.ptPct || '';
+    // Closed deals show their REALIZED Profit Taker % (deal.closePtPct
+    // -- same field finalStats()/the Portfolio P/L cell already read),
+    // not the stale opening plan -- otherwise any update made via the
+    // Close Deal/Closed Deal Prices ✔️ button (which only ever writes
+    // closePtPct) would never appear here, even though Portfolio's own
+    // rendering already reflects it.
+    ptPctEl.value = (deal.closed ? deal.closePtPct : deal.ptPct) || '';
     calculate();
     setMode('calculator');
     // Portfolio can be scrolled well past the top with enough deals; nothing

@@ -4932,7 +4932,8 @@
     contractsEl.value = String(getContractsValue(deal.contracts));
     totalEl.value = deal.total || '';
     limitEl.value = deal.limit || '';
-    ptPctEl.value = deal.ptPct || '';
+
+    ptPctEl.value = (deal.closed ? deal.closePtPct : deal.ptPct) || '';
     calculate();
     setMode('calculator');
 
