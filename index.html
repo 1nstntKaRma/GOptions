@@ -326,7 +326,7 @@
 
   .inputs {
     display: grid;
-    grid-template-columns: 130px repeat(3, minmax(0, 220px));
+    grid-template-columns: 130px repeat(3, minmax(90px, 220px));
     justify-content: start;
     gap: 36px;
     margin: 0;
@@ -789,7 +789,7 @@
 
     .inputs {
       padding-right: 0;
-      grid-template-columns: 100px repeat(3, minmax(0, 180px));
+      grid-template-columns: 100px repeat(3, minmax(70px, 180px));
       gap: 18px;
     }
 
@@ -1715,10 +1715,10 @@
 
   .commissions-mode-btn.active { border-color: var(--green); color: var(--green); background: rgba(3,136,0,.15); }
 
-  .income-summary-panel { width: min(340px, 92vw); }
+  .income-summary-panel { width: min(400px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
 
-  .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+  .income-summary-row { display: grid; grid-template-columns: minmax(130px, 1fr) 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
   .income-summary-label { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .income-summary-value { font-size: 18px; font-weight: 800; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2052,15 +2052,6 @@
 
   .hamburger-wrap { position: relative; }
 
-  .hamburger-menu-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.72);
-    z-index: 69;
-  }
-
-  .hamburger-menu-backdrop[hidden] { display: none; }
-
   .hamburger-btn {
     width: 52px;
     height: 52px;
@@ -2076,60 +2067,10 @@
     box-shadow: 0 4px 14px rgba(0,0,0,.5);
   }
 
-  .hamburger-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.6);
-    min-width: 230px;
-    padding: 6px;
-    z-index: 70;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    isolation: isolate;
-  }
-
-  .hamburger-menu::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: var(--panel);
-    border-radius: inherit;
-    z-index: -1;
-  }
-
-  .hamburger-menu[hidden] {
-    display: flex;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  .hamburger-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-    width: 100%;
-    font-family: inherit;
-  }
-
   .portfolio-logo-corner { cursor: pointer; }
   .calc-logo-corner { cursor: pointer; }
 
-  .hamburger-item:hover { background: var(--row); }
-
-  .hamburger-item input[type="file"] { display: none; }
+  .pm-hidden-file-input { display: none; }
 
   .pm-menu-panel { width: min(420px, 94vw); }
   @media (max-width: 700px) {
@@ -2139,6 +2080,11 @@
   @media (min-width: 701px) {
     #portfolioMenu { justify-content: flex-start; align-items: stretch; padding: 0; }
     #portfolioMenu .pm-menu-panel { width: 440px; max-width: 440px; height: 100vh; max-height: 100vh; border-radius: 0 16px 16px 0; }
+  }
+
+  @media (min-width: 701px) {
+    #hamburgerMenu { justify-content: flex-end; align-items: stretch; padding: 0; }
+    #hamburgerMenu .pm-menu-panel { width: 440px; max-width: 440px; height: 100vh; max-height: 100vh; border-radius: 16px 0 0 16px; }
   }
   .pm-menu-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
   .pm-menu-row {
@@ -2299,22 +2245,72 @@
 
               <button id="modeToggleBtn" class="mode-toggle-btn" title="Switch to Portfolio Mode" onclick="setMode('portfolio')"><img class="mode-toggle-gif" src="ICO/Portfolio.gif" alt="Switch to Portfolio Mode"></button>
               <div class="hamburger-wrap">
-
-                <div id="hamburgerMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closeHamburgerMenu()"></div>
                 <button id="hamburgerBtn" class="hamburger-btn" title="Menu" onclick="toggleHamburgerMenu(event)">&#x2630;</button>
-                <div id="hamburgerMenu" class="hamburger-menu" hidden>
-                  <button type="button" class="hamburger-item" id="layoutToggleItem" onclick="togglePortfolioLayoutManual()"></button>
-                  <button type="button" class="hamburger-item" id="layoutLockItem" onclick="toggleLayoutLock()"></button>
-                  <button type="button" class="hamburger-item" id="hamburgerExportItem" onclick="exportDeals(); closeHamburgerMenu();"></button>
-                  <label class="hamburger-item">
-                    <span id="hamburgerImportLabel"></span>
 
-                    <input type="file" accept="application/json" onclick="return requirePermission();" onchange="importDealsFile(event); closeHamburgerMenu();" />
-                  </label>
+                <div id="hamburgerMenu" class="modal-backdrop hidden">
+                  <div class="modal-panel pm-menu-panel">
+                    <h2>Menu</h2>
+                    <div class="pm-menu-list">
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F5A5;&#xFE0F;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Desktop Mode</span>
+                          <span class="pm-menu-desc">Display Mode is adjusted for monitors.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmDesktopModeItem" onchange="setPortfolioLayoutManual('desktop')" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4F1;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Phone Mode</span>
+                          <span class="pm-menu-desc">Display Mode is adjusted for smartphones.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmPhoneModeItem" onchange="setPortfolioLayoutManual('mobile')" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Lock Display Mode</span>
+                          <span class="pm-menu-desc">Disable/Enable Auto Identification.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmLayoutLockItem" onchange="toggleLayoutLock()" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <button type="button" class="pm-menu-row pm-menu-row-nav" onclick="exportDeals(); closeHamburgerMenu();">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4E4;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Export</span>
+                          <span class="pm-menu-desc">Download your deals data.</span>
+                        </span>
+                        <span class="pm-menu-chevron">&#8250;</span>
+                      </button>
+
+                      <label class="pm-menu-row pm-menu-row-nav">
+                        <span class="pm-menu-icon pm-icon-green">&#x1F4E5;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Import</span>
+                          <span class="pm-menu-desc">Upload deals from a file.</span>
+                        </span>
+                        <span class="pm-menu-chevron">&#8250;</span>
+                        <input type="file" accept="application/json" class="pm-hidden-file-input" onclick="return requirePermission();" onchange="importDealsFile(event); closeHamburgerMenu();" />
+                      </label>
+                    </div>
+                    <div class="modal-actions">
+                      <button type="button" class="btn btn-primary" onclick="closeHamburgerMenu()">Done</button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
         </div>
       </div>
 
@@ -2411,22 +2407,22 @@
           <h2>Portfolio Menu</h2>
           <div class="pm-menu-list">
             <label class="pm-menu-row">
-              <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
-              <span class="pm-menu-text">
-                <span class="pm-menu-title">Show Closed Deals</span>
-              </span>
-              <span class="pm-toggle-switch">
-                <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
-                <span class="pm-toggle-slider"></span>
-              </span>
-            </label>
-            <label class="pm-menu-row">
               <span class="pm-menu-icon pm-icon-green">&#x2714;&#xFE0E;</span>
               <span class="pm-menu-text">
                 <span class="pm-menu-title">Show Active Deals</span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmHideActiveItem" onchange="togglePortfolioSetting('hideActiveDeals')" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
+            <label class="pm-menu-row">
+              <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Show Closed Deals</span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
                 <span class="pm-toggle-slider"></span>
               </span>
             </label>
@@ -3088,14 +3084,6 @@
     dealDelete:          '✕',          
     dealReopen:          '\u{267B}\u{FE0F}', 
 
-    hamburgerPhoneMode:      '\u{1F4F1}',        
-    hamburgerDesktopMode:    '\u{1F5A5}\u{FE0F}', 
-    hamburgerLockDisplay:    '\u{1F512}',        
-    hamburgerUnlockDisplay:  '\u{1F513}',        
-
-    hamburgerExport:         '\u{1F4E4}',        
-    hamburgerImport:         '\u{1F4E5}',        
-
     dealButtonIcon:      '\u{1F4BE}',  
     sdTickerIcon:        '\u{1F3F7}\u{FE0F}', 
     sdDatesCardIcon:     '\u{1F4C6}',  
@@ -3124,8 +3112,6 @@
     const iconMaxLoss = document.getElementById('metricIconMaxLoss');
     const iconMaxProfit = document.getElementById('metricIconMaxProfit');
     const iconProfitTaker = document.getElementById('metricIconProfitTaker');
-    const exportItem = document.getElementById('hamburgerExportItem');
-    const importLabel = document.getElementById('hamburgerImportLabel');
 
     if (modeBtn) setModeToggleIcon(modeBtn, 'portfolio');
     if (hamburgerBtn) hamburgerBtn.textContent = BUTTON_EMOJIS.hamburger;
@@ -3133,8 +3119,6 @@
     if (iconMaxLoss) iconMaxLoss.textContent = BUTTON_EMOJIS.maxLoss;
     if (iconMaxProfit) iconMaxProfit.textContent = BUTTON_EMOJIS.maxProfit;
     if (iconProfitTaker) iconProfitTaker.textContent = BUTTON_EMOJIS.profitTaker;
-    if (exportItem) exportItem.textContent = `${BUTTON_EMOJIS.hamburgerExport} Export`;
-    if (importLabel) importLabel.textContent = `${BUTTON_EMOJIS.hamburgerImport} Import`;
 
     const syncBtn = document.getElementById('googleSyncBtn');
     if (syncBtn) syncBtn.textContent = BUTTON_EMOJIS.syncIdle;
@@ -4027,13 +4011,12 @@
     applyPortfolioLayout();
   }
 
-  function togglePortfolioLayoutManual() {
-    gPortfolioLayout = gPortfolioLayout === 'mobile' ? 'desktop' : 'mobile';
+  function setPortfolioLayoutManual(target) {
+    gPortfolioLayout = target === 'mobile' ? 'mobile' : 'desktop';
     if (gLayoutLocked) {
       try { localStorage.setItem(LAYOUT_VALUE_KEY, gPortfolioLayout); } catch (err) {  }
     }
     applyPortfolioLayout();
-    closeHamburgerMenu();
   }
 
   function toggleLayoutLock() {
@@ -4048,34 +4031,23 @@
       }
     } catch (err) {  }
     updateHamburgerMenuLabels();
-    closeHamburgerMenu();
   }
 
   function updateHamburgerMenuLabels() {
-    const layoutItem = document.getElementById('layoutToggleItem');
-    const lockItem = document.getElementById('layoutLockItem');
-    if (layoutItem) {
-      layoutItem.textContent = gPortfolioLayout === 'mobile'
-        ? `${BUTTON_EMOJIS.hamburgerDesktopMode} Desktop Mode`
-        : `${BUTTON_EMOJIS.hamburgerPhoneMode} Phone Mode`;
-    }
-    if (lockItem) {
-      lockItem.textContent = gLayoutLocked
-        ? `${BUTTON_EMOJIS.hamburgerUnlockDisplay} Unlock Display Mode`
-        : `${BUTTON_EMOJIS.hamburgerLockDisplay} Lock Display Mode`;
-    }
+    const desktopItem = document.getElementById('hmDesktopModeItem');
+    const phoneItem = document.getElementById('hmPhoneModeItem');
+    const lockItem = document.getElementById('hmLayoutLockItem');
+    if (desktopItem) desktopItem.checked = gPortfolioLayout !== 'mobile';
+    if (phoneItem) phoneItem.checked = gPortfolioLayout === 'mobile';
+    if (lockItem) lockItem.checked = gLayoutLocked;
   }
 
   function toggleHamburgerMenu(evt) {
-    if (evt) evt.stopPropagation();
     const menu = document.getElementById('hamburgerMenu');
-    const backdrop = document.getElementById('hamburgerMenuBackdrop');
     if (!menu) return;
-    if (menu.hidden) {
-      menu.hidden = false;
-      if (backdrop) backdrop.hidden = false;
-      document.addEventListener('click', onHamburgerOutsideClick);
-      document.addEventListener('keydown', onHamburgerEscape);
+    if (menu.classList.contains('hidden')) {
+      updateHamburgerMenuLabels();
+      menu.classList.remove('hidden');
     } else {
       closeHamburgerMenu();
     }
@@ -4083,20 +4055,7 @@
 
   function closeHamburgerMenu() {
     const menu = document.getElementById('hamburgerMenu');
-    const backdrop = document.getElementById('hamburgerMenuBackdrop');
-    if (menu) menu.hidden = true;
-    if (backdrop) backdrop.hidden = true;
-    document.removeEventListener('click', onHamburgerOutsideClick);
-    document.removeEventListener('keydown', onHamburgerEscape);
-  }
-
-  function onHamburgerOutsideClick(evt) {
-    const wrap = document.querySelector('.hamburger-wrap');
-    if (wrap && !wrap.contains(evt.target)) closeHamburgerMenu();
-  }
-
-  function onHamburgerEscape(evt) {
-    if (evt.key === 'Escape') closeHamburgerMenu();
+    if (menu) menu.classList.add('hidden');
   }
 
   function togglePortfolioMenu(evt) {

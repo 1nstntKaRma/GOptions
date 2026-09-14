@@ -500,7 +500,7 @@
      doesn't need the $ fields' 220px budget. */
   .inputs {
     display: grid;
-    grid-template-columns: 130px repeat(3, minmax(0, 220px));
+    grid-template-columns: 130px repeat(3, minmax(90px, 220px));
     justify-content: start;
     gap: 36px;
     margin: 0;
@@ -1128,7 +1128,7 @@
 
     .inputs {
       padding-right: 0;
-      grid-template-columns: 100px repeat(3, minmax(0, 180px));
+      grid-template-columns: 100px repeat(3, minmax(70px, 180px));
       gap: 18px;
     }
 
@@ -3082,7 +3082,7 @@
   .commissions-mode-btn.active { border-color: var(--green); color: var(--green); background: rgba(3,136,0,.15); }
 
   /* ---------- Income Summary popup ---------- */
-  .income-summary-panel { width: min(340px, 92vw); }
+  .income-summary-panel { width: min(400px, 92vw); }
   .income-summary-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
   /* Grid, not flex -- 3 FIXED tracks (label | deduction | total) shared
      identically by every row (each row is its own grid container, but
@@ -3094,8 +3094,11 @@
      sized to comfortably fit this modal's realistic worst case
      ("-$12,345"-style totals, "(-100%) $1,234"-style deductions)
      without the row ever needing to grow past this panel's own
-     min(340px, 92vw) cap on any screen size. */
-  .income-summary-row { display: grid; grid-template-columns: 1fr 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
+     min(400px, 92vw) cap on any screen size. Label track has a 130px
+     floor (not bare 1fr) -- at the old 340px panel width this column
+     resolved to just 56px, silently truncating "After Commissions"
+     (needs ~109px) to "After C..." on Desktop. */
+  .income-summary-row { display: grid; grid-template-columns: minmax(130px, 1fr) 90px 96px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--row); }
   .income-summary-label { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Bold + sign-colored -- a positive total reads Bold Green, a
      negative one Bold Red, same green/red convention every other P/L
@@ -3762,31 +3765,14 @@
   .mode-toggle-gif { width: 100%; height: 100%; object-fit: contain; }
 
 
-  /* Hamburger menu (Phone/Desktop layout toggle, lock, Export, Import) --
+  /* Hamburger menu button (Phone/Desktop layout toggle, lock, Export,
+     Import -- see #hamburgerMenu, now a modal like #portfolioMenu) --
      lives in the GLOBAL shared icon row (not scoped to the mobile
      portfolio layout alone) so it's reachable even while on Desktop
      layout, where it's the only way to manually switch to the Phone
      layout at all. Matches the same 52px-circle sizing/style as its
      neighbors in #sharedTopIcons. */
   .hamburger-wrap { position: relative; }
-
-  /* 3 previous rounds tried fixing .hamburger-menu's own paint
-     directly, none held on the user's real browser (never reproduced
-     locally either). Switched strategy: block the view of whatever's
-     behind it with the same proven pattern the Save/Edit/Close
-     modals' `.modal-backdrop` already uses -- a full-viewport opaque
-     scrim just below the menu's z-index. Toggled together with the
-     menu in toggleHamburgerMenu()/closeHamburgerMenu(); its own
-     onclick also closes the menu, alongside the existing outside-click
-     listener. */
-  .hamburger-menu-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.72);
-    z-index: 69;
-  }
-
-  .hamburger-menu-backdrop[hidden] { display: none; }
 
   .hamburger-btn {
     width: 52px;
@@ -3803,81 +3789,10 @@
     box-shadow: 0 4px 14px rgba(0,0,0,.5);
   }
 
-  /* Bug report: menu background renders transparent in Calculator at a
-     real wide desktop viewport, not reproducible in any local test
-     browser at any viewport tried. Two targeted theories (compositing
-     layer from an ancestor transform; a display:none->visible
-     first-paint glitch) were both ruled out live or failed on the
-     user's machine. Fixed with a mechanism-independent ::before
-     backing layer instead (below) -- a flat rectangle with no text/
-     emoji/shadow/flex of its own, so it can't share whatever specific
-     rendering bug hits the menu's own `background` property. */
-  .hamburger-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.6);
-    min-width: 230px;
-    padding: 6px;
-    z-index: 70;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    isolation: isolate;
-  }
-
-  .hamburger-menu::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: var(--panel);
-    border-radius: inherit;
-    z-index: -1;
-  }
-
-  /* `visibility` (not `display`) for the hidden state -- keeps the menu
-     (and its ::before backing layer) permanently alive in the render
-     tree instead of being destroyed/recreated on every toggle. Correct
-     on its own merits even though it didn't fully fix the bug above --
-     see that comment. Safe specifically because this element is already
-     `position: absolute` (out of flow already) -- `visibility: hidden`
-     never reserves layout space or shows up for a sighted user the way
-     it would on an in-flow element, and `pointer-events: none` covers
-     the interaction side `display: none` used to handle for free. */
-  .hamburger-menu[hidden] {
-    display: flex;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  .hamburger-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-    width: 100%;
-    font-family: inherit;
-  }
-
   .portfolio-logo-corner { cursor: pointer; }
   .calc-logo-corner { cursor: pointer; }
 
-  .hamburger-item:hover { background: var(--row); }
-
-  /* The Import item is a <label> wrapping a hidden native file input --
-     same trick as the portfolio header's own Import button, just styled
-     to match the other menu rows instead of .btn-file. */
-  .hamburger-item input[type="file"] { display: none; }
+  .pm-hidden-file-input { display: none; }
 
   /* ---------- Portfolio Menu (#portfolioMenu) ----------
      Icon + fixed title/description + toggle-switch-or-chevron rows,
@@ -3895,6 +3810,12 @@
   @media (min-width: 701px) {
     #portfolioMenu { justify-content: flex-start; align-items: stretch; padding: 0; }
     #portfolioMenu .pm-menu-panel { width: 440px; max-width: 440px; height: 100vh; max-height: 100vh; border-radius: 0 16px 16px 0; }
+  }
+  /* Hamburger menu docks RIGHT instead (its button lives in the
+     top-right corner) -- same drawer treatment, mirrored side. */
+  @media (min-width: 701px) {
+    #hamburgerMenu { justify-content: flex-end; align-items: stretch; padding: 0; }
+    #hamburgerMenu .pm-menu-panel { width: 440px; max-width: 440px; height: 100vh; max-height: 100vh; border-radius: 16px 0 0 16px; }
   }
   .pm-menu-list { display: flex; flex-direction: column; gap: 4px; margin: 14px 0; }
   .pm-menu-row {
@@ -4139,26 +4060,79 @@
               <!-- Icon (GIF) swapped per mode by setModeToggleIcon(). -->
               <button id="modeToggleBtn" class="mode-toggle-btn" title="Switch to Portfolio Mode" onclick="setMode('portfolio')"><img class="mode-toggle-gif" src="ICO/Portfolio.gif" alt="Switch to Portfolio Mode"></button>
               <div class="hamburger-wrap">
-                <!-- Fixes transparent hamburger-menu background on desktop --
-                     see .hamburger-menu-backdrop in CSS. -->
-                <div id="hamburgerMenuBackdrop" class="hamburger-menu-backdrop" hidden onclick="closeHamburgerMenu()"></div>
                 <button id="hamburgerBtn" class="hamburger-btn" title="Menu" onclick="toggleHamburgerMenu(event)">&#x2630;</button>
-                <div id="hamburgerMenu" class="hamburger-menu" hidden>
-                  <button type="button" class="hamburger-item" id="layoutToggleItem" onclick="togglePortfolioLayoutManual()"></button>
-                  <button type="button" class="hamburger-item" id="layoutLockItem" onclick="toggleLayoutLock()"></button>
-                  <button type="button" class="hamburger-item" id="hamburgerExportItem" onclick="exportDeals(); closeHamburgerMenu();"></button>
-                  <label class="hamburger-item">
-                    <span id="hamburgerImportLabel"></span>
-                    <!-- onclick (not just onchange) so a Guest never even
-                         sees the native file picker -- returning false
-                         from requirePermission() stops the input's own
-                         default click behavior. -->
-                    <input type="file" accept="application/json" onclick="return requirePermission();" onchange="importDealsFile(event); closeHamburgerMenu();" />
-                  </label>
+                <!-- Standard .modal-backdrop/.modal-panel, same theme/
+                     pattern as #portfolioMenu -- see
+                     toggleHamburgerMenu()/closeHamburgerMenu(). Docks
+                     right on Desktop (portfolioMenu docks left) since
+                     this button lives in the top-right corner. -->
+                <div id="hamburgerMenu" class="modal-backdrop hidden">
+                  <div class="modal-panel pm-menu-panel">
+                    <h2>Menu</h2>
+                    <div class="pm-menu-list">
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F5A5;&#xFE0F;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Desktop Mode</span>
+                          <span class="pm-menu-desc">Display Mode is adjusted for monitors.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmDesktopModeItem" onchange="setPortfolioLayoutManual('desktop')" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4F1;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Phone Mode</span>
+                          <span class="pm-menu-desc">Display Mode is adjusted for smartphones.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmPhoneModeItem" onchange="setPortfolioLayoutManual('mobile')" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Lock Display Mode</span>
+                          <span class="pm-menu-desc">Disable/Enable Auto Identification.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmLayoutLockItem" onchange="toggleLayoutLock()" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <button type="button" class="pm-menu-row pm-menu-row-nav" onclick="exportDeals(); closeHamburgerMenu();">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4E4;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Export</span>
+                          <span class="pm-menu-desc">Download your deals data.</span>
+                        </span>
+                        <span class="pm-menu-chevron">&#8250;</span>
+                      </button>
+                      <!-- onclick (not just onchange) so a Guest never even
+                           sees the native file picker -- returning false
+                           from requirePermission() stops the input's own
+                           default click behavior. -->
+                      <label class="pm-menu-row pm-menu-row-nav">
+                        <span class="pm-menu-icon pm-icon-green">&#x1F4E5;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Import</span>
+                          <span class="pm-menu-desc">Upload deals from a file.</span>
+                        </span>
+                        <span class="pm-menu-chevron">&#8250;</span>
+                        <input type="file" accept="application/json" class="pm-hidden-file-input" onclick="return requirePermission();" onchange="importDealsFile(event); closeHamburgerMenu();" />
+                      </label>
+                    </div>
+                    <div class="modal-actions">
+                      <button type="button" class="btn btn-primary" onclick="closeHamburgerMenu()">Done</button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
         </div>
       </div>
 
@@ -4280,22 +4254,22 @@
           <h2>Portfolio Menu</h2>
           <div class="pm-menu-list">
             <label class="pm-menu-row">
-              <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
-              <span class="pm-menu-text">
-                <span class="pm-menu-title">Show Closed Deals</span>
-              </span>
-              <span class="pm-toggle-switch">
-                <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
-                <span class="pm-toggle-slider"></span>
-              </span>
-            </label>
-            <label class="pm-menu-row">
               <span class="pm-menu-icon pm-icon-green">&#x2714;&#xFE0E;</span>
               <span class="pm-menu-text">
                 <span class="pm-menu-title">Show Active Deals</span>
               </span>
               <span class="pm-toggle-switch">
                 <input type="checkbox" id="pmHideActiveItem" onchange="togglePortfolioSetting('hideActiveDeals')" />
+                <span class="pm-toggle-slider"></span>
+              </span>
+            </label>
+            <label class="pm-menu-row">
+              <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
+              <span class="pm-menu-text">
+                <span class="pm-menu-title">Show Closed Deals</span>
+              </span>
+              <span class="pm-toggle-switch">
+                <input type="checkbox" id="pmHideClosedItem" onchange="togglePortfolioSetting('hideClosedDeals')" />
                 <span class="pm-toggle-slider"></span>
               </span>
             </label>
@@ -5126,18 +5100,6 @@
     dealEdit:            '✎',          // Deal Row: Edit
     dealDelete:          '✕',          // Deal Row: Delete
     dealReopen:          '\u{267B}\u{FE0F}', // ♻️ Deal Row: Reopen a closed deal (was ↺)
-    // Hamburger menu items -- hamburgerPhoneMode/hamburgerDesktopMode and
-    // hamburgerLockDisplay/hamburgerUnlockDisplay are destination-icon
-    // pairs (matching the mode-toggle convention above): each shows what
-    // clicking it will DO, not the current state, so BOTH glyphs in a
-    // pair are used -- see updateHamburgerMenuLabels().
-    hamburgerPhoneMode:      '\u{1F4F1}',        // 📱 shown while on Desktop layout (click -> Phone)
-    hamburgerDesktopMode:    '\u{1F5A5}\u{FE0F}', // 🖥️ shown while on Phone layout (click -> Desktop)
-    hamburgerLockDisplay:    '\u{1F512}',        // 🔒 shown while unlocked (click -> Lock)
-    hamburgerUnlockDisplay:  '\u{1F513}',        // 🔓 shown while locked (click -> Unlock)
-    // Export/import pair requested by the user.
-    hamburgerExport:         '\u{1F4E4}',        // 📤 Export
-    hamburgerImport:         '\u{1F4E5}',        // 📥 Import
     // Deal button -- the SAME glyph/label shared by all 3 topbar "Deal"
     // buttons (#topSaveBtn Desktop, #topSaveBtnMobile Phone,
     // #topNewDealBtn Portfolio's own) plus the Save/Edit modal's own
@@ -5187,8 +5149,6 @@
     const iconMaxLoss = document.getElementById('metricIconMaxLoss');
     const iconMaxProfit = document.getElementById('metricIconMaxProfit');
     const iconProfitTaker = document.getElementById('metricIconProfitTaker');
-    const exportItem = document.getElementById('hamburgerExportItem');
-    const importLabel = document.getElementById('hamburgerImportLabel');
     // Page always loads in Calculator mode (see `let currentMode =
     // 'calculator'` below -- can't reference it HERE, still in its
     // temporal-dead-zone this early), so the toggle's initial glyph is
@@ -5200,8 +5160,6 @@
     if (iconMaxLoss) iconMaxLoss.textContent = BUTTON_EMOJIS.maxLoss;
     if (iconMaxProfit) iconMaxProfit.textContent = BUTTON_EMOJIS.maxProfit;
     if (iconProfitTaker) iconProfitTaker.textContent = BUTTON_EMOJIS.profitTaker;
-    if (exportItem) exportItem.textContent = `${BUTTON_EMOJIS.hamburgerExport} Export`;
-    if (importLabel) importLabel.textContent = `${BUTTON_EMOJIS.hamburgerImport} Import`;
     // Static pre-JS default only -- initGoogleSync() (runs on window
     // 'load') immediately calls setSyncButton(), which takes over from
     // here using the SAME BUTTON_EMOJIS.syncIdle value, so this is only
@@ -6601,13 +6559,12 @@
     applyPortfolioLayout();
   }
 
-  function togglePortfolioLayoutManual() {
-    gPortfolioLayout = gPortfolioLayout === 'mobile' ? 'desktop' : 'mobile';
+  function setPortfolioLayoutManual(target) {
+    gPortfolioLayout = target === 'mobile' ? 'mobile' : 'desktop';
     if (gLayoutLocked) {
       try { localStorage.setItem(LAYOUT_VALUE_KEY, gPortfolioLayout); } catch (err) { /* ignore */ }
     }
     applyPortfolioLayout();
-    closeHamburgerMenu();
   }
 
   function toggleLayoutLock() {
@@ -6622,36 +6579,28 @@
       }
     } catch (err) { /* ignore */ }
     updateHamburgerMenuLabels();
-    closeHamburgerMenu();
   }
 
-  // Destination-icon convention, matching #modeToggleBtn: each item shows
-  // what clicking it will DO, not the current state.
+  // Current-state readout now (Desktop Mode/Phone Mode are a synced
+  // pair -- only one is ever checked), same convention as the Portfolio
+  // Menu's own toggles.
   function updateHamburgerMenuLabels() {
-    const layoutItem = document.getElementById('layoutToggleItem');
-    const lockItem = document.getElementById('layoutLockItem');
-    if (layoutItem) {
-      layoutItem.textContent = gPortfolioLayout === 'mobile'
-        ? `${BUTTON_EMOJIS.hamburgerDesktopMode} Desktop Mode`
-        : `${BUTTON_EMOJIS.hamburgerPhoneMode} Phone Mode`;
-    }
-    if (lockItem) {
-      lockItem.textContent = gLayoutLocked
-        ? `${BUTTON_EMOJIS.hamburgerUnlockDisplay} Unlock Display Mode`
-        : `${BUTTON_EMOJIS.hamburgerLockDisplay} Lock Display Mode`;
-    }
+    const desktopItem = document.getElementById('hmDesktopModeItem');
+    const phoneItem = document.getElementById('hmPhoneModeItem');
+    const lockItem = document.getElementById('hmLayoutLockItem');
+    if (desktopItem) desktopItem.checked = gPortfolioLayout !== 'mobile';
+    if (phoneItem) phoneItem.checked = gPortfolioLayout === 'mobile';
+    if (lockItem) lockItem.checked = gLayoutLocked;
   }
 
+  /* ---------- Hamburger menu -- standard .modal-backdrop/.modal-panel,
+     same theme/pattern as #portfolioMenu -- see its own comment. ---------- */
   function toggleHamburgerMenu(evt) {
-    if (evt) evt.stopPropagation();
     const menu = document.getElementById('hamburgerMenu');
-    const backdrop = document.getElementById('hamburgerMenuBackdrop');
     if (!menu) return;
-    if (menu.hidden) {
-      menu.hidden = false;
-      if (backdrop) backdrop.hidden = false;
-      document.addEventListener('click', onHamburgerOutsideClick);
-      document.addEventListener('keydown', onHamburgerEscape);
+    if (menu.classList.contains('hidden')) {
+      updateHamburgerMenuLabels();
+      menu.classList.remove('hidden');
     } else {
       closeHamburgerMenu();
     }
@@ -6659,20 +6608,7 @@
 
   function closeHamburgerMenu() {
     const menu = document.getElementById('hamburgerMenu');
-    const backdrop = document.getElementById('hamburgerMenuBackdrop');
-    if (menu) menu.hidden = true;
-    if (backdrop) backdrop.hidden = true;
-    document.removeEventListener('click', onHamburgerOutsideClick);
-    document.removeEventListener('keydown', onHamburgerEscape);
-  }
-
-  function onHamburgerOutsideClick(evt) {
-    const wrap = document.querySelector('.hamburger-wrap');
-    if (wrap && !wrap.contains(evt.target)) closeHamburgerMenu();
-  }
-
-  function onHamburgerEscape(evt) {
-    if (evt.key === 'Escape') closeHamburgerMenu();
+    if (menu) menu.classList.add('hidden');
   }
 
   /* ---------- Portfolio-logo menu -- standard .modal-backdrop/
