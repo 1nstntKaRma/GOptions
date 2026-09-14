@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="color-scheme" content="dark" />
 <title>Options v5.0 - Golan</title>
+<!-- Portfolio.gif loads for free (it's the mode-toggle button's own
+     initial <img> src below), but Calculator.gif is never referenced
+     until the FIRST toggle click swaps to it -- that first click paid
+     for a live network fetch, showing the <img>'s alt text ("Switch to
+     Calculator Mode") for a moment before the gif arrived. Preloading
+     it here means it's already cached by the time anyone can click. -->
+<link rel="preload" as="image" href="ICO/Calculator.gif" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ============================== GLOBAL / BASE ============================== */
