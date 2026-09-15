@@ -28,6 +28,8 @@
     --hover-accent: #4c097f;
     --purple-dark: #45007a;
     --yellow-bright: #c99a00;
+    --yellow-dark: #9c7a00;
+    --gold: #d4a017;
   }
 
   * { box-sizing: border-box; }
@@ -94,7 +96,7 @@
     letter-spacing: .2px;
   }
 
-  .btn-primary { background: var(--panel); border: 2px solid var(--btn-blue); color: var(--btn-blue); }
+  .btn-primary { background: var(--panel); border: 2px solid var(--btn-blue); color: var(--btn-blue); transition: filter .15s ease, box-shadow .15s ease; }
 
   .btn-primary:hover { filter: brightness(1.2); }
 
@@ -117,7 +119,7 @@
 
   .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
-  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); transition: background-color .15s ease, box-shadow .15s ease; }
 
   .btn-danger:hover { background: rgba(201,4,10,.1); }
 
@@ -125,7 +127,7 @@
 
   .btn-danger-solid:hover { background: #8f3232; border-color: #8f3232; }
 
-  .btn-cancel { background: var(--panel); border: 1.5px solid var(--legend-dealDelete-color); color: var(--legend-dealDelete-color); }
+  .btn-cancel { background: var(--panel); border: 1.5px solid var(--legend-dealDelete-color); color: var(--legend-dealDelete-color); transition: filter .15s ease, box-shadow .15s ease; }
 
   .btn-cancel:hover { filter: brightness(1.2); }
 
@@ -182,16 +184,31 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
-    #googleSyncBtn:hover { border-color: var(--hover-accent); }
-    .mode-toggle-btn:hover { border-color: var(--hover-accent); }
+
+    #googleSyncBtn:hover { border-color: var(--legend-sync-color); box-shadow: 0 0 5px color-mix(in srgb, var(--legend-sync-color) 55%, transparent); }
+    #googleSyncBtn.sync-busy:hover { border-color: var(--legend-sync-busy-color); box-shadow: 0 0 5px color-mix(in srgb, var(--legend-sync-busy-color) 55%, transparent); }
+    #googleSyncBtn.sync-ok:hover { border-color: var(--legend-sync-ok-color); box-shadow: 0 0 5px color-mix(in srgb, var(--legend-sync-ok-color) 55%, transparent); }
+    #googleSyncBtn.sync-error:hover { border-color: var(--legend-sync-error-color); box-shadow: 0 0 5px color-mix(in srgb, var(--legend-sync-error-color) 55%, transparent); }
+
+    .mode-toggle-btn[title="Switch to Portfolio Mode"]:hover { border-color: var(--purple-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--purple-dark) 55%, transparent); }
+    .mode-toggle-btn[title="Switch to Calculator Mode"]:hover { border-color: var(--yellow-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--yellow-dark) 55%, transparent); }
     .hamburger-btn:hover { border-color: var(--hover-accent); }
     .btn-secondary:hover { border-color: var(--hover-accent); }
     .conflict-choice-btn:hover { border-color: var(--hover-accent); }
 
-    button.badge-open:hover { color: var(--hover-accent); }
+    button.badge-open:hover { color: var(--hover-accent); box-shadow: 0 0 4px color-mix(in srgb, var(--hover-accent) 55%, transparent); }
 
-    button.badge-closed:hover { color: var(--yellow-bright); }
-    .deal-card button.badge-closed:hover { color: var(--blue); }
+    button.badge-closed:hover { color: var(--yellow-bright); box-shadow: 0 0 4px color-mix(in srgb, var(--yellow-bright) 55%, transparent); }
+    .deal-card button.badge-closed:hover { color: var(--blue); box-shadow: 0 0 4px color-mix(in srgb, var(--blue) 55%, transparent); }
+
+    .deal-icon-btn.close:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealClose-color) 55%, transparent); }
+    .deal-icon-btn.delete:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealDelete-color) 55%, transparent); }
+    .deal-icon-btn.edit:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dte-closed-color) 55%, transparent); }
+    .deal-icon-btn.reopen:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealReopen-color) 55%, transparent); }
+
+    .btn-primary:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--btn-blue) 55%, transparent); }
+    .btn-cancel:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--legend-dealDelete-color) 55%, transparent); }
+    .btn-danger:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 55%, transparent); }
   }
 
   :root {
@@ -350,7 +367,7 @@
   input, select {
     width: 100%;
     height: 58px;
-    border: 1px solid #4b4e52;
+    border: 1px solid var(--border);
     border-radius: 13px;
     background: #010101;
     color: var(--text);
@@ -359,6 +376,12 @@
     outline: none;
     padding: 0 10px;
     font-family: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--purple-dark);
+    box-shadow: 0 0 0 3px rgba(69,0,122,.3);
   }
 
   .total-stepper-wrap { position: relative; width: 100%; }
@@ -387,7 +410,7 @@
     width: 38px;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid #4b4e52;
+    border-left: 1px solid var(--border);
     border-radius: 0 12px 12px 0;
     overflow: hidden;
   }
@@ -406,11 +429,12 @@
     justify-content: center;
     font-family: inherit;
     padding: 0;
+    transition: color .15s ease, background-color .15s ease;
   }
 
-  .total-stepper-btn + .total-stepper-btn { border-top: 1px solid #4b4e52; }
+  .total-stepper-btn + .total-stepper-btn { border-top: 1px solid var(--border); }
 
-  .total-stepper-btn:hover, .total-stepper-btn:active { color: var(--text); background: rgba(196,195,195,.08); }
+  .total-stepper-btn:hover, .total-stepper-btn:active { color: var(--gold); background: rgba(212,160,23,.15); }
 
   input::placeholder {
     color: var(--muted);
@@ -442,7 +466,7 @@
     gap: 4px;
   }
 
-  .metric + .metric { border-left: 1px solid #45494d; }
+  .metric + .metric { border-left: 1px solid var(--border); }
 
   .metric-title {
     font-size: 18px;
@@ -571,13 +595,13 @@
     grid-row: 1 / 3;
     grid-column: 2;
     position: relative;
-    border-left: 2px solid #eee;
+    border-left: 2px solid var(--muted);
     background-image: repeating-linear-gradient(
       to right,
       transparent 0,
       transparent calc(25% - 1px),
-      #3b3e42 calc(25% - 1px),
-      #3b3e42 25%
+      var(--border) calc(25% - 1px),
+      var(--border) 25%
     );
   }
 
@@ -607,7 +631,7 @@
     height: 24px;
     display: flex;
     justify-content: space-between;
-    color: #aaa;
+    color: var(--text);
     font-size: 13px;
   }
 
@@ -631,8 +655,8 @@
   }
 
   th, td {
-    border-right: 1px solid #515151;
-    border-bottom: 1px solid #515151;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     text-align: center;
     height: 45px;
     font-size: 16px;
@@ -836,12 +860,12 @@
     .metric:nth-child(4) {
       grid-column: 1 / 4;
       border-left: 0;
-      border-top: 1px solid #45494d;
+      border-top: 1px solid var(--border);
     }
 
     .metric:nth-child(5) {
       grid-column: 4 / 7;
-      border-top: 1px solid #45494d;
+      border-top: 1px solid var(--border);
     }
 
     .metric-value { font-size: 32px; }
@@ -1194,6 +1218,7 @@
     background: none;
     font-family: inherit;
     cursor: default;
+    transition: color .15s ease, box-shadow .15s ease;
   }
 
   .badge-open { color: var(--blue); }
@@ -1276,6 +1301,7 @@
   .deal-icon-btn {
     background: none; border: none; cursor: pointer; font-size: var(--legend-deal-icon-size-table);
     padding: 3px 5px; line-height: 1; color: var(--legend-dealEdit-color); border-radius: 6px;
+    transition: box-shadow .15s ease;
   }
 
   .deal-icon-btn:hover { background: var(--panel); }
@@ -1958,7 +1984,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
 
   #googleSyncBtn.sync-busy { background: var(--legend-sync-busy-bg); border-color: var(--legend-sync-busy-color); }
@@ -2047,7 +2074,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
 
   .mode-toggle-gif { width: 100%; height: 100%; object-fit: contain; }
@@ -2066,7 +2094,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
 
   .portfolio-logo-corner { cursor: pointer; }
