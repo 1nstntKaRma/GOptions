@@ -191,7 +191,7 @@
     #googleSyncBtn.sync-error:hover { border-color: var(--legend-sync-error-color); box-shadow: 0 0 5px color-mix(in srgb, var(--legend-sync-error-color) 55%, transparent); }
 
     .mode-toggle-btn[title="Switch to Portfolio Mode"]:hover { border-color: var(--purple-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--purple-dark) 55%, transparent); }
-    .mode-toggle-btn[title="Switch to Calculator Mode"]:hover { border-color: var(--yellow-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--yellow-dark) 55%, transparent); }
+    .mode-toggle-btn[title="Switch to Calculator Mode"]:hover { border-color: var(--purple-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--purple-dark) 55%, transparent); }
     .hamburger-btn:hover { border-color: var(--hover-accent); }
     .btn-secondary:hover { border-color: var(--hover-accent); }
     .conflict-choice-btn:hover { border-color: var(--hover-accent); }
@@ -206,9 +206,14 @@
     .deal-icon-btn.edit:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dte-closed-color) 55%, transparent); }
     .deal-icon-btn.reopen:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealReopen-color) 55%, transparent); }
 
+    .deal-price-display.blue:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--blue) 55%, transparent); }
+    .deal-dte-price-btn:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealClose-color) 55%, transparent); }
+
     .btn-primary:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--btn-blue) 55%, transparent); }
     .btn-cancel:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--legend-dealDelete-color) 55%, transparent); }
     .btn-danger:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 55%, transparent); }
+
+    .total-stepper-btn:hover { color: var(--gold); background: rgba(212,160,23,.15); }
   }
 
   :root {
@@ -434,7 +439,7 @@
 
   .total-stepper-btn + .total-stepper-btn { border-top: 1px solid var(--border); }
 
-  .total-stepper-btn:hover, .total-stepper-btn:active { color: var(--gold); background: rgba(212,160,23,.15); }
+  .total-stepper-btn:active { color: var(--gold); background: rgba(212,160,23,.15); }
 
   input::placeholder {
     color: var(--muted);
@@ -1153,7 +1158,7 @@
     padding: 2px 8px;
   }
 
-  .deal-dte-price-btn { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: var(--text); font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .deal-dte-price-btn { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: var(--text); font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: box-shadow .15s ease; }
 
   .deal-dte-price-btn.stacked { flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
 
@@ -1183,7 +1188,7 @@
 
   .deal-card-actions .deal-icon-btn.reopen { border-color: var(--legend-dealReopen-color); background: var(--legend-dealReopen-bg); }
 
-  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; }
+  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; transition: box-shadow .15s ease; }
 
   .deal-price-display.blue { color: var(--blue); }
 
@@ -1759,36 +1764,72 @@
 
   .portfolio-summary-clickable { cursor: pointer; }
 
-  .mid-price-panel { width: min(340px, 92vw); }
+  .mid-price-panel { width: min(380px, 92vw); }
+  .lf-panel-header { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 16px; }
+  .lf-panel-header h2 { margin: 0; }
+  .lf-label { flex: 0 0 auto; text-align: left; font-size: 15px; font-weight: 800; letter-spacing: .5px; white-space: nowrap; }
+  .lf-label.lf-ask { color: var(--blue); }
+  .lf-label.lf-bid { color: var(--red); }
+  #mpAskPrice, #elfAskPrice { color: var(--blue); }
+  #mpBidPrice, #elfBidPrice { color: var(--red); }
+  .lf-field-wrap { width: 200px; }
+  .lf-field-wrap input { font-size: 26px; font-weight: 800; }
 
-  .mid-price-panel h2 { text-align: center; margin: -13px 0 13px; }
-
-  .mid-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-
-  .mid-price-row label { margin-bottom: 0; text-align: center; font-size: 16px; flex: 0 0 105px; }
-  .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; }
-  .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 28px 0 6px; }
-  .mid-price-sign { position: static; transform: none; }
-
-  .mid-price-clear-btn {
-    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-    width: 20px; height: 20px; border-radius: 50%; padding: 0;
+  .lf-clear-btn {
+    flex: none; width: 30px; height: 30px; border-radius: 50%; padding: 0;
     border: 1.5px solid var(--red); background: transparent; color: var(--red);
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; line-height: 1; cursor: pointer;
+    font-size: 13px; cursor: pointer; transition: box-shadow .15s ease;
   }
-  .mid-price-clear-btn[hidden] { display: none; }
-  #mpAskPrice, .mid-price-ask label { color: var(--blue); font-weight: 800; }
-  #mpBidPrice, .mid-price-bid label { color: var(--red); font-weight: 800; }
-  .mid-price-ask .mid-price-sign { color: var(--blue); }
-  .mid-price-bid .mid-price-sign { color: var(--red); }
+  .lf-clear-btn:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 55%, transparent); }
 
-  #mpAskPrice:placeholder-shown ~ .mid-price-sign,
-  #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
+  .lf-clear-btn[hidden] { visibility: hidden; }
 
-  .mid-price-live-spacer { flex: 0 0 105px; }
-  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 17px; font-weight: 800; color: var(--muted); }
-  .mid-price-live-value.has-value { color: var(--green); }
+  .lf-trash-btn { border-color: var(--border); }
+  .lf-trash-btn:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--border) 55%, transparent); }
+  .lf-live-value { font-size: 24px; font-weight: 800; color: var(--muted); text-align: center; }
+  .lf-live-value.has-value { color: var(--green); }
+
+  .lf-live-inner { position: relative; display: inline-block; }
+  .lf-live-sign { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 4px; }
+  .lf-live-sign[hidden] { display: none; }
+
+  .lf-mirror-grid { display: flex; gap: 14px; margin-bottom: 16px; }
+  .lf-mirror-col { flex: 1; min-width: 0; }
+  .lf-mirror-label { display: block; text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .lf-mirror-col input { width: 100%; height: 52px; text-align: center; font-size: 16px; }
+  .lf-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  .lf-embedded-panel { display: flex; flex-direction: column; justify-content: center; flex: 1; padding: 22px 22px 17px; }
+  .lf-embedded-panel[hidden] { display: none; }
+
+  .lf-price-grid { display: grid; grid-template-columns: auto minmax(0, 200px) 30px; align-items: center; justify-content: center; column-gap: 10px; row-gap: 18px; }
+
+  #mainLayout.lf-embedded-showing { align-items: stretch; }
+
+  @media (max-width: 980px) {
+    #mainLayout.lf-embedded-showing #tableColumnSlot { order: -1; }
+  }
+
+  @media (min-width: 981px) {
+    .lf-embedded-panel .lf-field-wrap input { height: 78px; }
+    .lf-embedded-panel .total-stepper-btn { font-size: 24px; }
+    .lf-embedded-panel .lf-price-grid { row-gap: 32px; }
+  }
+
+  @media (min-width: 981px) {
+    #midPriceModal .lf-field-wrap input { height: 68px; }
+    #midPriceModal .lf-price-grid .total-stepper-btn { font-size: 22px; }
+    #midPriceModal .lf-clear-btn { width: 34px; height: 34px; font-size: 15px; }
+  }
+
+  @media (max-width: 980px) {
+    #midPriceModal .lf-panel-header { display: none; }
+    #midPriceModal .lf-divider { display: none; }
+    #midPriceModal .lf-field-wrap input { height: 76px; }
+    #midPriceModal .lf-mirror-col input { height: 60px; }
+    #midPriceModal .total-stepper-btn { font-size: 26px; }
+  }
 
   .date-pair { display: flex; align-items: center; gap: 6px; }
 
@@ -2215,7 +2256,7 @@
 
     <div id="calculatorView">
 
-      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" onclick="openMidPriceModal()" title="Limit Finder" />
+      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" onclick="onCalcLogoClick()" title="Limit Finder" />
 
       <div id="calcEditingBanner" class="calc-editing-banner"></div>
 
@@ -2313,6 +2354,17 @@
                         </span>
                       </label>
                       <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4CF;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Limit Finder</span>
+                          <span class="pm-menu-desc">Toggle vs Pop Up menu.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmLimitFinderItem" onchange="toggleLimitFinderMode()" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
                         <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
                         <span class="pm-menu-text">
                           <span class="pm-menu-title">Lock Display Mode</span>
@@ -2406,7 +2458,7 @@
       </section>
 
       <section id="mainLayout" class="main-layout">
-        <section class="panel chart-panel">
+        <section class="panel chart-panel" id="chartPanelBox">
           <div class="chart">
             <div class="chart-label"><span>Max Loss</span><span class="dot red"></span></div>
             <div class="chart-label"><span>Max Profit</span><span class="dot green"></span></div>
@@ -2418,8 +2470,8 @@
           </div>
         </section>
 
-        <section class="table-column">
-          <section class="panel table-wrap">
+        <section class="table-column" id="tableColumnSlot">
+          <section class="panel table-wrap" id="tableWrapBox">
             <table>
               <thead>
                 <tr>
@@ -2432,6 +2484,46 @@
               </thead>
               <tbody id="rows"></tbody>
             </table>
+          </section>
+
+          <section class="panel lf-embedded-panel" id="embeddedLimitFinderPanel" hidden>
+
+            <div class="lf-price-grid">
+              <label for="elfAskPrice" class="lf-label lf-ask">Ask Price</label>
+              <div class="total-stepper-wrap lf-field-wrap">
+                <input id="elfAskPrice" type="text" inputmode="decimal"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('elfAskPrice','elfBidPrice');}"
+                       onblur="normalizeElfAskOnBlur(); advanceIfOtherEmpty('elfAskPrice','elfBidPrice');"
+                       oninput="updateElfClearBtns(); updateElfLive();" />
+                <div class="total-stepper">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Ask Price" onclick="stepDecimalField('elfAskPrice','up',0.01,2,0)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Ask Price" onclick="stepDecimalField('elfAskPrice','down',0.01,2,0)">&#8722;</button>
+                </div>
+              </div>
+              <button type="button" class="lf-clear-btn" id="elfAskClearBtn" onclick="clearElfField('elfAskPrice')" title="Clear" hidden>&#10060;</button>
+
+              <span class="lf-grid-spacer"></span>
+              <b id="elfLiveLimit" class="lf-live-value">
+                <span class="lf-live-inner">
+                  <span class="lf-live-sign" hidden>-</span>
+                  <span class="lf-live-digits">&mdash;</span>
+                </span>
+              </b>
+              <button type="button" class="lf-clear-btn lf-trash-btn" id="elfTrashBtn" onclick="resetElfFields()" title="Reset" hidden>&#x1F5D1;&#xFE0F;</button>
+
+              <label for="elfBidPrice" class="lf-label lf-bid">Bid Price</label>
+              <div class="total-stepper-wrap lf-field-wrap">
+                <input id="elfBidPrice" type="text" inputmode="decimal"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('elfBidPrice','elfAskPrice');}"
+                       onblur="normalizeElfBidOnBlur(); advanceIfOtherEmpty('elfBidPrice','elfAskPrice');"
+                       oninput="updateElfClearBtns(); updateElfLive();" />
+                <div class="total-stepper">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Bid Price" onclick="stepDecimalField('elfBidPrice','up',0.01,2,0)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Bid Price" onclick="stepDecimalField('elfBidPrice','down',0.01,2,0)">&#8722;</button>
+                </div>
+              </div>
+              <button type="button" class="lf-clear-btn" id="elfBidClearBtn" onclick="clearElfField('elfBidPrice')" title="Clear" hidden>&#10060;</button>
+            </div>
           </section>
         </section>
       </section>
@@ -3074,33 +3166,63 @@
 
 <div id="midPriceModal" class="modal-backdrop hidden">
   <div class="modal-panel mid-price-panel">
-    <h2>Limit Finder</h2>
-    <div class="form-row mid-price-row mid-price-ask">
-      <label for="mpAskPrice">Ask Price</label>
-      <div class="mid-price-field">
-        <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
-               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
-               onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
-        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
-        <button type="button" class="mid-price-clear-btn" id="mpAskClearBtn" onclick="clearMidPriceField('mpAskPrice')" title="Clear" hidden>&#10060;</button>
-      </div>
+    <div class="lf-panel-header">
+      <h2>&#x1F3AF; Limit Finder</h2>
     </div>
 
-    <div class="form-row mid-price-row mid-price-live">
-      <span class="mid-price-live-spacer" aria-hidden="true"></span>
-      <b id="mpLiveLimit" class="mid-price-live-value">&mdash;</b>
-    </div>
-    <div class="form-row mid-price-row mid-price-bid">
-      <label for="mpBidPrice">Bid Price</label>
-      <div class="mid-price-field">
-        <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
-               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
-               onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
-        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
-        <button type="button" class="mid-price-clear-btn" id="mpBidClearBtn" onclick="clearMidPriceField('mpBidPrice')" title="Clear" hidden>&#10060;</button>
+    <div class="lf-mirror-grid">
+      <div class="lf-mirror-col">
+        <label for="mpTotal" class="lf-mirror-label">Total $</label>
+        <div class="total-stepper-wrap">
+          <input id="mpTotal" type="text" inputmode="decimal" oninput="onMpTotalInput()" />
+          <div class="total-stepper">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Total $" onclick="stepTotalField('mpTotal','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Total $" onclick="stepTotalField('mpTotal','down')">&#8722;</button>
+          </div>
+        </div>
       </div>
+      <div class="lf-mirror-col">
+        <label for="mpRatio" class="lf-mirror-label">Ratio</label>
+        <input id="mpRatio" type="text" readonly tabindex="-1" />
+      </div>
+    </div>
+    <hr class="lf-divider" />
+
+    <div class="lf-price-grid">
+      <label for="mpAskPrice" class="lf-label lf-ask">Ask Price</label>
+      <div class="total-stepper-wrap lf-field-wrap">
+        <input id="mpAskPrice" type="text" inputmode="decimal"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
+               onblur="normalizeAskPriceOnBlur();"
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns(); refreshMpRatio();" />
+        <div class="total-stepper">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Ask Price" onclick="stepDecimalField('mpAskPrice','up',0.01,2,0)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Ask Price" onclick="stepDecimalField('mpAskPrice','down',0.01,2,0)">&#8722;</button>
+        </div>
+      </div>
+      <button type="button" class="lf-clear-btn" id="mpAskClearBtn" onclick="clearMidPriceField('mpAskPrice')" title="Clear" hidden>&#10060;</button>
+
+      <span class="lf-grid-spacer"></span>
+      <b id="mpLiveLimit" class="lf-live-value">
+        <span class="lf-live-inner">
+          <span class="lf-live-sign" hidden>-</span>
+          <span class="lf-live-digits">&mdash;</span>
+        </span>
+      </b>
+      <button type="button" class="lf-clear-btn lf-trash-btn" id="mpTrashBtn" onclick="resetMidPriceFields()" title="Reset" hidden>&#x1F5D1;&#xFE0F;</button>
+
+      <label for="mpBidPrice" class="lf-label lf-bid">Bid Price</label>
+      <div class="total-stepper-wrap lf-field-wrap">
+        <input id="mpBidPrice" type="text" inputmode="decimal"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
+               onblur="normalizeBidPriceOnBlur();"
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns(); refreshMpRatio();" />
+        <div class="total-stepper">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Bid Price" onclick="stepDecimalField('mpBidPrice','up',0.01,2,0)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Bid Price" onclick="stepDecimalField('mpBidPrice','down',0.01,2,0)">&#8722;</button>
+        </div>
+      </div>
+      <button type="button" class="lf-clear-btn" id="mpBidClearBtn" onclick="clearMidPriceField('mpBidPrice')" title="Clear" hidden>&#10060;</button>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeMidPriceModal()">Close</button>
@@ -3440,8 +3562,11 @@
   }
 
   function updateMidPriceClearBtns() {
-    document.getElementById('mpAskClearBtn').hidden = !document.getElementById('mpAskPrice').value.trim();
-    document.getElementById('mpBidClearBtn').hidden = !document.getElementById('mpBidPrice').value.trim();
+    const askHasVal = !!document.getElementById('mpAskPrice').value.trim();
+    const bidHasVal = !!document.getElementById('mpBidPrice').value.trim();
+    document.getElementById('mpAskClearBtn').hidden = !askHasVal;
+    document.getElementById('mpBidClearBtn').hidden = !bidHasVal;
+    document.getElementById('mpTrashBtn').hidden = !(askHasVal && bidHasVal);
   }
 
   function clearMidPriceField(id) {
@@ -3450,33 +3575,85 @@
     updateMidPriceButtonState();
     updateMidPriceLive();
     updateMidPriceClearBtns();
+    refreshMpRatio();
     el.focus();
+  }
+
+  function resetMidPriceFields() {
+    document.getElementById('mpAskPrice').value = '';
+    document.getElementById('mpBidPrice').value = '';
+    updateMidPriceButtonState();
+    updateMidPriceLive();
+    updateMidPriceClearBtns();
+    refreshMpRatio();
+  }
+
+  function onMpTotalInput() {
+    totalEl.value = document.getElementById('mpTotal').value;
+    calculate();
+    refreshMpRatio();
+  }
+
+  function refreshMpRatio() {
+    const ratioEl = document.getElementById('mpRatio');
+    const askRaw = document.getElementById('mpAskPrice').value;
+    const bidRaw = document.getElementById('mpBidPrice').value;
+    const totalRaw = document.getElementById('mpTotal').value;
+    let limitForRatio = limitEl.value;
+    if (askRaw.trim() !== '' && bidRaw.trim() !== '') {
+      const ask = getLimitValueRaw(askRaw);
+      const bid = getLimitValueRaw(bidRaw);
+      limitForRatio = Math.abs((ask + bid) / 2).toFixed(2);
+    }
+    const m = computeMetrics(totalRaw, limitForRatio, ptPctEl.value, contractsEl.value);
+    ratioEl.value = m.ratioMissing ? '—' : truncate2(m.ratio) + '%';
+  }
+
+  function alignLiveValueToField(liveEl, fieldEl) {
+    const inner = liveEl.querySelector('.lf-live-inner');
+    inner.style.transform = '';
+    const fieldRect = fieldEl.getBoundingClientRect();
+    const fieldStyle = getComputedStyle(fieldEl);
+    const fieldContentCenter = fieldRect.left + parseFloat(fieldStyle.paddingLeft) +
+      (fieldRect.width - parseFloat(fieldStyle.paddingLeft) - parseFloat(fieldStyle.paddingRight)) / 2;
+    const innerRect = inner.getBoundingClientRect();
+    const innerCenter = innerRect.left + innerRect.width / 2;
+    inner.style.transform = `translateX(${fieldContentCenter - innerCenter}px)`;
   }
 
   function updateMidPriceLive() {
     const askRaw = document.getElementById('mpAskPrice').value;
     const bidRaw = document.getElementById('mpBidPrice').value;
     const el = document.getElementById('mpLiveLimit');
+    const digitsEl = el.querySelector('.lf-live-digits');
+    const signEl = el.querySelector('.lf-live-sign');
     if (askRaw.trim() === '' || bidRaw.trim() === '') {
-      el.textContent = '—';
+      digitsEl.textContent = '—';
+      signEl.hidden = true;
       el.classList.remove('has-value');
+      alignLiveValueToField(el, document.getElementById('mpAskPrice'));
       return;
     }
     const ask = getLimitValueRaw(askRaw);
     const bid = getLimitValueRaw(bidRaw);
     const avg = (ask + bid) / 2;
 
-    el.textContent = '- ' + Math.abs(avg).toFixed(2);
+    digitsEl.textContent = Math.abs(avg).toFixed(2);
+    signEl.hidden = false;
     el.classList.add('has-value');
+    alignLiveValueToField(el, document.getElementById('mpAskPrice'));
   }
 
   function openMidPriceModal() {
     document.getElementById('mpAskPrice').value = '';
     document.getElementById('mpBidPrice').value = '';
+    document.getElementById('mpTotal').value = totalEl.value;
+
+    document.getElementById('midPriceModal').classList.remove('hidden');
     updateMidPriceButtonState();
     updateMidPriceLive();
     updateMidPriceClearBtns();
-    document.getElementById('midPriceModal').classList.remove('hidden');
+    refreshMpRatio();
     const askEl = document.getElementById('mpAskPrice');
     askEl.focus();
     askEl.select();
@@ -3494,6 +3671,94 @@
     limitEl.value = Math.abs(avg).toFixed(2);
     calculate();
     closeMidPriceModal();
+  }
+
+  function normalizeElfAskOnBlur() {
+    const el = document.getElementById('elfAskPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  function normalizeElfBidOnBlur() {
+    const el = document.getElementById('elfBidPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  function updateElfClearBtns() {
+    const askHasVal = !!document.getElementById('elfAskPrice').value.trim();
+    const bidHasVal = !!document.getElementById('elfBidPrice').value.trim();
+    document.getElementById('elfAskClearBtn').hidden = !askHasVal;
+    document.getElementById('elfBidClearBtn').hidden = !bidHasVal;
+    document.getElementById('elfTrashBtn').hidden = !(askHasVal && bidHasVal);
+  }
+
+  function clearElfField(id) {
+    const el = document.getElementById(id);
+    el.value = '';
+    updateElfClearBtns();
+    updateElfLive();
+    el.focus();
+  }
+
+  function resetElfFields() {
+    document.getElementById('elfAskPrice').value = '';
+    document.getElementById('elfBidPrice').value = '';
+    updateElfClearBtns();
+    updateElfLive();
+  }
+
+  function updateElfLive() {
+    const askRaw = document.getElementById('elfAskPrice').value;
+    const bidRaw = document.getElementById('elfBidPrice').value;
+    const el = document.getElementById('elfLiveLimit');
+    const digitsEl = el.querySelector('.lf-live-digits');
+    const signEl = el.querySelector('.lf-live-sign');
+    if (askRaw.trim() === '' || bidRaw.trim() === '') {
+      digitsEl.textContent = '—';
+      signEl.hidden = true;
+      el.classList.remove('has-value');
+      alignLiveValueToField(el, document.getElementById('elfAskPrice'));
+      return;
+    }
+    const ask = getLimitValueRaw(askRaw);
+    const bid = getLimitValueRaw(bidRaw);
+    const avg = (ask + bid) / 2;
+    digitsEl.textContent = Math.abs(avg).toFixed(2);
+    signEl.hidden = false;
+    el.classList.add('has-value');
+    limitEl.value = Math.abs(avg).toFixed(2);
+    calculate();
+    alignLiveValueToField(el, document.getElementById('elfAskPrice'));
+  }
+
+  function onCalcLogoClick() {
+    const isPhoneWidth = window.matchMedia('(max-width: 980px)').matches;
+    if (isPhoneWidth || portfolioSettings.limitFinderMode === 'popup') {
+      openMidPriceModal();
+    } else {
+      toggleEmbeddedLimitFinder();
+    }
+  }
+
+  function toggleEmbeddedLimitFinder() {
+    const tableBox = document.getElementById('tableWrapBox');
+    const lfBox = document.getElementById('embeddedLimitFinderPanel');
+    const chartBox = document.getElementById('chartPanelBox');
+    const showingLf = lfBox.hidden;
+    tableBox.hidden = showingLf;
+    lfBox.hidden = !showingLf;
+    document.getElementById('mainLayout').classList.toggle('lf-embedded-showing', showingLf);
+    if (showingLf) {
+      document.getElementById('elfAskPrice').value = '';
+      document.getElementById('elfBidPrice').value = '';
+      updateElfClearBtns();
+      updateElfLive();
+
+      chartBox.style.height = lfBox.getBoundingClientRect().height + 'px';
+    } else {
+      chartBox.style.height = '';
+    }
   }
 
   function computeMetrics(totalRaw, limitRaw, ptRaw, contractsRaw) {
@@ -4085,9 +4350,24 @@
     const desktopItem = document.getElementById('hmDesktopModeItem');
     const phoneItem = document.getElementById('hmPhoneModeItem');
     const lockItem = document.getElementById('hmLayoutLockItem');
+    const limitFinderItem = document.getElementById('hmLimitFinderItem');
     if (desktopItem) desktopItem.checked = gPortfolioLayout !== 'mobile';
     if (phoneItem) phoneItem.checked = gPortfolioLayout === 'mobile';
     if (lockItem) lockItem.checked = gLayoutLocked;
+
+    if (limitFinderItem) {
+      try { limitFinderItem.checked = portfolioSettings.limitFinderMode !== 'popup'; } catch (err) {  }
+    }
+  }
+
+  function toggleLimitFinderMode() {
+    portfolioSettings.limitFinderMode = portfolioSettings.limitFinderMode === 'popup' ? 'toggle' : 'popup';
+    if (portfolioSettings.limitFinderMode === 'popup') {
+      const lfBox = document.getElementById('embeddedLimitFinderPanel');
+      if (lfBox && !lfBox.hidden) toggleEmbeddedLimitFinder();
+    }
+    savePortfolioSettings();
+    pushToDriveDebounced();
   }
 
   function toggleHamburgerMenu(evt) {
@@ -4289,6 +4569,8 @@
     summaryMode: 'gross',   
 
     desktopPricesDisplayMethod: 'sideBySide',
+
+    limitFinderMode: 'toggle',
     updatedAt: 0
   };
 

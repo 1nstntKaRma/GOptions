@@ -281,7 +281,7 @@
        off the same title text setModeToggleIcon() already sets, no JS
        change needed. */
     .mode-toggle-btn[title="Switch to Portfolio Mode"]:hover { border-color: var(--purple-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--purple-dark) 55%, transparent); }
-    .mode-toggle-btn[title="Switch to Calculator Mode"]:hover { border-color: var(--yellow-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--yellow-dark) 55%, transparent); }
+    .mode-toggle-btn[title="Switch to Calculator Mode"]:hover { border-color: var(--purple-dark); box-shadow: 0 0 5px color-mix(in srgb, var(--purple-dark) 55%, transparent); }
     .hamburger-btn:hover { border-color: var(--hover-accent); }
     .btn-secondary:hover { border-color: var(--hover-accent); }
     .conflict-choice-btn:hover { border-color: var(--hover-accent); }
@@ -302,12 +302,23 @@
     .deal-icon-btn.delete:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealDelete-color) 55%, transparent); }
     .deal-icon-btn.edit:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dte-closed-color) 55%, transparent); }
     .deal-icon-btn.reopen:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealReopen-color) 55%, transparent); }
+    /* "Edit Entry Stock Price" (.deal-price-display.blue) / "Edit Entry/
+       Closed Stock Price" (.deal-dte-price-btn) -- each glows in the same
+       color as its own frame (blue border on Phone's dte-stack; the DTE
+       badge's --legend-dealClose-color frame on the closed-deal button),
+       same as every other button in this glow system. */
+    .deal-price-display.blue:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--blue) 55%, transparent); }
+    .deal-dte-price-btn:hover { box-shadow: 0 0 4px color-mix(in srgb, var(--legend-dealClose-color) 55%, transparent); }
     /* Save/Done/Confirm (.btn-primary), Cancel/Reset/Close (.btn-cancel),
        and the solid danger buttons -- same glow-on-hover treatment,
        each using its own existing color. */
     .btn-primary:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--btn-blue) 55%, transparent); }
     .btn-cancel:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--legend-dealDelete-color) 55%, transparent); }
     .btn-danger:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 55%, transparent); }
+    /* Mouse-only twin of the global .total-stepper-btn:active rule (see
+       its own comment) -- :hover belongs here so a touchscreen tap never
+       triggers it and gets stuck showing gold with no way to un-hover. */
+    .total-stepper-btn:hover { color: var(--gold); background: rgba(212,160,23,.15); }
   }
 
 
@@ -656,7 +667,13 @@
 
   .total-stepper-btn + .total-stepper-btn { border-top: 1px solid var(--border); }
 
-  .total-stepper-btn:hover, .total-stepper-btn:active { color: var(--gold); background: rgba(212,160,23,.15); }
+  /* :active only here (not :hover too) -- :hover has no natural "unhover"
+     event on a touchscreen, so a tap used to leave that specific stepper
+     stuck gold until something else was tapped. :active still highlights
+     during the actual press/tap on every device and clears cleanly on
+     release; :hover (mouse-only) moved into the hover-capable media
+     query below, alongside this file's other hover-only rules. */
+  .total-stepper-btn:active { color: var(--gold); background: rgba(212,160,23,.15); }
 
 
   input::placeholder {
@@ -1910,7 +1927,7 @@
      Desktop (.deal-dte-cell) and Phone (.deal-card-dte-badge) -- not layout-
      scoped. 10px -> 12px.
   */
-  .deal-dte-price-btn { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: var(--text); font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .deal-dte-price-btn { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: var(--text); font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: box-shadow .15s ease; }
 
   .deal-dte-price-btn.stacked { flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
 
@@ -1957,7 +1974,7 @@
      text); Phone additionally frames it (see .deal-card-dte-stack
      .deal-price-display above) since that's the only place asked for a
      black background + border. */
-  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; }
+  .deal-price-display { background: none; border: none; padding: 0; cursor: pointer; font-weight: 700; font-size: 13px; transition: box-shadow .15s ease; }
 
   .deal-price-display.blue { color: var(--blue); }
 
@@ -3172,77 +3189,167 @@
   /* Portfolio's 4 top summary stats now open the Income Summary popup. */
   .portfolio-summary-clickable { cursor: pointer; }
 
-  /* ---------- Limit Finder (midPriceModal) ----------
+  /* ---------- Limit Finder (midPriceModal popup + the embedded
+     #embeddedLimitFinderPanel variant, shared .lf-* classes) ----------
      Ask/Bid are negative by rule, same as Limit $ -- displayed as
-     magnitude only (normalizeAskPriceOnBlur/normalizeBidPriceOnBlur).
-     Label left, field right. .mid-price-field wraps ONLY the input+sign
-     (not the label) so the sign's vertical centering is scoped to the
-     input alone -- reusing .limit-sign-prefix's color/weight but
-     overriding its position:absolute to static so it takes part in
-     this flex pair instead. DOM order is input-then-sign (required for
-     the :focus/:placeholder-shown ~ sibling selectors below); row-reverse
-     flips the VISUAL order so the sign renders first (left of the value)
-     without breaking that selector direction. */
-  .mid-price-panel { width: min(340px, 92vw); }
-  /* Centered to sit above the Ask Price/Bid Price grid row below it
-     (same content width, since both share .modal-panel as their
-     container) -- was left-nudged before, which read as cornered on
-     phones where the panel's own lateral padding is already small.
-     margin-top/-bottom are equal and opposite (-10/+10) so the title
-     shifts up WITHIN the panel's existing padding without eating it
-     entirely (an earlier, larger negative-top-only margin pulled it
-     flush against the panel's own border) and without changing the
-     panel's total flow height or nudging anything below it. */
-  .mid-price-panel h2 { text-align: center; margin: -13px 0 13px; }
-  /* label+field are a single centered flex GROUP (not 2 independent
-     grid columns each centered on their own) -- label sits immediately
-     next to its field and the pair moves/centers together, so
-     shrinking the label's font (see below) doesn't leave it stranded
-     in the middle of its own half-empty column. Still responsive to
-     the panel's own width (min(340px, 92vw)), not a fixed layout. */
-  .mid-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-  /* Fixed label width (not auto/content-based) -- "Ask Price" and "Bid
-     Price" render at slightly different widths (different letters,
-     same character count), which was shifting each row's centered
-     [label+field] pair by a few px, so the two fields didn't line up
-     into a clean column even though the fields themselves are already
-     an identical fixed width. Locking the label to one shared width
-     makes both rows' total width identical, so the fields land at the
-     same X in both rows. */
-  .mid-price-row label { margin-bottom: 0; text-align: center; font-size: 16px; flex: 0 0 105px; }
-  .mid-price-field { position: relative; display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; }
-  .mid-price-field input { width: 108px; height: 64px; text-align: left; padding: 0 28px 0 6px; }
-  .mid-price-sign { position: static; transform: none; }
-  /* Clear (X) buttons -- absolutely positioned so row-reverse (needed
-     for the sign's DOM-order-dependent selectors above) can't push them
-     out of place. `right` is relative to .mid-price-field itself, but
-     row-reverse already renders the input as the rightmost flex child,
-     so this lands right where it visually reads as "inside the field." */
-  .mid-price-clear-btn {
-    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-    width: 20px; height: 20px; border-radius: 50%; padding: 0;
+     magnitude only (normalizeAskPriceOnBlur/normalizeBidPriceOnBlur /
+     their elf- twins). Label ABOVE field now (matches the Calculator's
+     own .input-group convention), steppers reuse the same global
+     .total-stepper component (gold hover, purple focus -- nothing
+     field-specific to maintain), Clear (X) sits OUTSIDE the field as
+     its own circle instead of overlapping it. */
+  .mid-price-panel { width: min(380px, 92vw); }
+  .lf-panel-header { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 16px; }
+  .lf-panel-header h2 { margin: 0; }
+  .lf-label { flex: 0 0 auto; text-align: left; font-size: 15px; font-weight: 800; letter-spacing: .5px; white-space: nowrap; }
+  .lf-label.lf-ask { color: var(--blue); }
+  .lf-label.lf-bid { color: var(--red); }
+  #mpAskPrice, #elfAskPrice { color: var(--blue); }
+  #mpBidPrice, #elfBidPrice { color: var(--red); }
+  .lf-field-wrap { width: 200px; }
+  .lf-field-wrap input { font-size: 26px; font-weight: 800; }
+  /* Clear (X) -- a flex sibling AFTER the field+stepper wrap now, not
+     absolutely positioned inside it, so it can never overlap the
+     stepper regardless of field width. */
+  .lf-clear-btn {
+    flex: none; width: 30px; height: 30px; border-radius: 50%; padding: 0;
     border: 1.5px solid var(--red); background: transparent; color: var(--red);
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; line-height: 1; cursor: pointer;
+    font-size: 13px; cursor: pointer; transition: box-shadow .15s ease;
   }
-  .mid-price-clear-btn[hidden] { display: none; }
-  #mpAskPrice, .mid-price-ask label { color: var(--blue); font-weight: 800; }
-  #mpBidPrice, .mid-price-bid label { color: var(--red); font-weight: 800; }
-  .mid-price-ask .mid-price-sign { color: var(--blue); }
-  .mid-price-bid .mid-price-sign { color: var(--red); }
-  /* Visible while editing now (only hidden when the field is truly
-     empty) -- was also hidden on :focus before. */
-  #mpAskPrice:placeholder-shown ~ .mid-price-sign,
-  #mpBidPrice:placeholder-shown ~ .mid-price-sign { opacity: 0; }
+  .lf-clear-btn:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 55%, transparent); }
+  /* visibility (not display:none) -- keeps this button's own box/space
+     reserved even while "hidden", so a centered row's total width never
+     changes the instant a value is typed. Without this, the field it
+     sits beside visibly jumped sideways to re-center around the newly-
+     appeared/disappeared X -- that jitter was the actual bug, not the
+     X's appearance itself. */
+  .lf-clear-btn[hidden] { visibility: hidden; }
+  /* Grey, not red -- clears BOTH fields at once rather than one, so it
+     isn't part of the X's own red "remove this one value" language.
+     Border only; the emoji glyph itself ignores CSS color. */
+  .lf-trash-btn { border-color: var(--border); }
+  .lf-trash-btn:hover { box-shadow: 0 0 5px color-mix(in srgb, var(--border) 55%, transparent); }
+  .lf-live-value { font-size: 24px; font-weight: 800; color: var(--muted); text-align: center; }
+  .lf-live-value.has-value { color: var(--green); }
+  /* Splits "- 0.01" into a sign + digits so the DIGITS can align with
+     the Ask/Bid fields' own text -- centering the combined "- 0.01"
+     string as one block shifted the digits off that alignment by the
+     sign's own width. lf-live-inner shrink-wraps to just the digits
+     (the sign is taken out of flow), so centering IT centers only the
+     digits; the sign then sits pinned just left of that box instead,
+     popping out rather than dragging the digits with it.
+     The Ask/Bid inputs themselves aren't centered on their own full box
+     either -- .total-stepper-wrap input reserves 46px on the right for
+     the stepper (10px on the left), so their text-align:center actually
+     centers on a box shifted off true-center, by an amount that also
+     depends on the grid column's actual resolved width (which can be
+     less than its 200px cap once minmax(0,200px) has to shrink it, e.g.
+     inside the popup's own narrower modal). Rather than re-deriving that
+     shift in CSS, alignLiveValueToField() (JS) measures the real Ask
+     field's rendered text-center at runtime and nudges lf-live-inner by
+     the exact delta -- correct regardless of column width. */
+  .lf-live-inner { position: relative; display: inline-block; }
+  .lf-live-sign { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 4px; }
+  .lf-live-sign[hidden] { display: none; }
+  /* Popup-only: Total $ (editable, 2-way synced with the main
+     Calculator) / Ratio (read-only mirror -- never directly editable
+     anywhere else either) -- lets you tune the whole trade without
+     closing the popup. Not present in the embedded variant, which
+     already sits right next to the real Total $/Ratio fields.
+     Side-by-side columns with the label ABOVE each field now (was a
+     single label-left column stacked over 2 rows) -- matches the
+     concept image's layout. */
+  .lf-mirror-grid { display: flex; gap: 14px; margin-bottom: 16px; }
+  .lf-mirror-col { flex: 1; min-width: 0; }
+  .lf-mirror-label { display: block; text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .lf-mirror-col input { width: 100%; height: 52px; text-align: center; font-size: 16px; }
+  .lf-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  /* Embedded variant sits inside the Ratio table's own column (see
+     #tableColumnSlot) -- centers its content vertically/horizontally
+     within that footprint instead of the popup's top-down modal flow.
+     Own padding (not .chart-panel's, which it no longer carries -- it
+     swaps with the Ratio table now, not the Max Loss/Max Profit chart
+     above it). flex:1 (not height:100%) -- #tableColumnSlot only
+     stretches to the chart's height at all once .lf-embedded-showing
+     sets align-items:stretch below; this is what actually claims that
+     stretched space once it exists. */
+  .lf-embedded-panel { display: flex; flex-direction: column; justify-content: center; flex: 1; padding: 22px 22px 17px; }
+  .lf-embedded-panel[hidden] { display: none; }
 
-  /* Live (Ask+Bid)/2 preview row, between the 2 fields -- spacer matches
-     the other rows' own label width (105px) so this row's total width
-     (and its centering within the panel) is identical to theirs,
-     landing the value under the SAME column the fields themselves sit
-     in, not the row's full width. */
-  .mid-price-live-spacer { flex: 0 0 105px; }
-  .mid-price-live-value { flex: 0 0 108px; text-align: center; font-size: 17px; font-weight: 800; color: var(--muted); }
-  .mid-price-live-value.has-value { color: var(--green); }
+  /* 3 columns (label | field | X) shared by all 3 rows (Ask / live value
+     / Bid) -- shared by BOTH the embedded panel and the popup now, plain
+     DOM-order auto-placement (see the lf-grid-spacer comment in the
+     HTML). align-items:center centers each row's own content on that
+     row's own height, which is what lands each (X) centered on its OWN
+     field, and the trash button (same column, live-value row) centered
+     on that shorter middle row -- between the two X's, without any
+     manual position math. minmax(0,200px) (not a bare 200px) lets the
+     field shrink instead of overflowing on narrow phones; that tier
+     isn't tuned yet otherwise, see the 980px note below. Trash only
+     shown once BOTH fields have a value -- see updateElfClearBtns()/
+     updateMidPriceClearBtns(). */
+  .lf-price-grid { display: grid; grid-template-columns: auto minmax(0, 200px) 30px; align-items: center; justify-content: center; column-gap: 10px; row-gap: 18px; }
+
+  /* Ratio table's normal height (~content-driven) is left alone --
+     .main-layout's default align-items:start only gets overridden here,
+     scoped to whenever the embedded Limit Finder is actually showing,
+     so #tableColumnSlot stretches to match the Max Loss/Max Profit
+     chart's height instead of shrinking to the Limit Finder's own
+     (much shorter) content -- this was the "too small, not utilizing
+     chart taken space" bug. */
+  #mainLayout.lf-embedded-showing { align-items: stretch; }
+
+  /* "Above the graph, not below it" on Phone -- .main-layout stacks
+     .chart-panel then .table-column top-to-bottom in DOM order once it
+     collapses to 1 column (see the 980px tier below), so without this
+     the Ratio table's normal spot (after the chart) would put the
+     Limit Finder below the Max Loss/Max Profit chart whenever it's
+     showing. order:-1 only inside that same collapsed-width tier --
+     Desktop's 2-column side-by-side layout is untouched. */
+  @media (max-width: 980px) {
+    #mainLayout.lf-embedded-showing #tableColumnSlot { order: -1; }
+  }
+
+  /* Desktop only (Phone sizing still pending its own testing pass) --
+     Ask/Bid boxes get noticeably taller now that the panel itself
+     stretches to the chart's full height (see .lf-embedded-showing
+     above) and has real vertical room to spend. .total-stepper's own
+     top/right/bottom:1px inset already re-fills the taller box
+     automatically; only the +/- glyph needed a bump to stay
+     proportional (matches this file's existing convention of bumping
+     stepper font-size whenever the field it sits in grows). */
+  @media (min-width: 981px) {
+    .lf-embedded-panel .lf-field-wrap input { height: 78px; }
+    .lf-embedded-panel .total-stepper-btn { font-size: 24px; }
+    .lf-embedded-panel .lf-price-grid { row-gap: 32px; }
+  }
+
+  /* Popup fields "a bit bigger" -- more modest than the embedded panel's
+     78px (that one fills real leftover space next to a tall chart; this
+     one just needs to feel less cramped inside a normal-sized modal).
+     Desktop tier -- Phone gets its own separate (bigger again) tier
+     below, plus the Clear (X) bump: at the original 30px circle / 13px
+     glyph the color-emoji ended up visibly clipped/"chopped" against
+     the circle specifically on Desktop, more room around the glyph is
+     the direct fix. */
+  @media (min-width: 981px) {
+    #midPriceModal .lf-field-wrap input { height: 68px; }
+    #midPriceModal .lf-price-grid .total-stepper-btn { font-size: 22px; }
+    #midPriceModal .lf-clear-btn { width: 34px; height: 34px; font-size: 15px; }
+  }
+
+  /* Phone tier -- title/divider dropped entirely (see .lf-panel-header/
+     .lf-divider below) to free up vertical space for noticeably bigger
+     fields and steppers than Desktop gets; touch targets want more room
+     than a mouse pointer does. */
+  @media (max-width: 980px) {
+    #midPriceModal .lf-panel-header { display: none; }
+    #midPriceModal .lf-divider { display: none; }
+    #midPriceModal .lf-field-wrap input { height: 76px; }
+    #midPriceModal .lf-mirror-col input { height: 60px; }
+    #midPriceModal .total-stepper-btn { font-size: 26px; }
+  }
 
 
   /* ---------- month/day date picker (no year field) ---------- */
@@ -4038,7 +4145,7 @@
            #calculatorView so it hides automatically in Portfolio mode.
            Plain relative path (not an absolute one) so it resolves
            against this file's own folder wherever the project lives. -->
-      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" onclick="openMidPriceModal()" title="Limit Finder" />
+      <img class="calc-logo-corner" src="ICO/Calculator.png" alt="Calculator" onclick="onCalcLogoClick()" title="Limit Finder" />
       <!-- Shows which deal is loaded while editing (see
            openDealInCalculator()) -- its own independent
            position:absolute element, like the logo, hidden by default
@@ -4157,6 +4264,17 @@
                         </span>
                       </label>
                       <label class="pm-menu-row">
+                        <span class="pm-menu-icon pm-icon-blue">&#x1F4CF;</span>
+                        <span class="pm-menu-text">
+                          <span class="pm-menu-title">Limit Finder</span>
+                          <span class="pm-menu-desc">Toggle vs Pop Up menu.</span>
+                        </span>
+                        <span class="pm-toggle-switch">
+                          <input type="checkbox" id="hmLimitFinderItem" onchange="toggleLimitFinderMode()" />
+                          <span class="pm-toggle-slider"></span>
+                        </span>
+                      </label>
+                      <label class="pm-menu-row">
                         <span class="pm-menu-icon pm-icon-gold">&#x1F512;</span>
                         <span class="pm-menu-text">
                           <span class="pm-menu-title">Lock Display Mode</span>
@@ -4266,7 +4384,7 @@
       </section>
 
       <section id="mainLayout" class="main-layout">
-        <section class="panel chart-panel">
+        <section class="panel chart-panel" id="chartPanelBox">
           <div class="chart">
             <div class="chart-label"><span>Max Loss</span><span class="dot red"></span></div>
             <div class="chart-label"><span>Max Profit</span><span class="dot green"></span></div>
@@ -4278,8 +4396,15 @@
           </div>
         </section>
 
-        <section class="table-column">
-          <section class="panel table-wrap">
+        <!-- Ratio table and the embedded Limit Finder share this column
+             -- exactly one of the two is ever hidden=false at a time,
+             toggled by the Calculator logo when
+             portfolioSettings.limitFinderMode is 'toggle' (see
+             onCalcLogoClick()/toggleEmbeddedLimitFinder()). Max Loss/
+             Max Profit chart above is a plain, always-visible sibling,
+             never touched by this toggle. -->
+        <section class="table-column" id="tableColumnSlot">
+          <section class="panel table-wrap" id="tableWrapBox">
             <table>
               <thead>
                 <tr>
@@ -4292,6 +4417,55 @@
               </thead>
               <tbody id="rows"></tbody>
             </table>
+          </section>
+
+          <section class="panel lf-embedded-panel" id="embeddedLimitFinderPanel" hidden>
+            <!-- Grid (not the old flex rows) so all 3 rows share the exact
+                 same 3 column tracks -- label | field | X -- regardless of
+                 which cells are empty/hidden. That's what makes each (X)
+                 land vertically centered on its OWN field's row (grid
+                 align-items:center is per-row) and the trash button land
+                 in the SAME column, centered on the live-value row in
+                 between, with zero manual position math. The empty
+                 lf-grid-spacer in slot 4 is what keeps the live row's
+                 value in column 2 (not 1) under plain DOM-order auto-
+                 placement -- only element with no visual purpose here. -->
+            <div class="lf-price-grid">
+              <label for="elfAskPrice" class="lf-label lf-ask">Ask Price</label>
+              <div class="total-stepper-wrap lf-field-wrap">
+                <input id="elfAskPrice" type="text" inputmode="decimal"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('elfAskPrice','elfBidPrice');}"
+                       onblur="normalizeElfAskOnBlur(); advanceIfOtherEmpty('elfAskPrice','elfBidPrice');"
+                       oninput="updateElfClearBtns(); updateElfLive();" />
+                <div class="total-stepper">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Ask Price" onclick="stepDecimalField('elfAskPrice','up',0.01,2,0)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Ask Price" onclick="stepDecimalField('elfAskPrice','down',0.01,2,0)">&#8722;</button>
+                </div>
+              </div>
+              <button type="button" class="lf-clear-btn" id="elfAskClearBtn" onclick="clearElfField('elfAskPrice')" title="Clear" hidden>&#10060;</button>
+
+              <span class="lf-grid-spacer"></span>
+              <b id="elfLiveLimit" class="lf-live-value">
+                <span class="lf-live-inner">
+                  <span class="lf-live-sign" hidden>-</span>
+                  <span class="lf-live-digits">&mdash;</span>
+                </span>
+              </b>
+              <button type="button" class="lf-clear-btn lf-trash-btn" id="elfTrashBtn" onclick="resetElfFields()" title="Reset" hidden>&#x1F5D1;&#xFE0F;</button>
+
+              <label for="elfBidPrice" class="lf-label lf-bid">Bid Price</label>
+              <div class="total-stepper-wrap lf-field-wrap">
+                <input id="elfBidPrice" type="text" inputmode="decimal"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('elfBidPrice','elfAskPrice');}"
+                       onblur="normalizeElfBidOnBlur(); advanceIfOtherEmpty('elfBidPrice','elfAskPrice');"
+                       oninput="updateElfClearBtns(); updateElfLive();" />
+                <div class="total-stepper">
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Bid Price" onclick="stepDecimalField('elfBidPrice','up',0.01,2,0)">+</button>
+                  <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Bid Price" onclick="stepDecimalField('elfBidPrice','down',0.01,2,0)">&#8722;</button>
+                </div>
+              </div>
+              <button type="button" class="lf-clear-btn" id="elfBidClearBtn" onclick="clearElfField('elfBidPrice')" title="Clear" hidden>&#10060;</button>
+            </div>
           </section>
         </section>
       </section>
@@ -5097,38 +5271,68 @@
      submitting. -->
 <div id="midPriceModal" class="modal-backdrop hidden">
   <div class="modal-panel mid-price-panel">
-    <h2>Limit Finder</h2>
-    <div class="form-row mid-price-row mid-price-ask">
-      <label for="mpAskPrice">Ask Price</label>
-      <div class="mid-price-field">
-        <input id="mpAskPrice" type="text" inputmode="decimal" placeholder="0.00"
+    <div class="lf-panel-header">
+      <h2>&#x1F3AF; Limit Finder</h2>
+    </div>
+    <!-- Total $ (editable, 2-way synced with the main Calculator) /
+         Ratio (read-only mirror) -- see refreshMpRatio()/onMpTotalInput().
+         Not present in the embedded variant -- see its own comment. -->
+    <div class="lf-mirror-grid">
+      <div class="lf-mirror-col">
+        <label for="mpTotal" class="lf-mirror-label">Total $</label>
+        <div class="total-stepper-wrap">
+          <input id="mpTotal" type="text" inputmode="decimal" oninput="onMpTotalInput()" />
+          <div class="total-stepper">
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Total $" onclick="stepTotalField('mpTotal','up')">+</button>
+            <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Total $" onclick="stepTotalField('mpTotal','down')">&#8722;</button>
+          </div>
+        </div>
+      </div>
+      <div class="lf-mirror-col">
+        <label for="mpRatio" class="lf-mirror-label">Ratio</label>
+        <input id="mpRatio" type="text" readonly tabindex="-1" />
+      </div>
+    </div>
+    <hr class="lf-divider" />
+    <!-- Same 3-column (label | field | X) grid as the embedded variant
+         (see .lf-price-grid) -- trash button lives in the live-value row,
+         between the two X's, same as there; see updateMidPriceClearBtns()/
+         updateMidPriceLive(). -->
+    <div class="lf-price-grid">
+      <label for="mpAskPrice" class="lf-label lf-ask">Ask Price</label>
+      <div class="total-stepper-wrap lf-field-wrap">
+        <input id="mpAskPrice" type="text" inputmode="decimal"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice'); applyMidPrice();}"
-               onblur="normalizeAskPriceOnBlur(); advanceIfOtherEmpty('mpAskPrice','mpBidPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
-        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
-        <button type="button" class="mid-price-clear-btn" id="mpAskClearBtn" onclick="clearMidPriceField('mpAskPrice')" title="Clear" hidden>&#10060;</button>
+               onblur="normalizeAskPriceOnBlur();"
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns(); refreshMpRatio();" />
+        <div class="total-stepper">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Ask Price" onclick="stepDecimalField('mpAskPrice','up',0.01,2,0)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Ask Price" onclick="stepDecimalField('mpAskPrice','down',0.01,2,0)">&#8722;</button>
+        </div>
       </div>
-    </div>
-    <!-- Live (Ask+Bid)/2 preview -- same formula applyMidPrice() itself
-         uses, just not yet committed to Limit $. No label, per request
-         -- .mid-price-live-spacer is an invisible flex-child the exact
-         same fixed width as the OTHER rows' own label (105px), so this
-         row's value lands centered under the FIELD column specifically
-         (not the row's full width, which would include the label). -->
-    <div class="form-row mid-price-row mid-price-live">
-      <span class="mid-price-live-spacer" aria-hidden="true"></span>
-      <b id="mpLiveLimit" class="mid-price-live-value">&mdash;</b>
-    </div>
-    <div class="form-row mid-price-row mid-price-bid">
-      <label for="mpBidPrice">Bid Price</label>
-      <div class="mid-price-field">
-        <input id="mpBidPrice" type="text" inputmode="decimal" placeholder="0.00"
+      <button type="button" class="lf-clear-btn" id="mpAskClearBtn" onclick="clearMidPriceField('mpAskPrice')" title="Clear" hidden>&#10060;</button>
+
+      <span class="lf-grid-spacer"></span>
+      <b id="mpLiveLimit" class="lf-live-value">
+        <span class="lf-live-inner">
+          <span class="lf-live-sign" hidden>-</span>
+          <span class="lf-live-digits">&mdash;</span>
+        </span>
+      </b>
+      <button type="button" class="lf-clear-btn lf-trash-btn" id="mpTrashBtn" onclick="resetMidPriceFields()" title="Reset" hidden>&#x1F5D1;&#xFE0F;</button>
+
+      <label for="mpBidPrice" class="lf-label lf-bid">Bid Price</label>
+      <div class="total-stepper-wrap lf-field-wrap">
+        <input id="mpBidPrice" type="text" inputmode="decimal"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice'); applyMidPrice();}"
-               onblur="normalizeBidPriceOnBlur(); advanceIfOtherEmpty('mpBidPrice','mpAskPrice');"
-               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns();" />
-        <span class="limit-sign-prefix mid-price-sign" aria-hidden="true">&#8722;</span>
-        <button type="button" class="mid-price-clear-btn" id="mpBidClearBtn" onclick="clearMidPriceField('mpBidPrice')" title="Clear" hidden>&#10060;</button>
+               onblur="normalizeBidPriceOnBlur();"
+               oninput="updateMidPriceButtonState(); updateMidPriceLive(); updateMidPriceClearBtns(); refreshMpRatio();" />
+        <div class="total-stepper">
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Increase Bid Price" onclick="stepDecimalField('mpBidPrice','up',0.01,2,0)">+</button>
+          <button type="button" class="total-stepper-btn" tabindex="-1" aria-label="Decrease Bid Price" onclick="stepDecimalField('mpBidPrice','down',0.01,2,0)">&#8722;</button>
+        </div>
       </div>
+      <button type="button" class="lf-clear-btn" id="mpBidClearBtn" onclick="clearMidPriceField('mpBidPrice')" title="Clear" hidden>&#10060;</button>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-cancel" onclick="closeMidPriceModal()">Close</button>
@@ -5707,12 +5911,13 @@
   }
 
   // Clear (X) buttons -- one per field, shown only once that field has
-  // a value, instead of steppers (Ask/Bid are typed straight off a
-  // broker quote, not incremented). Clearing refocuses the field so
-  // retyping is a single motion.
+  // a value. Clearing refocuses the field so retyping is a single motion.
   function updateMidPriceClearBtns() {
-    document.getElementById('mpAskClearBtn').hidden = !document.getElementById('mpAskPrice').value.trim();
-    document.getElementById('mpBidClearBtn').hidden = !document.getElementById('mpBidPrice').value.trim();
+    const askHasVal = !!document.getElementById('mpAskPrice').value.trim();
+    const bidHasVal = !!document.getElementById('mpBidPrice').value.trim();
+    document.getElementById('mpAskClearBtn').hidden = !askHasVal;
+    document.getElementById('mpBidClearBtn').hidden = !bidHasVal;
+    document.getElementById('mpTrashBtn').hidden = !(askHasVal && bidHasVal);
   }
 
   function clearMidPriceField(id) {
@@ -5721,20 +5926,85 @@
     updateMidPriceButtonState();
     updateMidPriceLive();
     updateMidPriceClearBtns();
+    refreshMpRatio();
     el.focus();
+  }
+
+  // Resets Ask/Bid only -- Total $ stays as typed (it's a live mirror of
+  // the real field, not a scratch value, so "reset" resetting it too
+  // would surprise-edit the actual deal being built).
+  function resetMidPriceFields() {
+    document.getElementById('mpAskPrice').value = '';
+    document.getElementById('mpBidPrice').value = '';
+    updateMidPriceButtonState();
+    updateMidPriceLive();
+    updateMidPriceClearBtns();
+    refreshMpRatio();
+  }
+
+  // Total $ mirror -- editable, writes straight into the real #total
+  // field live (same one Set Limit will use), so Ratio and everything
+  // else downstream stays correct without leaving the popup.
+  function onMpTotalInput() {
+    totalEl.value = document.getElementById('mpTotal').value;
+    calculate();
+    refreshMpRatio();
+  }
+
+  // Ratio mirror -- read-only (Ratio is never directly editable
+  // anywhere else in this file either). Recomputed against whatever
+  // Limit $ Ask/Bid currently imply, so it reflects "if I set this
+  // Limit, what would Ratio become" the same way calculate() would.
+  function refreshMpRatio() {
+    const ratioEl = document.getElementById('mpRatio');
+    const askRaw = document.getElementById('mpAskPrice').value;
+    const bidRaw = document.getElementById('mpBidPrice').value;
+    const totalRaw = document.getElementById('mpTotal').value;
+    let limitForRatio = limitEl.value;
+    if (askRaw.trim() !== '' && bidRaw.trim() !== '') {
+      const ask = getLimitValueRaw(askRaw);
+      const bid = getLimitValueRaw(bidRaw);
+      limitForRatio = Math.abs((ask + bid) / 2).toFixed(2);
+    }
+    const m = computeMetrics(totalRaw, limitForRatio, ptPctEl.value, contractsEl.value);
+    ratioEl.value = m.ratioMissing ? '—' : truncate2(m.ratio) + '%';
   }
 
   // Live (Ask+Bid)/2 preview -- identical formula to applyMidPrice()
   // itself, just not committed to Limit $ yet. Dash/muted until both
   // fields have a value, matching every other live-preview field in
   // this file.
+  // Ask's own text-align:center doesn't land on its true box-center (see
+  // .lf-live-inner's CSS comment) -- measures Ask's actual rendered
+  // text-center at call time and nudges the live value's digit block to
+  // match exactly, correct regardless of the grid column's resolved
+  // width or any stepper-padding quirks (a CSS-only equivalent would
+  // have to re-derive that shift, and did not reliably match in
+  // testing). Reset transform before measuring inner's own rect, or a
+  // previous call's shift would corrupt this one's baseline.
+  function alignLiveValueToField(liveEl, fieldEl) {
+    const inner = liveEl.querySelector('.lf-live-inner');
+    inner.style.transform = '';
+    const fieldRect = fieldEl.getBoundingClientRect();
+    const fieldStyle = getComputedStyle(fieldEl);
+    const fieldContentCenter = fieldRect.left + parseFloat(fieldStyle.paddingLeft) +
+      (fieldRect.width - parseFloat(fieldStyle.paddingLeft) - parseFloat(fieldStyle.paddingRight)) / 2;
+    const innerRect = inner.getBoundingClientRect();
+    const innerCenter = innerRect.left + innerRect.width / 2;
+    inner.style.transform = `translateX(${fieldContentCenter - innerCenter}px)`;
+  }
+
   function updateMidPriceLive() {
     const askRaw = document.getElementById('mpAskPrice').value;
     const bidRaw = document.getElementById('mpBidPrice').value;
     const el = document.getElementById('mpLiveLimit');
+    const digitsEl = el.querySelector('.lf-live-digits');
+    const signEl = el.querySelector('.lf-live-sign');
     if (askRaw.trim() === '' || bidRaw.trim() === '') {
-      el.textContent = '—';
+      digitsEl.textContent = '—';
+      signEl.hidden = true;
       el.classList.remove('has-value');
+      alignLiveValueToField(el, document.getElementById('mpAskPrice'));
       return;
     }
     const ask = getLimitValueRaw(askRaw);
@@ -5742,19 +6012,30 @@
     const avg = (ask + bid) / 2;
     // No "$" -- and always shown negative, matching Limit $ itself
     // (always negative by rule, see getLimitValueRaw) rather than a
-    // plain magnitude. Space after the "-" (not tight against the
-    // digits) per explicit request.
-    el.textContent = '- ' + Math.abs(avg).toFixed(2);
+    // plain magnitude. Sign is its own element (not prefixed onto the
+    // digits) so it can pop out to the left instead of shifting the
+    // digits off the same center the Ask/Bid fields' own digits use --
+    // see .lf-live-sign/.lf-live-inner.
+    digitsEl.textContent = Math.abs(avg).toFixed(2);
+    signEl.hidden = false;
     el.classList.add('has-value');
+    alignLiveValueToField(el, document.getElementById('mpAskPrice'));
   }
 
   function openMidPriceModal() {
     document.getElementById('mpAskPrice').value = '';
     document.getElementById('mpBidPrice').value = '';
+    document.getElementById('mpTotal').value = totalEl.value;
+    // Unhidden BEFORE the update calls below (not after, like every
+    // other one-shot modal opener in this file) -- updateMidPriceLive()
+    // now measures the Ask field's real rendered position to align the
+    // live value's digits (see alignLiveValueToField()), which reads as
+    // all-zero while the modal is still display:none.
+    document.getElementById('midPriceModal').classList.remove('hidden');
     updateMidPriceButtonState();
     updateMidPriceLive();
     updateMidPriceClearBtns();
-    document.getElementById('midPriceModal').classList.remove('hidden');
+    refreshMpRatio();
     const askEl = document.getElementById('mpAskPrice');
     askEl.focus();
     askEl.select();
@@ -5772,6 +6053,123 @@
     limitEl.value = Math.abs(avg).toFixed(2);
     calculate();
     closeMidPriceModal();
+  }
+
+  /* ---------- Embedded Limit Finder (#embeddedLimitFinderPanel) ----------
+     Own id-prefixed twin of the mp* functions above rather than a
+     shared/parameterized version -- the two variants behave
+     differently on purpose (this one live-applies straight to Limit $
+     on every keystroke, no Set/Close step, see updateElfLive()), so
+     sharing code would mean branching inside every function anyway.
+     Keeping them separate means neither can regress the other. */
+  function normalizeElfAskOnBlur() {
+    const el = document.getElementById('elfAskPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  function normalizeElfBidOnBlur() {
+    const el = document.getElementById('elfBidPrice');
+    if (el.value.trim() === '') return;
+    el.value = Math.abs(getLimitValueRaw(el.value)).toFixed(2);
+  }
+
+  function updateElfClearBtns() {
+    const askHasVal = !!document.getElementById('elfAskPrice').value.trim();
+    const bidHasVal = !!document.getElementById('elfBidPrice').value.trim();
+    document.getElementById('elfAskClearBtn').hidden = !askHasVal;
+    document.getElementById('elfBidClearBtn').hidden = !bidHasVal;
+    document.getElementById('elfTrashBtn').hidden = !(askHasVal && bidHasVal);
+  }
+
+  function clearElfField(id) {
+    const el = document.getElementById(id);
+    el.value = '';
+    updateElfClearBtns();
+    updateElfLive();
+    el.focus();
+  }
+
+  function resetElfFields() {
+    document.getElementById('elfAskPrice').value = '';
+    document.getElementById('elfBidPrice').value = '';
+    updateElfClearBtns();
+    updateElfLive();
+  }
+
+  // No Set button here -- typing directly drives the real Limit $ (and
+  // everything downstream of it) live, per explicit spec ("all
+  // relevant parameters are affected by these values immediately").
+  function updateElfLive() {
+    const askRaw = document.getElementById('elfAskPrice').value;
+    const bidRaw = document.getElementById('elfBidPrice').value;
+    const el = document.getElementById('elfLiveLimit');
+    const digitsEl = el.querySelector('.lf-live-digits');
+    const signEl = el.querySelector('.lf-live-sign');
+    if (askRaw.trim() === '' || bidRaw.trim() === '') {
+      digitsEl.textContent = '—';
+      signEl.hidden = true;
+      el.classList.remove('has-value');
+      alignLiveValueToField(el, document.getElementById('elfAskPrice'));
+      return;
+    }
+    const ask = getLimitValueRaw(askRaw);
+    const bid = getLimitValueRaw(bidRaw);
+    const avg = (ask + bid) / 2;
+    digitsEl.textContent = Math.abs(avg).toFixed(2);
+    signEl.hidden = false;
+    el.classList.add('has-value');
+    limitEl.value = Math.abs(avg).toFixed(2);
+    calculate();
+    alignLiveValueToField(el, document.getElementById('elfAskPrice'));
+  }
+
+  /* ---------- Calculator logo: popup vs embedded swap ----------
+     portfolioSettings.limitFinderMode decides which one clicking the
+     logo does -- see the Hamburger Menu's own "Limit Finder" toggle. */
+  // Phone always gets the popup, regardless of the Hamburger Menu's
+  // "Limit Finder" toggle -- the embedded swap-with-the-Ratio-table
+  // variant is a Desktop-only feature (explicit call: the popup works
+  // best on Phone no matter what, not worth the complexity there). The
+  // toggle itself stays visible/saved on Phone too -- it's just inert
+  // there, since this check overrides it before it's ever consulted.
+  // Same 980px breakpoint .main-layout's own 2-col/1-col split already
+  // uses, not gPortfolioLayout -- this is about the CURRENT viewport's
+  // width, not the user's separate desktop/phone card-layout preference.
+  function onCalcLogoClick() {
+    const isPhoneWidth = window.matchMedia('(max-width: 980px)').matches;
+    if (isPhoneWidth || portfolioSettings.limitFinderMode === 'popup') {
+      openMidPriceModal();
+    } else {
+      toggleEmbeddedLimitFinder();
+    }
+  }
+
+  function toggleEmbeddedLimitFinder() {
+    const tableBox = document.getElementById('tableWrapBox');
+    const lfBox = document.getElementById('embeddedLimitFinderPanel');
+    const chartBox = document.getElementById('chartPanelBox');
+    const showingLf = lfBox.hidden;
+    tableBox.hidden = showingLf;
+    lfBox.hidden = !showingLf;
+    document.getElementById('mainLayout').classList.toggle('lf-embedded-showing', showingLf);
+    if (showingLf) {
+      document.getElementById('elfAskPrice').value = '';
+      document.getElementById('elfBidPrice').value = '';
+      updateElfClearBtns();
+      updateElfLive();
+      // align-items:stretch (CSS) gets both boxes CLOSE, but the chart
+      // reaches its height via implicit grid stretch while the panel
+      // reaches it via flex:1 -- 2 different sizing paths that can each
+      // round to a different sub-pixel value despite targeting the same
+      // row height. Copying the panel's own measured height straight
+      // onto the chart is the only way to guarantee identical, not just
+      // close. getBoundingClientRect() forces the reflow that's needed
+      // for this to read the just-applied hidden/showingLf change.
+      chartBox.style.height = lfBox.getBoundingClientRect().height + 'px';
+    } else {
+      chartBox.style.height = '';
+    }
   }
 
   /* contractsRaw is optional (defaults to 1 via getContractsValue when
@@ -6661,9 +7059,35 @@
     const desktopItem = document.getElementById('hmDesktopModeItem');
     const phoneItem = document.getElementById('hmPhoneModeItem');
     const lockItem = document.getElementById('hmLayoutLockItem');
+    const limitFinderItem = document.getElementById('hmLimitFinderItem');
     if (desktopItem) desktopItem.checked = gPortfolioLayout !== 'mobile';
     if (phoneItem) phoneItem.checked = gPortfolioLayout === 'mobile';
     if (lockItem) lockItem.checked = gLayoutLocked;
+    // Guards portfolioSettings itself, not just a property on it --
+    // initPortfolioLayout() (script top-level) calls this via
+    // applyPortfolioLayout() BEFORE the `let portfolioSettings = {...}`
+    // declaration further down the same script has actually run
+    // (temporal dead zone), same pre-existing ordering quirk
+    // checkCalcCrampedLayout() already guards against for currentMode/
+    // gPortfolioLayout. Harmless no-op here -- toggleHamburgerMenu()
+    // calls this again (safely, by then) right before the menu is ever
+    // actually shown.
+    if (limitFinderItem) {
+      try { limitFinderItem.checked = portfolioSettings.limitFinderMode !== 'popup'; } catch (err) { /* too early -- see above */ }
+    }
+  }
+
+  // Switching FROM embedded mode while the chart/Limit Finder swap is
+  // currently showing Limit Finder would strand the chart hidden forever
+  // (nothing else ever un-hides it) -- force it back to the chart first.
+  function toggleLimitFinderMode() {
+    portfolioSettings.limitFinderMode = portfolioSettings.limitFinderMode === 'popup' ? 'toggle' : 'popup';
+    if (portfolioSettings.limitFinderMode === 'popup') {
+      const lfBox = document.getElementById('embeddedLimitFinderPanel');
+      if (lfBox && !lfBox.hidden) toggleEmbeddedLimitFinder();
+    }
+    savePortfolioSettings();
+    pushToDriveDebounced();
   }
 
   /* ---------- Hamburger menu -- standard .modal-backdrop/.modal-panel,
@@ -6918,6 +7342,11 @@
     // ONE side at a time (Open or Closed), click/tap to flip -- see
     // dealPricesView/togglePricesView().
     desktopPricesDisplayMethod: 'sideBySide',
+    // 'toggle' (default): clicking the Calculator logo swaps the chart
+    // for an embedded Limit Finder in the exact same spot, live-applying
+    // as you type. 'popup': original behavior, opens Limit Finder as a
+    // modal instead -- see onCalcLogoClick().
+    limitFinderMode: 'toggle',
     updatedAt: 0
   };
 
